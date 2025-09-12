@@ -5,12 +5,17 @@ import com.bobmowzie.mowziesmobs.client.particle.AdvancedTerrainParticle;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
+import com.bobmowzie.mowziesmobs.server.damage.DamageTypes;
 import com.bobmowzie.mowziesmobs.server.entity.bluff.EntityBluff;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityMagicEffect;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -77,10 +82,14 @@ public class EntityEarthSpike extends EntityGeomancyBase {
                     damage = damage * ConfigHandler.COMMON.MOBS.BLUFF.combatConfig.attackMultiplier.get();
                 }
             }
+
+            Holder<DamageType> geomancyDamageTypeHolder = getCaster().level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DamageTypes.GEOMANCY);
+            DamageSource damageSourceGeomancy = new DamageSource(geomancyDamageTypeHolder, getCaster());
+
             for (Entity entity : entitiesHit) {
                 if (getCaster() instanceof EntityBluff && entity instanceof EntityBluff) continue;
                 if (entity instanceof ItemEntity) continue;
-                entity.hurt(damageSources().mobProjectile(this, getCaster()), (float) damage);
+                entity.hurt(damageSourceGeomancy, (float) damage);
                 float applyKnockbackResistance = 0;
                 if (entity instanceof LivingEntity) {
                     applyKnockbackResistance = (float) ((LivingEntity) entity).getAttribute(Attributes.KNOCKBACK_RESISTANCE).getValue();

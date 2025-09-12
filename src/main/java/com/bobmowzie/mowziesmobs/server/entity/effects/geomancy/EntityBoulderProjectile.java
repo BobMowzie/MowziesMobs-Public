@@ -6,16 +6,20 @@ import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleRotation;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
+import com.bobmowzie.mowziesmobs.server.damage.DamageTypes;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityCameraShake;
 import com.bobmowzie.mowziesmobs.server.entity.sculptor.EntitySculptor;
 import com.bobmowzie.mowziesmobs.server.potion.EffectGeomancy;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
 import com.google.common.collect.Iterables;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -147,13 +151,12 @@ public class EntityBoulderProjectile extends EntityBoulderBase {
                 if (!travellingBlockedBy(entity)) continue;
                 if (ridingEntities != null && ridingEntities.contains(entity)) continue;
                 if (hitEntities.contains(entity)) continue;
+
+                Holder<DamageType> geomancyDamageTypeHolder = getCaster().level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DamageTypes.GEOMANCY);
+                DamageSource damageSourceGeomancy = new DamageSource(geomancyDamageTypeHolder, getCaster());
+
                 boolean didHurt;
-                if (getCaster() != null) {
-                    didHurt = entity.hurt(damageSources().mobProjectile(this, getCaster()), damage);
-                }
-                else {
-                    didHurt = entity.hurt(damageSources().generic(), damage);
-                }
+                didHurt = entity.hurt(damageSourceGeomancy, damage);
                 if (didHurt) hitEntities.add(entity);
                 if (isAlive() && getTier() != GeomancyTier.HUGE) this.explode();
             }

@@ -8,10 +8,15 @@ import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent.Property
 import com.bobmowzie.mowziesmobs.client.particle.util.RibbonComponent;
 import com.bobmowzie.mowziesmobs.client.particle.util.RibbonComponent.PropertyOverLength;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
+import com.bobmowzie.mowziesmobs.server.damage.DamageTypes;
 import com.bobmowzie.mowziesmobs.server.damage.DamageUtil;
 import com.bobmowzie.mowziesmobs.server.entity.LeaderSunstrikeImmune;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthi;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -68,24 +73,29 @@ public class EntitySuperNova extends EntityMagicEffect {
             setBoundingBox(getBoundingBox().inflate(scale));
             setPos(xo, yo, zo);
             List<Entity> hitList = getEntitiesNearbyCube(Entity.class, scale);
+
+            Holder<DamageType> heliomancyDamageTypeHolder = level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DamageTypes.HELIOMANCY);
+            DamageSource damageSourceHeliomancy = new DamageSource(heliomancyDamageTypeHolder, this, getCaster());
+
             for (Entity entity : hitList) {
             	if (getCaster() == entity) continue;
                 if (entity instanceof ItemEntity) continue;
                 if (getCaster() instanceof EntityUmvuthi && entity instanceof LeaderSunstrikeImmune) continue;
                 if (entity instanceof LivingEntity livingEntity) {
                     if (getCaster().canAttack(livingEntity)) {
-                        float damageFire = 4f;
+                        float damageHeliomancy = 4f;
                         float damageMob = 4f;
                         if (getCaster() instanceof EntityUmvuthi) {
-                            damageFire *= ConfigHandler.COMMON.MOBS.UMVUTHI.combatConfig.attackMultiplier.get();
+                            damageHeliomancy *= ConfigHandler.COMMON.MOBS.UMVUTHI.combatConfig.attackMultiplier.get();
                             damageMob *= ConfigHandler.COMMON.MOBS.UMVUTHI.combatConfig.attackMultiplier.get();
                         }
                         if (getCaster() instanceof Player) {
-                            damageFire *= ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.sunsBlessingAttackMultiplier.get() * 0.8;
+                            damageHeliomancy *= ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.sunsBlessingAttackMultiplier.get() * 0.8;
                             damageMob *= ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.sunsBlessingAttackMultiplier.get() * 0.8;
                         }
-                        boolean hitWithFire = DamageUtil.dealMixedDamage(livingEntity, damageSources().mobProjectile(this, getCaster()), damageMob, damageSources().onFire(), damageFire).getRight();
-                        if (hitWithFire) {
+
+                        boolean hitWithLight = DamageUtil.dealMixedDamage(livingEntity, damageSourceHeliomancy, damageHeliomancy, damageSources().mobProjectile(this, getCaster()), damageMob).getRight();
+                        if (hitWithLight) {
                             Vec3 diff = livingEntity.position().subtract(position());
                             diff = diff.normalize();
                             livingEntity.knockback(0.4f, -diff.x, -diff.z);

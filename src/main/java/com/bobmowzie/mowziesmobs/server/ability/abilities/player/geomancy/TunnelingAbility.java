@@ -11,6 +11,7 @@ import com.bobmowzie.mowziesmobs.client.sound.IGeomancyRumbler;
 import com.bobmowzie.mowziesmobs.server.ability.*;
 import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
+import com.bobmowzie.mowziesmobs.server.damage.DamageTypes;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityBlockSwapper;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityFallingBlock;
@@ -21,12 +22,15 @@ import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
 import com.bobmowzie.mowziesmobs.server.tag.TagHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -166,10 +170,11 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
                 getUser().setDeltaMovement(lookVec.multiply(0.3, 0, 0.3).add(0, 1, 0).normalize().scale(tunnelSpeed));
             }
 
-            List<LivingEntity> entitiesHit = getEntityLivingBaseNearby(getUser(),2, 2, 2, 2);
-            for (LivingEntity entityHit : entitiesHit) {
-                DamageSource damageSource = getUser().damageSources().playerAttack(getUser());
-                entityHit.hurt(damageSource, 3 * ConfigHandler.COMMON.TOOLS_AND_ABILITIES.EARTHREND_GAUNTLET.attackMultiplier.get().floatValue());
+            Holder<DamageType> geomancyDamageTypeHolder = getUser().level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DamageTypes.GEOMANCY);
+            DamageSource damageSourceGeomancy = new DamageSource(geomancyDamageTypeHolder, getUser());
+
+            for (LivingEntity entityHit : getEntityLivingBaseNearby(getUser(),2, 2, 2, 2)) {
+                entityHit.hurt(damageSourceGeomancy, 3 * ConfigHandler.COMMON.TOOLS_AND_ABILITIES.EARTHREND_GAUNTLET.attackMultiplier.get().floatValue());
             }
         }
         else {

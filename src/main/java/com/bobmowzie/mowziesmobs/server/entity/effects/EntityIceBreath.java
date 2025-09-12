@@ -10,12 +10,17 @@ import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
 import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
 import com.bobmowzie.mowziesmobs.server.capability.FrozenCapability;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
+import com.bobmowzie.mowziesmobs.server.damage.DamageTypes;
 import com.bobmowzie.mowziesmobs.server.entity.frostmaw.EntityFrostmaw;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -103,6 +108,10 @@ public class EntityIceBreath extends EntityMagicEffect {
         float damage = DAMAGE_PER_HIT;
         if (getCaster() instanceof EntityFrostmaw) damage *= ConfigHandler.COMMON.MOBS.FROSTMAW.combatConfig.attackMultiplier.get();
         if (getCaster() instanceof Player) damage *= ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ICE_CRYSTAL.attackMultiplier.get();
+
+        Holder<DamageType> iceBreathDamageTypeHolder = level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DamageTypes.ICE_BREATH);
+        DamageSource damageSourceIceBreath = new DamageSource(iceBreathDamageTypeHolder, this, getCaster());
+
         for (Entity entityHit : entitiesHit) {
             if (entityHit == getCaster()) continue;
             if (entityHit instanceof ItemEntity) continue;
@@ -141,7 +150,7 @@ public class EntityIceBreath extends EntityMagicEffect {
                 // Do raycast check to prevent damaging through walls
                 if (!raytraceCheckEntity(entityHit)) continue;
 
-                if (entityHit.hurt(damageSources().freeze(), damage) && entityHit instanceof LivingEntity) {
+                if (entityHit.hurt(damageSourceIceBreath, damage) && entityHit instanceof LivingEntity) {
                     entityHit.setDeltaMovement(entityHit.getDeltaMovement().multiply(0.25, 1, 0.25));
                     FrozenCapability.IFrozenCapability capability = CapabilityHandler.getCapability(entityHit, CapabilityHandler.FROZEN_CAPABILITY);
                     if (capability != null) capability.addFreezeProgress((LivingEntity) entityHit, 0.23f);

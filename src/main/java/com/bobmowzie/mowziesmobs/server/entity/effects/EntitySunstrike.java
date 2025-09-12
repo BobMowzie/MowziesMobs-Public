@@ -4,10 +4,14 @@ import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.tools.MathUtils;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleOrb;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
+import com.bobmowzie.mowziesmobs.server.damage.DamageTypes;
+import com.bobmowzie.mowziesmobs.server.damage.DamageUtil;
 import com.bobmowzie.mowziesmobs.server.entity.LeaderSunstrikeImmune;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthi;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
@@ -18,6 +22,8 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -195,8 +201,14 @@ public class EntitySunstrike extends Entity implements IEntityAdditionalSpawnDat
         AABB region = new AABB(getX() - radius, getY() - 0.5, getZ() - radius, getX() + radius, this.level().getMaxBuildHeight() + 20, getZ() + radius);
         List<Entity> entities = level().getEntities(this, region);
         double radiusSq = radius * radius;
-        for (Entity entity : entities) {
-            if (entity instanceof ItemEntity) continue;
+
+
+        Holder<DamageType> heliomancyDamageTypeHolder = level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DamageTypes.HELIOMANCY);
+        DamageSource damageSourceHeliomancy = new DamageSource(heliomancyDamageTypeHolder, this, caster);
+
+        for (Entity e : entities) {
+            if (!(e instanceof LivingEntity)) continue;
+            LivingEntity entity = (LivingEntity) e;
             if (getDistanceSqXZToEntity(entity) < radiusSq) {
                 if (caster instanceof EntityUmvuthi && (entity instanceof LeaderSunstrikeImmune)) {
                     continue;
@@ -204,20 +216,20 @@ public class EntitySunstrike extends Entity implements IEntityAdditionalSpawnDat
                 if (caster instanceof Player && entity == caster) {
                     continue;
                 }
-                float damageFire = 2f;
+                float damageHeliomancy = 2f;
                 float damageMob = 2f;
                 if (caster instanceof EntityUmvuthi) {
-                    damageFire *= ConfigHandler.COMMON.MOBS.UMVUTHI.combatConfig.attackMultiplier.get();
+                    damageHeliomancy *= ConfigHandler.COMMON.MOBS.UMVUTHI.combatConfig.attackMultiplier.get();
                     damageMob *= ConfigHandler.COMMON.MOBS.UMVUTHI.combatConfig.attackMultiplier.get();
                 }
                 if (caster instanceof Player) {
-                    damageFire *= ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.sunsBlessingAttackMultiplier.get();
+                    damageHeliomancy *= ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.sunsBlessingAttackMultiplier.get();
                     damageMob *= ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.sunsBlessingAttackMultiplier.get();
                 }
-                if (entity.hurt(damageSources().mobProjectile(this, caster), damageMob)) entity.invulnerableTime = 0;
-                if (entity.hurt(damageSources().onFire(), damageFire)) {
+
+                boolean hitWithLight = DamageUtil.dealMixedDamage(entity, damageSourceHeliomancy, damageHeliomancy, damageSources().mobProjectile(this, caster), damageMob).getRight();
+                if (hitWithLight)
                     entity.setSecondsOnFire(3);
-                }
             }
         }
     }

@@ -4,11 +4,16 @@ import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
 import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleBase;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
 import com.bobmowzie.mowziesmobs.server.ability.*;
+import com.bobmowzie.mowziesmobs.server.damage.DamageTypes;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityCameraShake;
 import com.bobmowzie.mowziesmobs.server.potion.EffectGeomancy;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
@@ -41,11 +46,14 @@ public class GroundSlamAbility extends PlayerAbility {
             //getUser().setDeltaMovement(0d,0d,0d);
         }
         if (getCurrentSection().sectionType == AbilitySection.AbilitySectionType.ACTIVE) {
-            getUser().setDeltaMovement(0d,-1.5d,0d);
             if(getUser().onGround()){
                 nextSection();
+
+                Holder<DamageType> geomancyDamageTypeHolder = getUser().level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DamageTypes.GEOMANCY);
+                DamageSource damageSourceGeomancy = new DamageSource(geomancyDamageTypeHolder, getUser());
+
                 for(LivingEntity livingentity : getUser().level().getEntitiesOfClass(LivingEntity.class, getUser().getBoundingBox().inflate(5.2D, 2.0D, 5.2D))) {
-                    livingentity.hurt(getUser().damageSources().mobAttack(getUser()),10f);
+                    livingentity.hurt(damageSourceGeomancy,10f);
                 }
 
                 EntityCameraShake.cameraShake(getUser().level(), getUser().position(), 45, 0.09f, 20, 20);
