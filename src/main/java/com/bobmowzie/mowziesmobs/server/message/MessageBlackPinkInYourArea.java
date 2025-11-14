@@ -45,18 +45,17 @@ public final class MessageBlackPinkInYourArea {
             final NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ClientLevel world = Minecraft.getInstance().level;
+                assert world != null;
                 Entity entity = world.getEntity(message.entityID);
-                if (entity instanceof AbstractMinecart) {
-                    AbstractMinecart minecart = (AbstractMinecart) entity;
+                if (entity instanceof AbstractMinecart minecart) {
                     MowziesMobs.PROXY.playBlackPinkSound(minecart);
-                    BlockState state = Blocks.STONE.defaultBlockState()
-                            .setValue(BlockGrottol.VARIANT, BlockGrottol.Variant.BLACK_PINK);
                     BlockPos pos = minecart.blockPosition();
+                    BlockState state = Blocks.STONE.defaultBlockState();
+                    SoundType sound = state.getBlock().getSoundType(state, world, pos, minecart);
                     final float scale = 0.75F;
                     double x = minecart.getX(),
                             y = minecart.getY() + 0.375F + 0.5F + (minecart.getDefaultDisplayOffset() - 8) / 16.0F * scale,
                             z = minecart.getZ();
-                    SoundType sound = state.getBlock().getSoundType(state, world, pos, minecart);
                     world.playLocalSound(
                             x, y, z,
                             sound.getBreakSound(),
@@ -65,6 +64,7 @@ public final class MessageBlackPinkInYourArea {
                             sound.getPitch() * 0.8F,
                             false
                     );
+
                     MowziesMobs.PROXY.minecartParticles(world, minecart, scale, x, y, z, state, pos);
                 }
             });

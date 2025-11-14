@@ -13,6 +13,9 @@ import net.minecraft.resources.ResourceLocation;
 public class RenderGrottol extends MobRenderer<EntityGrottol, ModelGrottol<EntityGrottol>> {
     private static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/grottol.png");
     private static final ResourceLocation TEXTURE_DEEPSLATE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/grottol_deepslate.png");
+    private static final ResourceLocation TEXTURE_BLACKPINK = new ResourceLocation(MowziesMobs.MODID, "textures/entity/grottol_blackpink.png");
+    private static final ResourceLocation TEXTURE_DEEPSLATE_BLACKPINK = new ResourceLocation(MowziesMobs.MODID, "textures/entity/grottol_deepslate_blackpink.png");
+
 
     public RenderGrottol(EntityRendererProvider.Context mgr) {
         super(mgr, new ModelGrottol<>(), 0.6f);
@@ -25,7 +28,11 @@ public class RenderGrottol extends MobRenderer<EntityGrottol, ModelGrottol<Entit
 
     @Override
     public ResourceLocation getTextureLocation(EntityGrottol entity) {
-        return entity.getDeepslate() ? RenderGrottol.TEXTURE_DEEPSLATE : RenderGrottol.TEXTURE;
+        if (entity.getBlackpink()) {
+            return entity.getDeepslate() ? RenderGrottol.TEXTURE_DEEPSLATE_BLACKPINK : RenderGrottol.TEXTURE_BLACKPINK;
+        } else {
+            return entity.getDeepslate() ? RenderGrottol.TEXTURE_DEEPSLATE : RenderGrottol.TEXTURE;
+        }
     }
 
     /*@Override

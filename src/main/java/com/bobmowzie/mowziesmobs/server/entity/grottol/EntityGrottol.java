@@ -21,6 +21,7 @@ import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
 import com.bobmowzie.mowziesmobs.server.tag.TagHandler;
 import com.ilexiconn.llibrary.server.animation.Animation;
 import com.ilexiconn.llibrary.server.animation.AnimationHandler;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -89,6 +90,7 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     private int timeSinceDeflectSound = 0;
 
     private static final EntityDataAccessor<Boolean> DEEPSLATE = SynchedEntityData.defineId(EntityGrottol.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> BLACKPINK = SynchedEntityData.defineId(EntityGrottol.class, EntityDataSerializers.BOOLEAN);
 
     public EntityGrottol(EntityType<? extends EntityGrottol> type, Level world) {
         super(type, world);
@@ -210,6 +212,7 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     protected void defineSynchedData() {
         super.defineSynchedData();
         getEntityData().define(DEEPSLATE, false);
+        getEntityData().define(BLACKPINK, false);
     }
 
     @Override
@@ -278,6 +281,13 @@ public class EntityGrottol extends MowzieLLibraryEntity {
         return super.hurt(source, amount);
     }
 
+    private static BlockState findGroundBelow(Level world, BlockPos pos) {
+        while (world.getBlockState(pos).isAir() && pos.getY() > world.getMinBuildHeight()) {
+            pos = pos.below();
+        }
+        return world.getBlockState(pos);
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -286,8 +296,9 @@ public class EntityGrottol extends MowzieLLibraryEntity {
             if (isMinecart(e)) {
                 AbstractMinecart minecart = (AbstractMinecart) e;
                 reader.accept(minecart);
-                boolean onRail = isBlockRail(level().getBlockState(e.blockPosition()).getBlock());
-                if ((timeSinceMinecart > 3 && e.getDeltaMovement().length() < 0.001) || !onRail) {
+                boolean onRail = isBlockRail(level().getBlockState(e.blockPosition()).getBlock()) || isBlockRail(findGroundBelow(level(), e.blockPosition()).getBlock());
+                if ((e.onGround() && !level().getBlockState(e.blockPosition().below()).isAir() && !level().getBlockState(e.blockPosition()).isAir())
+                        && ((timeSinceMinecart > 3 && e.getDeltaMovement().length() < 0.001) || !onRail)) {
                     minecart.ejectPassengers();
                     timeSinceMinecart = 0;
                 }
@@ -298,7 +309,6 @@ public class EntityGrottol extends MowzieLLibraryEntity {
                 }
             }
         }
-//        if (ticksExisted == 1) System.out.println("Grottle at " + getPosition());
 
         //Sparkle particles
         if (level().isClientSide && isAlive() && random.nextInt(15) == 0) {
@@ -367,10 +377,9 @@ public class EntityGrottol extends MowzieLLibraryEntity {
 
     private boolean isBlackPinkInYourArea() {
         Entity e = getVehicle();
-        /*if (isMinecart(e)) {
-            BlockState state = ((AbstractMinecartEntity) e).getDisplayTile();
-            return state.getBlock() == BlockHandler.GROTTOL.get() && state.get(BlockGrottol.VARIANT) == BlockGrottol.Variant.BLACK_PINK;
-        }*/
+        if (e instanceof AbstractMinecart) {
+            return getBlackpink();
+        }
         return false;
     }
 
@@ -462,6 +471,14 @@ public class EntityGrottol extends MowzieLLibraryEntity {
         return false;
     }
 
+    public boolean getBlackpink() {
+        return getEntityData().get(BLACKPINK);
+    }
+
+    public void setBlackpink(boolean blackpink) {
+        getEntityData().set(BLACKPINK, blackpink);
+    }
+
     public boolean getDeepslate() {
         return getEntityData().get(DEEPSLATE);
     }
@@ -474,12 +491,14 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putBoolean("deepslate", this.getDeepslate());
+        compound.putBoolean("blackpink", this.getBlackpink());
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         setDeepslate(compound.getBoolean("deepslate"));
+        setBlackpink(compound.getBoolean("blackpink"));
     }
 
     @Override

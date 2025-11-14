@@ -5,7 +5,9 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseRailBlock;
+import net.minecraft.world.level.block.Blocks;
 
+import java.util.ArrayList;
 import java.util.function.Consumer;
 
 public final class BlackPinkRailLine implements Consumer<AbstractMinecart> {
@@ -24,7 +26,7 @@ public final class BlackPinkRailLine implements Consumer<AbstractMinecart> {
 
     private State next(Level world, AbstractMinecart minecart) {
         BlockPos pos = getRailPosition(world, BlockPos.containing(minecart.position()));
-        if (BaseRailBlock.isRail(world.getBlockState(pos))) {
+        if (BaseRailBlock.isRail(world.getBlockState(pos)) || world.getBlockState(pos) == Blocks.AIR.defaultBlockState()) {
             return state.apply(world, minecart, pos);
         }
         return state.derail();
