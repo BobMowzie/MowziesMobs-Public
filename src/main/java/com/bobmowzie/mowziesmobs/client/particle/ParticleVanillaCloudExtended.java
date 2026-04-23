@@ -1,21 +1,22 @@
 package com.bobmowzie.mowziesmobs.client.particle;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.bobmowzie.mowziesmobs.server.message.NetworkHandler;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Locale;
+import java.util.Arrays;
 
 public class ParticleVanillaCloudExtended extends TextureSheetParticle {
     private final SpriteSet animatedSprite;
@@ -95,139 +96,55 @@ public class ParticleVanillaCloudExtended extends TextureSheetParticle {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public static final class CloudFactory implements ParticleProvider<VanillaCloudData> {
+    public static final class Provider implements ParticleProvider<Data> {
         private final SpriteSet spriteSet;
 
-        public CloudFactory(SpriteSet sprite) {
+        public Provider(SpriteSet sprite) {
             this.spriteSet = sprite;
         }
 
         @Override
-        public Particle createParticle(VanillaCloudData typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            ParticleVanillaCloudExtended particle = new ParticleVanillaCloudExtended(worldIn, spriteSet, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.getScale(), typeIn.getRed(), typeIn.getGreen(), typeIn.getBlue(), typeIn.getDrag(), typeIn.getDuration(), typeIn.getDestination());
-            particle.setColor(typeIn.getRed(), typeIn.getGreen(), typeIn.getBlue());
+        public Particle createParticle(Data typeIn, @NotNull ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+            ParticleVanillaCloudExtended particle = new ParticleVanillaCloudExtended(worldIn, spriteSet, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.scale(), typeIn.red(), typeIn.green(), typeIn.blue(), typeIn.airDrag(), typeIn.duration(), typeIn.destinations());
+            particle.setColor(typeIn.red(), typeIn.green(), typeIn.blue());
             return particle;
         }
     }
 
-    public static class VanillaCloudData implements ParticleOptions {
-        public static final ParticleOptions.Deserializer<VanillaCloudData> DESERIALIZER = new ParticleOptions.Deserializer<VanillaCloudData>() {
-            public VanillaCloudData fromCommand(ParticleType<VanillaCloudData> particleTypeIn, StringReader reader) throws CommandSyntaxException {
-                reader.expect(' ');
-                float scale = (float) reader.readDouble();
-                reader.expect(' ');
-                float red = (float) reader.readDouble();
-                reader.expect(' ');
-                float green = (float) reader.readDouble();
-                reader.expect(' ');
-                float blue = (float) reader.readDouble();
-                reader.expect(' ');
-                float drag = (float) reader.readDouble();
-                reader.expect(' ');
-                float duration = (float) reader.readDouble();
-                return new VanillaCloudData(scale, red, green, blue, drag, duration, null);
-            }
+    public record Data(float red, float green, float blue, float scale, float airDrag, float duration, Vec3[] destinations) implements ParticleOptions {
+        public static final MapCodec<ParticleVanillaCloudExtended.Data> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                        Codec.FLOAT.fieldOf("red").forGetter(ParticleVanillaCloudExtended.Data::red),
+                        Codec.FLOAT.fieldOf("green").forGetter(ParticleVanillaCloudExtended.Data::green),
+                        Codec.FLOAT.fieldOf("blue").forGetter(ParticleVanillaCloudExtended.Data::blue),
+                        Codec.FLOAT.fieldOf("scale").forGetter(ParticleVanillaCloudExtended.Data::scale),
+                        Codec.FLOAT.fieldOf("air_drag").forGetter(ParticleVanillaCloudExtended.Data::airDrag),
+                        Codec.FLOAT.fieldOf("duration").forGetter(ParticleVanillaCloudExtended.Data::duration),
+                        Vec3.CODEC.listOf().fieldOf("destinations").xmap(list -> list.toArray(new Vec3[]{}), Arrays::asList).forGetter(ParticleVanillaCloudExtended.Data::destinations)
+                ).apply(instance, ParticleVanillaCloudExtended.Data::new)
+        );
 
-            public VanillaCloudData fromNetwork(ParticleType<VanillaCloudData> particleTypeIn, FriendlyByteBuf buffer) {
-                return new VanillaCloudData(buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), null);
-            }
-        };
-
-        private final float red;
-        private final float green;
-        private final float blue;
-        private final float scale;
-        private final float drag;
-        private final float duration;
-        private final Vec3[] destination;
-
-        public VanillaCloudData(float scale, float redIn, float greenIn, float blueIn, float drag, float duration, Vec3[] destination) {
-            this.red = redIn;
-            this.green = greenIn;
-            this.blue = blueIn;
-            this.scale = scale;
-            this.drag = drag;
-            this.duration = duration;
-            this.destination = destination;
-        }
+        public static final StreamCodec<RegistryFriendlyByteBuf, ParticleVanillaCloudExtended.Data> STREAM_CODEC = NeoForgeStreamCodecs.composite(
+                ByteBufCodecs.FLOAT, ParticleVanillaCloudExtended.Data::red,
+                ByteBufCodecs.FLOAT, ParticleVanillaCloudExtended.Data::green,
+                ByteBufCodecs.FLOAT, ParticleVanillaCloudExtended.Data::blue,
+                ByteBufCodecs.FLOAT, ParticleVanillaCloudExtended.Data::scale,
+                ByteBufCodecs.FLOAT, ParticleVanillaCloudExtended.Data::airDrag,
+                ByteBufCodecs.FLOAT, ParticleVanillaCloudExtended.Data::duration,
+                NetworkHandler.VEC3_ARRAY, ParticleVanillaCloudExtended.Data::destinations,
+                ParticleVanillaCloudExtended.Data::new
+        );
 
         @Override
-        public void writeToNetwork(FriendlyByteBuf buffer) {
-            buffer.writeFloat(this.scale);
-            buffer.writeFloat(this.red);
-            buffer.writeFloat(this.green);
-            buffer.writeFloat(this.blue);
-            buffer.writeFloat(this.drag);
-            buffer.writeFloat(this.duration);
-        }
-
-        @SuppressWarnings("deprecation")
-        @Override
-        public String writeToString() {
-            return String.format(Locale.ROOT, "%s %.2f %.2f %.2f %.2f %.2f %.2f", BuiltInRegistries.PARTICLE_TYPE.getKey(this.getType()),
-                    this.scale, this.red, this.green, this.blue, this.drag, this.duration);
-        }
-
-        @Override
-        public ParticleType<VanillaCloudData> getType() {
+        public @NotNull ParticleType<ParticleVanillaCloudExtended.Data> getType() {
             return ParticleHandler.VANILLA_CLOUD_EXTENDED.get();
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getScale() {
-            return this.scale;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getRed() {
-            return this.red;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getGreen() {
-            return this.green;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getBlue() {
-            return this.blue;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getDrag() {
-            return this.drag;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getDuration() {
-            return this.duration;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public Vec3[] getDestination() {
-            return this.destination;
-        }
-
-        public static Codec<VanillaCloudData> CODEC(ParticleType<VanillaCloudData> particleType) {
-            return RecordCodecBuilder.create((codecBuilder) -> codecBuilder.group(
-                    Codec.FLOAT.fieldOf("r").forGetter(VanillaCloudData::getRed),
-                    Codec.FLOAT.fieldOf("g").forGetter(VanillaCloudData::getGreen),
-                    Codec.FLOAT.fieldOf("b").forGetter(VanillaCloudData::getBlue),
-                    Codec.FLOAT.fieldOf("scale").forGetter(VanillaCloudData::getScale),
-                    Codec.FLOAT.fieldOf("duration").forGetter(VanillaCloudData::getDuration),
-                    Codec.FLOAT.fieldOf("drag").forGetter(VanillaCloudData::getScale)
-                    ).apply(codecBuilder, (r, g, b, scale, duration, drag) ->
-                        new VanillaCloudData(r, g, b, scale, drag, duration, null))
-            );
         }
     }
 
     public static void spawnVanillaCloud(Level world, double x, double y, double z, double motionX, double motionY, double motionZ, double scale, double r, double g, double b, double drag, double duration) {
-        world.addParticle(new VanillaCloudData((float)scale, (float)r, (float)g, (float)b, (float)drag, (float)duration, null), x, y, z, motionX, motionY, motionZ);
+        world.addParticle(new Data((float)r, (float)g, (float)b, (float)scale, (float)drag, (float)duration, null), x, y, z, motionX, motionY, motionZ);
     }
 
     public static void spawnVanillaCloudDestination(Level world, double x, double y, double z, double motionX, double motionY, double motionZ, double scale, double r, double g, double b, double drag, double duration, Vec3[] destination) {
-        world.addParticle(new VanillaCloudData((float)scale, (float)r, (float)g, (float)b, (float)drag, (float)duration, destination), x, y, z, motionX, motionY, motionZ);
+        world.addParticle(new Data((float)r, (float)g, (float)b, (float)scale, (float)drag, (float)duration, destination), x, y, z, motionX, motionY, motionZ);
     }
 }

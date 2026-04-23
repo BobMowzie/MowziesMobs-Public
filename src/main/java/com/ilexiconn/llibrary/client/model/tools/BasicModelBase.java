@@ -5,13 +5,10 @@ import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
 import java.util.function.Function;
 
-@OnlyIn(Dist.CLIENT)
 public abstract class BasicModelBase<T extends Entity> extends EntityModel<T> {
     public int textureWidth = 64;
     public int textureHeight = 32;

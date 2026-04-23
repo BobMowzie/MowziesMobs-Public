@@ -24,7 +24,7 @@ public class WroughtnautEyesLayer<T extends EntityWroughtnaut> extends RenderLay
             this.model.prepareMobModel(entitylivingbaseIn, limbSwing, limbSwingAmount, partialTicks);
             this.model.setupAnim(entitylivingbaseIn, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
             VertexConsumer ivertexbuilder = bufferIn.getBuffer(MMRenderType.eyes(this.getTextureLocation(entitylivingbaseIn)));
-            this.model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingEntityRenderer.getOverlayCoords(entitylivingbaseIn, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+            this.model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, LivingEntityRenderer.getOverlayCoords(entitylivingbaseIn, 0.0F));
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.ilexiconn.llibrary.server.world;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 
 /**
  * @author gegy1000
@@ -19,7 +19,7 @@ public enum TickRateHandler {
 
     public void setTPS(float tps) {
         if (this.tps != tps) {
-            MowziesMobs.PROXY.setTPS(tps);
+            MMCommon.PROXY.setTPS(tps);
         }
         this.tps = tps;
     }

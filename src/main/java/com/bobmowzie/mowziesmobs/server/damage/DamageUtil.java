@@ -1,7 +1,7 @@
 package com.bobmowzie.mowziesmobs.server.damage;
 
-import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
-import com.bobmowzie.mowziesmobs.server.capability.LivingCapability;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.capability.LivingData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
@@ -20,44 +20,37 @@ public class DamageUtil {
         boolean flag1 = source1.getEntity() != null && target.isAlliedTo(source1.getEntity());
         boolean flag2 = source2.getEntity() != null && target.isAlliedTo(source2.getEntity());
         if(flag1 || flag2) return Pair.of(false, false);
-        LivingCapability.ILivingCapability lastDamageCapability = CapabilityHandler.getCapability(target, CapabilityHandler.LIVING_CAPABILITY);
-        if (lastDamageCapability != null) {
-            lastDamageCapability.setLastDamage(-1);
-            float damageSoFar = 0;
-            float origLastDamage = target.lastHurt;
-            boolean hit1 = target.hurt(source1, amount1);
-            boolean hit1Registered = hit1;
-            if (lastDamageCapability.getLastDamage() != -1) {
-                hit1Registered = true;
-            }
-            if (lastDamageCapability.getLastDamage() != 0) {
-                damageSoFar += amount1;
-            }
-            target.lastHurt = Math.max(target.lastHurt - amount1, 0);
-            lastDamageCapability.setLastDamage(-1);
-            boolean hit2 = target.hurt(source2, amount2);
-            boolean hit2Registered = hit2;
-            if (lastDamageCapability.getLastDamage() != -1) {
-                hit2Registered = true;
-            }
-            if (lastDamageCapability.getLastDamage() != 0) {
-                damageSoFar += amount2;
-            }
-            target.lastHurt = origLastDamage;
-            if (damageSoFar > target.lastHurt) target.lastHurt = damageSoFar;
-
-            if (hit2 && hit1Registered) {
-                onHit2(target, source2);
-                if (target instanceof Player) {
-                    SoundEvent sound = SoundEvents.PLAYER_HURT;
-                    if (source2.is(DamageTypeTags.IS_FIRE)) sound = SoundEvents.PLAYER_HURT_ON_FIRE;
-                    else if (source2.is(DamageTypeTags.IS_DROWNING)) sound = SoundEvents.PLAYER_HURT_DROWN;
-                    target.playSound(sound, 1F, getSoundPitch(target));
-                }
-            }
-            return Pair.of(hit1, hit2);
+        LivingData data = DataHandler.getData(target, DataHandler.LIVING_DATA);
+        data.setLastDamage(-1);
+        float damageSoFar = 0;
+        float origLastDamage = target.lastHurt;
+        boolean hit1 = target.hurt(source1, amount1);
+        boolean hit1Registered = hit1;
+        if (data.getLastDamage() != -1) {
+            hit1Registered = true;
         }
-        return Pair.of(false, false);
+        if (data.getLastDamage() != 0) {
+            damageSoFar += amount1;
+        }
+        target.lastHurt = Math.max(target.lastHurt - amount1, 0);
+        data.setLastDamage(-1);
+        boolean hit2 = target.hurt(source2, amount2);
+        if (data.getLastDamage() != 0) {
+            damageSoFar += amount2;
+        }
+        target.lastHurt = origLastDamage;
+        if (damageSoFar > target.lastHurt) target.lastHurt = damageSoFar;
+
+        if (hit2 && hit1Registered) {
+            onHit2(target, source2);
+            if (target instanceof Player) {
+                SoundEvent sound = SoundEvents.PLAYER_HURT;
+                if (source2.is(DamageTypeTags.IS_FIRE)) sound = SoundEvents.PLAYER_HURT_ON_FIRE;
+                else if (source2.is(DamageTypeTags.IS_DROWNING)) sound = SoundEvents.PLAYER_HURT_DROWN;
+                target.playSound(sound, 1F, getSoundPitch(target));
+            }
+        }
+        return Pair.of(hit1, hit2);
     }
 
     private static float getSoundPitch(LivingEntity target) {

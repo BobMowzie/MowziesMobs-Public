@@ -1,9 +1,9 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.world.feature.structure.jigsaw.MowzieJigsawManager;
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -20,11 +20,11 @@ import java.util.function.Predicate;
 // Based on Telepathicgrunt's tutorial class: https://github.com/TelepathicGrunt/StructureTutorialMod/blob/1.18.0-Forge-Jigsaw/src/main/java/com/telepathicgrunt/structuretutorial/structures/RunDownHouseStructure.java
 public class MonasteryStructure extends MowzieStructure {
 
-    public static final Set<String> MUST_CONNECT_POOLS = Set.of(MowziesMobs.MODID + ":monastery/path_pool", MowziesMobs.MODID + ":monastery/path_connector_pool");
-    public static final Set<String> REPLACE_POOLS = Set.of(MowziesMobs.MODID + ":monastery/path_pool");
-    public static final String STRAIGHT_POOL = MowziesMobs.MODID + ":monastery/dead_end_connect_pool";
+    public static final Set<String> MUST_CONNECT_POOLS = Set.of(MMCommon.MODID + ":monastery/path_pool", MMCommon.MODID + ":monastery/path_connector_pool");
+    public static final Set<String> REPLACE_POOLS = Set.of(MMCommon.MODID + ":monastery/path_pool");
+    public static final String STRAIGHT_POOL = MMCommon.MODID + ":monastery/dead_end_connect_pool";
 
-    public static final Codec<MonasteryStructure> CODEC = simpleCodec(MonasteryStructure::new);
+    public static final MapCodec<MonasteryStructure> CODEC = simpleCodec(MonasteryStructure::new);
 
     public MonasteryStructure(StructureSettings settings)
     {
@@ -62,7 +62,7 @@ public class MonasteryStructure extends MowzieStructure {
                 MowzieJigsawManager.addPieces(
                         newContext, // Used for JigsawPlacement to get all the proper behaviors done.
                         Holder.direct(context.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL)
-                                .get(new ResourceLocation(MowziesMobs.MODID, "monastery/start_pool"))), blockpos, // Position of the structure. Y value is ignored if last parameter is set to true.
+                                .get(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "monastery/start_pool"))), blockpos, // Position of the structure. Y value is ignored if last parameter is set to true.
                         false,  // Special boundary adjustments for villages. It's... hard to explain. Keep this false and make your pieces not be partially intersecting.
                         // Either not intersecting or fully contained will make children pieces spawn just fine. It's easier that way.
                         true, // Place at heightmap (top land). Set this to false for structure to be place at the passed in blockpos's Y value instead.
@@ -74,7 +74,7 @@ public class MonasteryStructure extends MowzieStructure {
                 );
 
         if(structurePiecesGenerator.isPresent()) {
-            MowziesMobs.LOGGER.log(Level.DEBUG, "Monastery at " + blockpos);
+            MMCommon.LOGGER.log(Level.DEBUG, "Monastery at " + blockpos);
         }
         return structurePiecesGenerator;
     }

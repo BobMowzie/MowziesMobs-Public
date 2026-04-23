@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.ability.abilities.player.geomancy;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
@@ -8,8 +8,10 @@ import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleBase;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
 import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoPlayer;
 import com.bobmowzie.mowziesmobs.client.sound.IGeomancyRumbler;
+import com.bobmowzie.mowziesmobs.datagen.MMBlockTags;
 import com.bobmowzie.mowziesmobs.server.ability.*;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityBlockSwapper;
@@ -18,8 +20,6 @@ import com.bobmowzie.mowziesmobs.server.item.ItemEarthrendGauntlet;
 import com.bobmowzie.mowziesmobs.server.item.ItemHandler;
 import com.bobmowzie.mowziesmobs.server.potion.EffectGeomancy;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
-import com.bobmowzie.mowziesmobs.server.tag.TagHandler;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -34,12 +34,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
 
 import java.util.List;
 
@@ -103,7 +103,7 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
             pitch = 0;
         }
         if (getLevel().isClientSide())
-            MowziesMobs.PROXY.playGeomancyRumbleSound(this);
+            MMCommon.PROXY.playGeomancyRumbleSound(this);
     }
 
     public boolean damageGauntlet() {
@@ -111,12 +111,12 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
         if (stack.getItem() == ItemHandler.EARTHREND_GAUNTLET.get()) {
             InteractionHand handIn = getUser().getUsedItemHand();
             if (stack.getDamageValue() + 5 < stack.getMaxDamage()) {
-                stack.hurtAndBreak(5, getUser(), p -> p.broadcastBreakEvent(handIn));
+                stack.hurtAndBreak(5, getUser(), LivingEntity.getSlotForHand(handIn));
                 return true;
             }
             else {
                 if (ConfigHandler.COMMON.TOOLS_AND_ABILITIES.EARTHREND_GAUNTLET.breakable.get()) {
-                    stack.hurtAndBreak(5, getUser(), p -> p.broadcastBreakEvent(handIn));
+                    stack.hurtAndBreak(5, getUser(), LivingEntity.getSlotForHand(handIn));
                 }
                 return false;
             }
@@ -135,9 +135,8 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
     @Override
     public void tick() {
         super.tick();
-        AbilityCapability.IAbilityCapability abilityCapability = AbilityHandler.INSTANCE.getAbilityCapability(getUser());
-        if (abilityCapability == null) return;
-        if (abilityCapability.getActiveAbility() == null || (abilityCapability.getActiveAbility().getAbilityType() != AbilityHandler.SPAWN_PILLAR_ABILITY && abilityCapability.getActiveAbility().getAbilityType() != AbilityHandler.TUNNELING_ABILITY)) {
+        AbilityData data = DataHandler.getData(getUser(), DataHandler.ABILITY_DATA);
+        if (data.getActiveAbility() == null || (data.getActiveAbility().getAbilityType() != AbilityHandler.SPAWN_PILLAR_ABILITY && data.getActiveAbility().getAbilityType() != AbilityHandler.TUNNELING_ABILITY)) {
             Player player = (Player) getUser();
             for (ItemStack stack : player.getInventory().items) {
                 restoreGauntlet(stack);
@@ -193,7 +192,7 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
                             posVec = posVec.add(motionScaled);
                             BlockPos pos = new BlockPos((int) posVec.x, (int) posVec.y, (int) posVec.z);
                             BlockState blockState = getUser().level().getBlockState(pos);
-                            if (EffectGeomancy.checkBlock(blockState, TagHandler.GEOMANCY_TUNNELABLE) && blockState.getBlock() != Blocks.BEDROCK) {
+                            if (EffectGeomancy.checkBlock(blockState, MMBlockTags.GEOMANCY_TUNNELABLE) && blockState.getBlock() != Blocks.BEDROCK) {
                                 justDug = blockState;
                                 if (!getLevel().isClientSide) {
                                     EntityBlockSwapper.EntityBlockSwapperTunneling swapper = new EntityBlockSwapper.EntityBlockSwapperTunneling(EntityHandler.BLOCK_SWAPPER_TUNNELING.get(), getLevel(), pos, Blocks.AIR.defaultBlockState(), 15, false, false, getUser());
@@ -210,7 +209,7 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
             timeUnderground = 0;
             getUser().playSound(MMSounds.EFFECT_GEOMANCY_BREAK_MEDIUM.get(rand.nextInt(3)).get(), 1f, 0.9f + rand.nextFloat() * 0.1f);
             if (getUser().level().isClientSide)
-                AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2.get(), (float) getUser().getX(), (float) getUser().getY() + 0.02f, (float) getUser().getZ(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 3.5F, 0.83f, 1, 0.39f, 1, 1, 10, true, true, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2, (float) getUser().getX(), (float) getUser().getY() + 0.02f, (float) getUser().getZ(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 3.5F, 0.83f, 1, 0.39f, 1, 1, 10, true, true, new ParticleComponent[]{
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(1f, 0f), false),
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(10f, 30f), false)
                 });
@@ -220,7 +219,7 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
             timeAboveGround = 0;
             getUser().playSound(MMSounds.EFFECT_GEOMANCY_BREAK.get(), 1f, 0.9f + rand.nextFloat() * 0.1f);
             if (getUser().level().isClientSide)
-                AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2.get(), (float) getUser().getX(), (float) getUser().getY() + 0.02f, (float) getUser().getZ(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 3.5F, 0.83f, 1, 0.39f, 1, 1, 10, true, true, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2, (float) getUser().getX(), (float) getUser().getY() + 0.02f, (float) getUser().getZ(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 3.5F, 0.83f, 1, 0.39f, 1, 1, 10, true, true, new ParticleComponent[]{
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(1f, 0f), false),
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(10f, 30f), false)
                 });
@@ -249,7 +248,7 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
 
     @Override
     public boolean canUse() {
-        return super.canUse() && ConfigHandler.COMMON.TOOLS_AND_ABILITIES.EARTHREND_GAUNTLET.enableTunneling.get();
+        return ConfigHandler.COMMON.TOOLS_AND_ABILITIES.EARTHREND_GAUNTLET.enableTunneling.get() && super.canUse() && ConfigHandler.COMMON.TOOLS_AND_ABILITIES.EARTHREND_GAUNTLET.enableTunneling.get();
     }
 
     @Override
@@ -274,7 +273,7 @@ public class TunnelingAbility extends PlayerAbility implements IGeomancyRumbler 
     public <E extends GeoEntity> PlayState animationPredicate(AnimationState<E> e, GeckoPlayer.Perspective perspective) {
         e.getController().transitionLength(4);
         if (perspective == GeckoPlayer.Perspective.THIRD_PERSON) {
-            float yMotionThreshold = getUser() == Minecraft.getInstance().player ? 1 : 2;
+            float yMotionThreshold = getUser() == MMCommon.PROXY.getLocalPlayer() ? 1 : 2;
             if (!underground && getUser().getUseItem().getItem() != ItemHandler.EARTHREND_GAUNTLET.get() && getUser().getDeltaMovement().y() < yMotionThreshold) {
                 e.getController().setAnimation(FALL_ANIM);
             }

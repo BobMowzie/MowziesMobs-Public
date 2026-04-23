@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.entity.effects.geomancy;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.particle.AdvancedTerrainParticle;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
@@ -36,8 +36,8 @@ public class EntityFissure extends Projectile implements IGeomancyRumbler {
     }
 
     @Override
-    protected void defineSynchedData() {
-        getEntityData().define(TRAVELLING, true);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(TRAVELLING, true);
     }
 
     public boolean isTravelling() {
@@ -84,14 +84,14 @@ public class EntityFissure extends Projectile implements IGeomancyRumbler {
         }
         else {
             if (tickCount == 1) {
-                MowziesMobs.PROXY.playGeomancyRumbleSound(this);
+                MMCommon.PROXY.playGeomancyRumbleSound(this);
             }
             if (isTravelling()) {
                 BlockState blockBeneath = level().getBlockState(getOnPos());
                 for (int i = 0; i < 10; i++) {
                     Vec3 offset = new Vec3(random.nextFloat() * 0.45, 0, 0).yRot(random.nextFloat() * (float) Math.PI * 2f);
                     Vec3 vel = offset.normalize().scale(random.nextGaussian() * 0.12).yRot(random.nextFloat() * 0.2f - 0.1f).add(0, random.nextDouble() * 0.25 + 0.02, 0).add(getDeltaMovement().scale(0.4));
-                    AdvancedTerrainParticle.spawnTerrainParticle(level(), ParticleHandler.TERRAIN.get(), getX() + offset.x, getY(), getZ() + offset.z, vel.x, vel.y, vel.z, 0, 0.4f + random.nextGaussian() * 0.3, 0.94f, 20 + random.nextFloat() * 5, blockBeneath, new ParticleComponent[]{
+                    AdvancedTerrainParticle.spawnTerrainParticle(level(), ParticleHandler.TERRAIN, getX() + offset.x, getY(), getZ() + offset.z, vel.x, vel.y, vel.z, 0, 0.4f + random.nextGaussian() * 0.3, 0.94f, 20 + random.nextFloat() * 5, blockBeneath, new ParticleComponent[]{
                             new ParticleComponent.Gravity(1)
                     });
                 }

@@ -1,123 +1,104 @@
-buildscript {
-    repositories {
-        maven {
-            url "https://files.minecraftforge.net/maven"
-        }
-        maven {
-            url = "https://repo.spongepowered.org/repository/maven-public/"
-        }
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: "net.minecraftforge.gradle", name: "ForgeGradle", version: "5.1.+", changing: true
-        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
-    }
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.0.165'
 }
 
-apply plugin: "java"
-apply plugin: "eclipse"
-apply plugin: "maven-publish"
-apply plugin: "net.minecraftforge.gradle"
-apply plugin: "org.spongepowered.mixin"
-
-version = "1.7.3"
-group = "com.bobmowzie.mowziesmobs"
-archivesBaseName = "mowziesmobs"
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-minecraft {
-    mappings channel: "official", version: "1.20.1"
-    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-    runs {
-        client {
-            workingDirectory project.file("run")
-
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            arg "-mixin.config="+"mowziesmobs.mixins.json"
-
-            property "forge.logging.console.level", "debug"
-            mods {
-                mowziesmobs {
-                    source sourceSets.main
-                }
-            }
-        }
-        server {
-            workingDirectory project.file("run-server")
-
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', ''
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            arg "-mixin.config="+"mowziesmobs.mixins.json"
-
-            property "forge.logging.console.level", "debug"
-            mods {
-                mowziesmobs {
-                    source sourceSets.main
-                }
-            }
-        }
-        data {
-            workingDirectory project.file('data')
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-
-            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            args '--mod', 'mowziesmobs', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-
-        }
-    }
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
 }
 
-processResources {
-    filesMatching("META-INF/mods.toml") {
-        expand([
-                'version': "${project.version}"
-        ])
-    }
-}
-
-mixin {
-    add sourceSets.main, "mowziesmobs.refmap.json"
-    config 'mowziesmobs.mixins.json'
-}
-
-jar {
-    manifest {
-        attributes([
-            "Specification-Title": "mowziesmobs",
-            "Specification-Vendor": "BobMowzie",
-            "Specification-Version": "1",
-            "Implementation-Title": "mowziesmobs",
-            "Implementation-Version": "${project.version}",
-            "Implementation-Vendor" : "BobMowzie",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-        ])
-    }
-}
+version = minecraft_version + "-" + mod_version
+group = mod_group_id
 
 repositories {
+    mavenCentral()
     maven { url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/' }
-    maven { url "https://www.cursemaven.com" }
+    maven { url "https://www.cursemaven.com" } // CurseForge
+}
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+        modSource project.sourceSets.main
+    }
+
+    client {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    }
+
+    server {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        programArgument '--nogui'
+    }
+
+    gameTestServer {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    }
+
+    data {
+        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:1.20.1-47.2.32"
-    implementation fg.deobf("curse.maven:geckolib-388172:5675221")
-//    implementation fg.deobf("curse.maven:creativecore-257814:5999532")
-//    implementation fg.deobf("curse.maven:cmdcam-251244:5728116")
-//    implementation fg.deobf("curse.maven:customskinloader-286924:5896868")
-    implementation fg.deobf("curse.maven:worldedit-225608:4586218")
-    /*implementation fg.deobf("curse.maven:yungs-api-421850:5147001")
-    implementation fg.deobf("curse.maven:yungs-better-desert-temples-631016:4769439")*/
-//    implementation fg.deobf("curse.maven:irons-spells-n-spellbooks-855414:6371701")
-//    implementation fg.deobf("curse.maven:caelus-308989:5281700")
-//    implementation fg.deobf("curse.maven:curios-309927:6418456")
-//    implementation fg.deobf("curse.maven:playeranimator-658587:4587214")
-    // Apply Mixin AP
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    implementation "net.neoforged:neoforge:${neo_version}"
+    implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
+    implementation "curse.maven:worldedit-225608:5830452"
+    implementation "curse.maven:tslatentitystatus-tes-830420:7115952"
+}
+
+tasks.withType(ProcessResources).configureEach {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            loader_version_range   : loader_version_range,
+            geckolib_version_range : geckolib_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+minecraft {
+    accessTransformers {
+        file('src/main/resources/META-INF/accesstransformer.cfg')
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
 }

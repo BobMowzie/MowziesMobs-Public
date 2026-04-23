@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Created by BobMowzie on 4/14/2017.
  */
-public class EntityBoulderBase extends EntityGeomancyBase {
+public abstract class EntityBoulderBase extends EntityGeomancyBase {
     public BlockState storedBlock;
     public float animationOffset = 0;
     public GeomancyTier boulderSize = GeomancyTier.SMALL;
@@ -160,7 +160,7 @@ public class EntityBoulderBase extends EntityGeomancyBase {
                 EntityCameraShake.cameraShake(level(), position(), 15, 0.05f, 50, 30);
             }
             if (level().isClientSide) {
-                AdvancedParticleBase.spawnAlwaysVisibleParticle(level(), ParticleHandler.RING2.get(), 64, getX(), getY() - 0.9f, getZ(), 0, 0, 0, false, 0, Math.PI / 2f, 0, 0, 3.5F, 0.83f, 1, 0.39f, 1, 1, (int) (5 + 2 * getBbWidth()), true, true, new ParticleComponent[]{
+                AdvancedParticleBase.spawnAlwaysVisibleParticle(level(), ParticleHandler.RING2, 64, getX(), getY() - 0.9f, getZ(), 0, 0, 0, false, 0, Math.PI / 2f, 0, 0, 3.5F, 0.83f, 1, 0.39f, 1, 1, (int) (5 + 2 * getBbWidth()), true, true, new ParticleComponent[]{
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(1f, 0f), false),
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(0f, (1.0f + 0.5f * getBbWidth()) * 10f), false)
                 });
@@ -224,9 +224,9 @@ public class EntityBoulderBase extends EntityGeomancyBase {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        getEntityData().define(RISING_TICK, 0);
-        getEntityData().define(ACTIVE, false);
+    protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(RISING_TICK, 0);
+        builder.define(ACTIVE, false);
     }
 }

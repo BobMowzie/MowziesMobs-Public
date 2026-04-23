@@ -2,22 +2,20 @@ package com.bobmowzie.mowziesmobs.client.particle;
 
 import com.bobmowzie.mowziesmobs.client.model.tools.MathUtils;
 import com.bobmowzie.mowziesmobs.client.render.MMRenderType;
+import com.bobmowzie.mowziesmobs.server.message.NetworkHandler;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.util.Locale;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import org.jetbrains.annotations.NotNull;
 
 public class ParticleOrb extends TextureSheetParticle {
     private double targetX;
@@ -133,165 +131,73 @@ public class ParticleOrb extends TextureSheetParticle {
         super.render(buffer, renderInfo, partialTicks);
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public static final class OrbFactory implements ParticleProvider<OrbData> {
+    public static final class Provider implements ParticleProvider<Data> {
         private final SpriteSet spriteSet;
 
-        public OrbFactory(SpriteSet sprite) {
+        public Provider(SpriteSet sprite) {
             this.spriteSet = sprite;
         }
 
         @Override
-        public Particle createParticle(ParticleOrb.OrbData typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            ParticleOrb particle;
-            if (typeIn.getMode() == 0) particle = new ParticleOrb(worldIn, x, y, z, typeIn.getTargetX(), typeIn.getTargetZ());
-            else if (typeIn.getMode() == 1) particle = new ParticleOrb(worldIn, x, y, z, typeIn.getTargetX(), typeIn.getTargetY(), typeIn.getTargetZ(), typeIn.getSpeed());
-            else particle = new ParticleOrb(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.getR(), typeIn.getG(), typeIn.getB(), typeIn.getScale(), typeIn.getDuration());
+        public Particle createParticle(Data data, @NotNull ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+            ParticleOrb particle = switch (data.mode()) {
+                case 0:
+                    yield new ParticleOrb(level, x, y, z, data.targetX(), data.targetZ());
+                case 1:
+                    yield new ParticleOrb(level, x, y, z, data.targetX(), data.targetY(), data.targetZ(), data.speed());
+                default:
+                    yield new ParticleOrb(level, x, y, z, xSpeed, ySpeed, zSpeed, data.red(), data.green(), data.blue(), data.scale(), data.duration());
+            };
+
             particle.setSpriteFromAge(spriteSet);
             return particle;
         }
     }
 
-    public static class OrbData implements ParticleOptions {
-        public static final ParticleOptions.Deserializer<ParticleOrb.OrbData> DESERIALIZER = new ParticleOptions.Deserializer<ParticleOrb.OrbData>() {
-            public ParticleOrb.OrbData fromCommand(ParticleType<ParticleOrb.OrbData> particleTypeIn, StringReader reader) throws CommandSyntaxException {
-                reader.expect(' ');
-                float r = (float) reader.readDouble();
-                reader.expect(' ');
-                float g = (float) reader.readDouble();
-                reader.expect(' ');
-                float b = (float) reader.readDouble();
-                reader.expect(' ');
-                float scale = (float) reader.readDouble();
-                reader.expect(' ');
-                int duration = reader.readInt();
-                return new ParticleOrb.OrbData(r, g, b, scale, duration);
-            }
+    public record Data(float red, float green, float blue, float scale, int duration, float targetX, float targetY, float targetZ, float speed, int mode) implements ParticleOptions {
+        public static final MapCodec<Data> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                        Codec.FLOAT.fieldOf("red").forGetter(Data::red),
+                        Codec.FLOAT.fieldOf("green").forGetter(Data::green),
+                        Codec.FLOAT.fieldOf("blue").forGetter(Data::blue),
+                        Codec.FLOAT.fieldOf("scale").forGetter(Data::scale),
+                        Codec.INT.fieldOf("duration").forGetter(Data::duration),
+                        Codec.FLOAT.fieldOf("targetX").forGetter(Data::targetX),
+                        Codec.FLOAT.fieldOf("targetY").forGetter(Data::targetY),
+                        Codec.FLOAT.fieldOf("targetZ").forGetter(Data::targetZ),
+                        Codec.FLOAT.fieldOf("speed").forGetter(Data::speed),
+                        Codec.INT.fieldOf("mode").forGetter(Data::mode)
+                ).apply(instance, Data::new)
+        );
 
-            public ParticleOrb.OrbData fromNetwork(ParticleType<ParticleOrb.OrbData> particleTypeIn, FriendlyByteBuf buffer) {
-                return new ParticleOrb.OrbData(buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readInt());
-            }
-        };
+        public static final StreamCodec<RegistryFriendlyByteBuf, Data> STREAM_CODEC = NetworkHandler.composite(
+                ByteBufCodecs.FLOAT, Data::red,
+                ByteBufCodecs.FLOAT, Data::green,
+                ByteBufCodecs.FLOAT, Data::blue,
+                ByteBufCodecs.FLOAT, Data::scale,
+                ByteBufCodecs.INT, Data::duration,
+                ByteBufCodecs.FLOAT, Data::targetX,
+                ByteBufCodecs.FLOAT, Data::targetY,
+                ByteBufCodecs.FLOAT, Data::targetZ,
+                ByteBufCodecs.FLOAT, Data::speed,
+                ByteBufCodecs.INT, Data::mode,
+                Data::new
+        );
 
-        private final float r;
-        private final float g;
-        private final float b;
-        private float scale;
-        private int duration;
-
-        private float targetX;
-        private float targetY;
-        private float targetZ;
-        private float speed;
-
-        private int mode;
-
-        public OrbData(float targetX, float targetZ) {
-            this.targetX = targetX;
-            this.targetZ = targetZ;
-            this.r = this.g = this.b = 1;
-
-            this.mode = 0;
+        public static Data create(float targetX, float targetZ) {
+            return new Data(1, 1, 1, 0, 0, targetX, 0, targetZ, 0, 0);
         }
 
-        public OrbData(float targetX, float targetY, float targetZ, float speed) {
-            this(targetX, targetZ);
-            this.targetY = targetY;
-            this.speed = speed;
-
-            this.mode = 1;
+        public static Data create(float targetX, float targetY, float targetZ, float speed) {
+            return new Data(1, 1, 1, 0, 0, targetX, targetY, targetZ, speed, 1);
         }
 
-        public OrbData(float r, float g, float b, float scale, int duration) {
-            this.r = r;
-            this.g = g;
-            this.b = b;
-            this.scale = scale;
-            this.duration = duration;
-
-            this.mode = 2;
+        public static Data create(float red, float green, float blue, float scale, int duration) {
+            return new Data(red, green, blue, scale, duration, 0, 0, 0, 0, 2);
         }
 
         @Override
-        public void writeToNetwork(FriendlyByteBuf buffer) {
-            buffer.writeFloat(this.r);
-            buffer.writeFloat(this.g);
-            buffer.writeFloat(this.b);
-            buffer.writeFloat(this.scale);
-            buffer.writeInt(this.duration);
-        }
-
-        @SuppressWarnings("deprecation")
-        @Override
-        public String writeToString() {
-            return String.format(Locale.ROOT, "%s %.2f %.2f %.2f %.2f %d", BuiltInRegistries.PARTICLE_TYPE.getKey(this.getType()),
-                    this.r, this.g, this.b, this.scale, this.duration);
-        }
-
-        @Override
-        public ParticleType<ParticleOrb.OrbData> getType() {
+        public @NotNull ParticleType<Data> getType() {
             return ParticleHandler.ORB.get();
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getR() {
-            return this.r;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getG() {
-            return this.g;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getB() {
-            return this.b;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getScale() {
-            return this.scale;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public int getDuration() {
-            return this.duration;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getTargetX() {
-            return this.targetX;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getTargetY() {
-            return this.targetY;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getTargetZ() {
-            return this.targetZ;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public float getSpeed() {
-            return this.speed;
-        }
-
-        @OnlyIn(Dist.CLIENT)
-        public int getMode() {
-            return this.mode;
-        }
-
-        public static Codec<OrbData> CODEC(ParticleType<OrbData> particleType) {
-            return RecordCodecBuilder.create((codecBuilder) -> codecBuilder.group(
-                    Codec.FLOAT.fieldOf("r").forGetter(OrbData::getR),
-                    Codec.FLOAT.fieldOf("g").forGetter(OrbData::getG),
-                    Codec.FLOAT.fieldOf("b").forGetter(OrbData::getB),
-                    Codec.FLOAT.fieldOf("scale").forGetter(OrbData::getScale),
-                    Codec.INT.fieldOf("duration").forGetter(OrbData::getDuration)
-                    ).apply(codecBuilder, OrbData::new)
-            );
         }
     }
 }

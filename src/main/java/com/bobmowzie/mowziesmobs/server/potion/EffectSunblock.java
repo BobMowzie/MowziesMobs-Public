@@ -9,7 +9,7 @@ public class EffectSunblock extends MowzieEffect {
     }
 
     @Override
-    public void applyEffectTick(LivingEntity entityLivingBaseIn, int amplifier) {
+    public boolean applyEffectTick(LivingEntity entityLivingBaseIn, int amplifier) {
         super.applyEffectTick(entityLivingBaseIn, amplifier);
         int k = 50 >> amplifier;
         if (k > 0 && entityLivingBaseIn.tickCount % k == 0) {
@@ -17,5 +17,7 @@ public class EffectSunblock extends MowzieEffect {
                 entityLivingBaseIn.heal(1.0F);
             }
         }
+
+        return true;
     }
 }

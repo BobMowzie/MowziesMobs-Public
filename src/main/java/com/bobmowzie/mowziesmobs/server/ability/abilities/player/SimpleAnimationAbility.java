@@ -4,7 +4,7 @@ import com.bobmowzie.mowziesmobs.server.ability.Ability;
 import com.bobmowzie.mowziesmobs.server.ability.AbilitySection;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityType;
 import net.minecraft.world.entity.LivingEntity;
-import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.animation.RawAnimation;
 
 public class SimpleAnimationAbility<T extends LivingEntity> extends Ability<T> {
     private RawAnimation animation;

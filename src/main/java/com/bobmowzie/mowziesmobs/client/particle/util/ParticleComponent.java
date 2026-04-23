@@ -9,6 +9,8 @@ import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.function.Function;
+
 public abstract class ParticleComponent {
     public ParticleComponent() {
 
@@ -122,6 +124,19 @@ public abstract class ParticleComponent {
         return new Constant(value);
     }
 
+    public static class Expression extends AnimData {
+        private final Function<Float, Float> expression;
+
+        public Expression(Function<Float, Float> expression) {
+            this.expression = expression;
+        }
+
+        @Override
+        public float evaluate(float t) {
+            return expression.apply(t);
+        }
+    }
+
     public static class Gravity extends ParticleComponent {
         private final AnimData animData;
 
@@ -216,6 +231,10 @@ public abstract class ParticleComponent {
                 if (additive) particle.airDrag += value;
                 else particle.airDrag = value;
             }
+            else if (property == EnumParticleProperty.SCALE) {
+                if (additive) particle.scale += value;
+                else particle.scale = value;
+            }
         }
 
         private void applyRender(AdvancedParticleBase particle, float value) {
@@ -235,36 +254,31 @@ public abstract class ParticleComponent {
                 if (additive) particle.alpha += value;
                 else particle.alpha = value;
             }
-            else if (property == EnumParticleProperty.SCALE) {
-                if (additive) particle.scale += value;
-                else particle.scale = value;
-            }
             else if (property == EnumParticleProperty.YAW) {
-                if (particle.rotation instanceof ParticleRotation.EulerAngles) {
-                    ParticleRotation.EulerAngles eulerRot = (ParticleRotation.EulerAngles) particle.rotation;
+                if (particle.rotation instanceof ParticleRotation.EulerAngles eulerRot) {
                     if (additive) eulerRot.yaw += value;
                     else eulerRot.yaw = value;
                 }
             }
             else if (property == EnumParticleProperty.PITCH) {
-                if (particle.rotation instanceof ParticleRotation.EulerAngles) {
-                    ParticleRotation.EulerAngles eulerRot = (ParticleRotation.EulerAngles) particle.rotation;
+                if (particle.rotation instanceof ParticleRotation.EulerAngles eulerRot) {
                     if (additive) eulerRot.pitch += value;
                     else eulerRot.pitch = value;
                 }
             }
             else if (property == EnumParticleProperty.ROLL) {
-                if (particle.rotation instanceof ParticleRotation.EulerAngles) {
-                    ParticleRotation.EulerAngles eulerRot = (ParticleRotation.EulerAngles) particle.rotation;
+                if (particle.rotation instanceof ParticleRotation.EulerAngles eulerRot) {
                     if (additive) eulerRot.roll += value;
                     else eulerRot.roll = value;
                 }
             }
             else if (property == EnumParticleProperty.PARTICLE_ANGLE) {
-                if (particle.rotation instanceof ParticleRotation.FaceCamera) {
-                    ParticleRotation.FaceCamera faceCameraRot = (ParticleRotation.FaceCamera) particle.rotation;
-                    if (additive) faceCameraRot.faceCameraAngle += value;
-                    else faceCameraRot.faceCameraAngle = value;
+                if (particle.rotation instanceof ParticleRotation.FaceCamera faceCameraRot) {
+                    if (additive) {
+                        faceCameraRot.angle = faceCameraRot.angle + value;
+                    } else {
+                        faceCameraRot.angle = value;
+                    }
                 }
             }
         }
@@ -272,9 +286,17 @@ public abstract class ParticleComponent {
 
     public static class PinLocation extends ParticleComponent {
         private final Vec3[] location;
+        private int pinDuration = -1;
+        private boolean inheritVelocity = false;
+        private Vec3 velocityOnRelease;
 
         public PinLocation(Vec3[] location) {
             this.location = location;
+        }
+
+        public PinLocation(Vec3[] location, int pinDuration) {
+            this.location = location;
+            this.pinDuration = pinDuration;
         }
 
         @Override
@@ -286,8 +308,23 @@ public abstract class ParticleComponent {
 
         @Override
         public void preUpdate(AdvancedParticleBase particle) {
-            if (location != null && location.length > 0 && location[0] != null) {
+            if (location != null && location.length > 0 && location[0] != null && (particle.getAge() <= pinDuration || pinDuration == -1)) {
                 particle.setPos(location[0].x, location[0].y, location[0].z);
+                particle.setMotionX(0);
+                particle.setMotionY(0);
+                particle.setMotionZ(0);
+            }
+            if (particle.getAge() == pinDuration) {
+                if (inheritVelocity) {
+                    particle.setMotionX(particle.getPosX() - particle.getPrevPosX());
+                    particle.setMotionY(particle.getPosY() - particle.getPrevPosY());
+                    particle.setMotionZ(particle.getPosZ() - particle.getPrevPosZ());
+                }
+                if (velocityOnRelease != null) {
+                    particle.setMotionX(particle.getMotionX() + velocityOnRelease.x());
+                    particle.setMotionY(particle.getMotionY() + velocityOnRelease.y());
+                    particle.setMotionZ(particle.getMotionZ() + velocityOnRelease.z());
+                }
             }
         }
 
@@ -295,6 +332,16 @@ public abstract class ParticleComponent {
         public void preRender(AdvancedParticleBase particle, float partialTicks) {
             super.preRender(particle, partialTicks);
             particle.doRender = location != null && location.length > 0 && location[0] != null;
+        }
+
+        public PinLocation setVelocityOnRelease(float x, float y, float z) {
+            this.velocityOnRelease = new Vec3(x, y, z);
+            return this;
+        }
+
+        public PinLocation setInheritVelocity(boolean inheritVelocity) {
+            this.inheritVelocity = inheritVelocity;
+            return this;
         }
     }
 
@@ -431,8 +478,7 @@ public abstract class ParticleComponent {
             double dz = particle.getPosZ() - particle.getPrevPosZ();
             double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (d != 0) {
-                if (particle.rotation instanceof ParticleRotation.EulerAngles) {
-                    ParticleRotation.EulerAngles eulerRot = (ParticleRotation.EulerAngles) particle.rotation;
+                if (particle.rotation instanceof ParticleRotation.EulerAngles eulerRot) {
                     double a = dy / d;
                     a = Math.max(-1, Math.min(1, a));
                     float pitch = -(float) Math.asin(a);
@@ -441,8 +487,7 @@ public abstract class ParticleComponent {
                     eulerRot.yaw = yaw;
 //                particle.roll = (float) Math.PI / 2;
                 }
-                else if (particle.rotation instanceof ParticleRotation.OrientVector) {
-                    ParticleRotation.OrientVector orientRot = (ParticleRotation.OrientVector) particle.rotation;
+                else if (particle.rotation instanceof ParticleRotation.OrientVector orientRot) {
                     orientRot.orientation = new Vec3(dx, dy, dz).normalize();
                 }
             }
@@ -477,6 +522,30 @@ public abstract class ParticleComponent {
             particle.setMotionX(particle.getMotionX() + fx.evaluate(ageFrac));
             particle.setMotionY(particle.getMotionY() + fy.evaluate(ageFrac));
             particle.setMotionZ(particle.getMotionZ() + fz.evaluate(ageFrac));
+        }
+    }
+
+    public static class Vortex extends ParticleComponent {
+        private Vec3 axis;
+        private Vec3 origin;
+        private AnimData amount;
+
+        public Vortex(Vec3 axis, Vec3 origin, AnimData amount) {
+            this.axis = axis;
+            this.origin = origin;
+            this.amount = amount;
+        }
+
+        @Override
+        public void preUpdate(AdvancedParticleBase particle) {
+            super.preUpdate(particle);
+            float ageFrac = particle.getAge() / particle.getLifetime();
+            float amount = this.amount.evaluate(ageFrac);
+            Vec3 diff = origin.subtract(particle.getPos()).normalize();
+            Vec3 force = diff.cross(axis).scale(amount);
+            particle.setMotionX(particle.getMotionX() + force.x);
+            particle.setMotionY(particle.getMotionY() + force.y);
+            particle.setMotionZ(particle.getMotionZ() + force.z);
         }
     }
 
@@ -525,6 +594,35 @@ public abstract class ParticleComponent {
 
             double divisor = 1.0 / ( 2.0 * e );
             return new Vec3(x ,y ,z ).scale(divisor).normalize();
+        }
+    }
+
+    public static class ScreenSpace extends ParticleComponent {
+        private final AnimData x;
+        private final AnimData y;
+        private final AnimData z;
+
+        public ScreenSpace(AnimData x, AnimData y, AnimData z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public ScreenSpace(float x, float y, float z) {
+            this(new Constant(x), new Constant(y), new Constant(z));
+        }
+
+        @Override
+        public void preUpdate(AdvancedParticleBase particle) {
+            super.preUpdate(particle);
+            particle.isScreenSpace = true;
+            float ageFrac = particle.getAge() / particle.getLifetime();
+            particle.screenXo = particle.screenX;
+            particle.screenYo = particle.screenY;
+            particle.screenZo = particle.screenZ;
+            particle.screenX = this.x.evaluate(ageFrac);
+            particle.screenY = this.y.evaluate(ageFrac);
+            particle.screenZ = this.z.evaluate(ageFrac);
         }
     }
 }

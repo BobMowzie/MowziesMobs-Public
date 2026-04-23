@@ -3,7 +3,6 @@ package com.bobmowzie.mowziesmobs.server.world.feature.structure.processor;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
@@ -18,8 +17,8 @@ public class BlockStateRandomizer {
                     BlockState.CODEC.fieldOf("default").forGetter((selector) -> selector.defaultState))
             .apply(instance, BlockStateRandomizer::new));
 
-    private Optional<List<Entry>> entries = Optional.empty();
-    private BlockState defaultState = Blocks.AIR.defaultBlockState();
+    private final Optional<List<Entry>> entries;
+    private final BlockState defaultState;
 
     public BlockStateRandomizer(Optional<List<Entry>> entries, BlockState defaultBlockState) {
         this.entries = entries;

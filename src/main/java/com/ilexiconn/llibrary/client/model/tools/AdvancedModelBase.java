@@ -4,8 +4,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.function.Function;
 
@@ -15,7 +13,6 @@ import java.util.function.Function;
  * @author gegy1000
  * @since 1.0.0
  */
-@OnlyIn(Dist.CLIENT)
 public abstract class AdvancedModelBase<T extends Entity> extends BasicModelBase<T> {
 
     private float movementScale = 1.0F;

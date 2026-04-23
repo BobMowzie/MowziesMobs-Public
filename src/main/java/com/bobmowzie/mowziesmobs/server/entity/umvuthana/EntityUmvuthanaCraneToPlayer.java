@@ -2,7 +2,6 @@ package com.bobmowzie.mowziesmobs.server.entity.umvuthana;
 
 import com.bobmowzie.mowziesmobs.server.ai.NearestAttackableTargetPredicateGoal;
 import com.bobmowzie.mowziesmobs.server.potion.EffectHandler;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -68,14 +67,14 @@ public class EntityUmvuthanaCraneToPlayer extends EntityUmvuthanaFollowerToPlaye
     protected void sunBlockTarget() {
         LivingEntity target = getTarget();
         if (target != null && target == getLeader()) {
-            EffectHandler.addOrCombineEffect(target, EffectHandler.SUNBLOCK.get(), 20, 0, true, false);
+            EffectHandler.addOrCombineEffect(target, EffectHandler.SUNBLOCK, 20, 0, true, false);
         }
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, SpawnGroupData livingData, CompoundTag compound) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, SpawnGroupData livingData) {
         setMask(MaskType.FAITH);
         setWeapon(3);
-        return super.finalizeSpawn(world, difficulty, reason, livingData, compound);
+        return super.finalizeSpawn(world, difficulty, reason, livingData);
     }
 }

@@ -3,7 +3,6 @@ package com.bobmowzie.mowziesmobs.server.inventory;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthanaMinion;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.trade.Trade;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Player;
@@ -123,6 +122,7 @@ public final class InventoryUmvuthana implements Container {
     }
 
     private static boolean areItemsEqual(ItemStack s1, ItemStack s2) {
-        return ItemStack.isSameItemSameTags(s1, s2);// && (!s2.hasTag() || s1.hasTag() && NbtUtils.compareNbt(s2.getTag(), s1.getTag(), false));
+        //return ItemStack.isSameItemSameTags(s1, s2);// && (!s2.hasTag() || s1.hasTag() && NbtUtils.compareNbt(s2.getTag(), s1.getTag(), false));
+        return ItemStack.isSameItemSameComponents(s1, s2);
     }
 }

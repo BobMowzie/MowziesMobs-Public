@@ -1,0 +1,6 @@
+{
+	"parent": "mowziesmobs:item/elokosa_paw",
+	"textures": {
+		"layer0": "mowziesmobs:item/monkey_paw_new_closed"
+	}
+}

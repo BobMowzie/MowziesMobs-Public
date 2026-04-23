@@ -6,19 +6,20 @@ import com.bobmowzie.mowziesmobs.server.ability.Ability;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityType;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.SimpleAnimationAbility;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
-import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
-import com.bobmowzie.mowziesmobs.server.capability.FrozenCapability;
-import net.minecraft.network.FriendlyByteBuf;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntity {
@@ -27,19 +28,30 @@ public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntit
 
     public GeckoDynamicChain[] dynamicChains;
 
+    public double moveDirForward;
+    public double moveDirBackward;
+    public double moveDirLeft;
+    public double moveDirRight;
+    public double prevMoveDirForward;
+    public double prevMoveDirBackward;
+    public double prevMoveDirLeft;
+    public double prevMoveDirRight;
+
+    public float lastRenderUpdateTime;
+
     public MowzieGeckoEntity(EntityType<? extends MowzieEntity> type, Level world) {
         super(type, world);
     }
 
     @Override
     protected int getDeathDuration() {
-        Ability deathAbility = getActiveAbility();
+        Ability<?>deathAbility = getActiveAbility();
         if (deathAbility instanceof SimpleAnimationAbility) return ((SimpleAnimationAbility) deathAbility).getDuration();
         return 20;
     }
 
     @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
+    public void writeSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
 
     }
 
@@ -55,7 +67,7 @@ public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntit
     public boolean hurt(DamageSource source, float damage) {
         boolean attack = super.hurt(source, damage);
         if (attack) {
-            if (getHealth() > 0.0F && (getActiveAbility() == null || getActiveAbility().damageInterrupts()) && shouldPlayHurtAnimation(source, damage)) {
+            if (getHealth() > 0.0F && (getActiveAbility() == null || (getActiveAbility().damageInterrupts() && damage >= getActiveAbility().damageInterruptThreshold())) && shouldPlayHurtAnimation(source, damage)) {
                 sendAbilityMessage(getHurtAbility());
             } else if (getHealth() <= 0.0F) {
                 sendAbilityMessage(getDeathAbility());
@@ -64,19 +76,44 @@ public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntit
         return attack;
     }
 
-    protected <E extends GeoEntity> PlayState predicate(AnimationState<E> state) {
-        AbilityCapability.IAbilityCapability abilityCapability = getAbilityCapability();
-        FrozenCapability.IFrozenCapability frozenCapability = CapabilityHandler.getCapability(this, CapabilityHandler.FROZEN_CAPABILITY);
-        if (abilityCapability == null) {
-            return PlayState.STOP;
+    @Override
+    public void tick() {
+        super.tick();
+
+        if (doDirectionalWalk()) {
+            prevMoveDirForward = moveDirForward;
+            prevMoveDirBackward = moveDirBackward;
+            prevMoveDirLeft = moveDirLeft;
+            prevMoveDirRight = moveDirRight;
+            Vec3 moveVec = getDeltaMovement().yRot((float) Math.toRadians(yBodyRot + 90.0f)).multiply(1, 0, 1);
+            if (moveVec.lengthSqr() > 0.01f * 0.01f) {
+                moveVec = moveVec.normalize();
+                moveDirForward = Math.max(0d, new Vec3(1.0, 0, 0).dot(moveVec));
+                moveDirBackward = Math.max(0d, new Vec3(-1.0, 0, 0).dot(moveVec));
+                moveDirLeft = Math.max(0d, new Vec3(0, 0, -1.0).dot(moveVec));
+                moveDirRight = Math.max(0d, new Vec3(0, 0, 1.0).dot(moveVec));
+            }
         }
-        if (frozenCapability != null && frozenCapability.getFrozen()) {
+    }
+
+    protected boolean doDirectionalWalk() {
+        return false;
+    }
+
+    protected <E extends GeoEntity> PlayState predicate(AnimationState<E> state) {
+        AbilityData abilityData = getAbilityData();
+
+        if (abilityData == null) {
             return PlayState.STOP;
         }
 
-        if (abilityCapability.getActiveAbility() != null) {
+        if (DataHandler.getData(this, DataHandler.FROZEN_DATA).getFrozen()) {
+            return PlayState.STOP;
+        }
+
+        if (abilityData.getActiveAbility() != null) {
             getController().transitionLength(0);
-            return abilityCapability.animationPredicate(state, null);
+            return abilityData.animationPredicate(state, null);
         }
         else {
             loopingAnimations(state);
@@ -108,26 +145,26 @@ public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntit
         return new AbilityType[]{};
     }
 
-    public AbilityCapability.IAbilityCapability getAbilityCapability() {
-        return AbilityHandler.INSTANCE.getAbilityCapability(this);
+    public AbilityData getAbilityData() {
+        return DataHandler.getData(this, DataHandler.ABILITY_DATA);
     }
 
-    public Ability getActiveAbility() {
-        AbilityCapability.IAbilityCapability capability = getAbilityCapability();
-        if (capability == null) return null;
-        return getAbilityCapability().getActiveAbility();
+    public Ability<?>getActiveAbility() {
+        AbilityData data = getAbilityData();
+        if (data == null) return null;
+        return getAbilityData().getActiveAbility();
     }
 
     public AbilityType getActiveAbilityType() {
-        Ability ability = getActiveAbility();
+        Ability<?>ability = getActiveAbility();
         if (ability == null) return null;
         return ability.getAbilityType();
     }
 
-    public Ability getAbility(AbilityType abilityType) {
-        AbilityCapability.IAbilityCapability capability = getAbilityCapability();
-        if (capability == null) return null;
-        return getAbilityCapability().getAbilityMap().get(abilityType);
+    public Ability<?>getAbility(AbilityType abilityType) {
+        AbilityData data = getAbilityData();
+        if (data == null) return null;
+        return getAbilityData().getAbilityMap().get(abilityType);
     }
 
     public void sendAbilityMessage(AbilityType abilityType) {

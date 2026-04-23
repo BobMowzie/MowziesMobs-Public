@@ -1,0 +1,32 @@
+{
+  "pools": [
+    {
+      "name": "foliaath",
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "name": "mowziesmobs:foliaath_seed",
+          "weight": 1,
+          "functions": [
+            {
+              "function": "set_count",
+              "count": {
+                "min": 0,
+                "max": 2
+              }
+            },
+            {
+              "enchantment": "minecraft:looting",
+              "function": "minecraft:enchanted_count_increase",
+              "count": {
+                "min": 0,
+                "max": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

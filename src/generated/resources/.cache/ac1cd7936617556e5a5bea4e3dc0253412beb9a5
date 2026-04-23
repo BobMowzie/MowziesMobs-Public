@@ -1,0 +1,3 @@
+// 1.21.1	2024-10-22T14:44:00.1072652	Tags for minecraft:worldgen/biome mod id mowziesmobs
+96bd20d8ad8fcac164921732d498b4d098033ef3 data/mowziesmobs/tags/worldgen/biome/has_structure/has_mowzie_structure.json
+5f176659fa27569cc678ddae4a306c2055a89a16 data/mowziesmobs/tags/worldgen/biome/is_magical.json

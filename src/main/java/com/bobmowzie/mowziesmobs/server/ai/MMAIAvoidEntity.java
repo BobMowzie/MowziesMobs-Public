@@ -15,7 +15,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 public class MMAIAvoidEntity<U extends PathfinderMob, T extends Entity> extends Goal {
-    private static final double NEAR_DISTANCE = 7.0D;
+    private double nearDistance = 7.0D;
 
     protected final U entity;
 
@@ -39,15 +39,21 @@ public class MMAIAvoidEntity<U extends PathfinderMob, T extends Entity> extends 
 
     private Path entityPathEntity;
 
+    private boolean isActive;
+
     public MMAIAvoidEntity(U entity, Class<T> avoidedEntityType, float evadeDistance, double farSpeed, double nearSpeed) {
-        this(entity, avoidedEntityType, Predicates.alwaysTrue(), evadeDistance, farSpeed, nearSpeed, 10, 12, 7);
+        this(entity, avoidedEntityType, Predicates.alwaysTrue(), evadeDistance, farSpeed, nearSpeed, 10, 12, 7, 7.0);
     }
 
     public MMAIAvoidEntity(U entity, Class<T> avoidedEntityType, float evadeDistance, double farSpeed, double nearSpeed, int numChecks, int horizontalEvasion, int verticalEvasion) {
-        this(entity, avoidedEntityType, Predicates.alwaysTrue(), evadeDistance, farSpeed, nearSpeed, numChecks, horizontalEvasion, verticalEvasion);
+        this(entity, avoidedEntityType, Predicates.alwaysTrue(), evadeDistance, farSpeed, nearSpeed, numChecks, horizontalEvasion, verticalEvasion, 7.0);
     }
 
     public MMAIAvoidEntity(U entity, Class<T> avoidedEntityType, Predicate<? super T> predicate, float evadeDistance, double farSpeed, double nearSpeed, int numChecks, int horizontalEvasion, int verticalEvasion) {
+        this(entity, avoidedEntityType, predicate, evadeDistance, farSpeed, nearSpeed, numChecks, horizontalEvasion, verticalEvasion, 7.0);
+    }
+
+    public MMAIAvoidEntity(U entity, Class<T> avoidedEntityType, Predicate<? super T> predicate, float evadeDistance, double farSpeed, double nearSpeed, int numChecks, int horizontalEvasion, int verticalEvasion, double nearDistance) {
         this.entity = entity;
         this.selector = e -> e != null &&
             EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(e) &&
@@ -62,6 +68,7 @@ public class MMAIAvoidEntity<U extends PathfinderMob, T extends Entity> extends 
         this.numChecks = numChecks;
         this.horizontalEvasion = horizontalEvasion;
         this.verticalEvasion = verticalEvasion;
+        this.nearDistance = nearDistance;
         setFlags(EnumSet.of(Flag.MOVE));
     }
 
@@ -97,16 +104,26 @@ public class MMAIAvoidEntity<U extends PathfinderMob, T extends Entity> extends 
 
     @Override
     public void start() {
+        isActive = true;
         entity.getNavigation().moveTo(entityPathEntity, farSpeed);
     }
 
     @Override
     public void stop() {
+        isActive = false;
         entityEvading = null;
     }
 
     @Override
     public void tick() {
-        entity.getNavigation().setSpeedModifier(entity.distanceToSqr(entityEvading) < NEAR_DISTANCE * NEAR_DISTANCE ? nearSpeed : farSpeed);
+        entity.getNavigation().setSpeedModifier(entity.distanceToSqr(entityEvading) < nearDistance * nearDistance ? nearSpeed : farSpeed);
+    }
+
+    public T getEntityEvading() {
+        return entityEvading;
+    }
+
+    public boolean isActive() {
+        return isActive;
     }
 }

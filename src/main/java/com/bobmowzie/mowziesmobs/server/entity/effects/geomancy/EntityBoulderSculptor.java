@@ -12,12 +12,14 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -225,13 +227,13 @@ public class EntityBoulderSculptor extends EntityBoulderProjectile {
         EntityDimensions nextDims = SIZE_MAP.get(nextBoulder.getTier());
         Vec3 startLocation = position();
         Vec2 fromPillarPos = new Vec2((float) (getCaster().getX() - startLocation.x), (float) (getCaster().getZ() - startLocation.z));
-        float horizontalOffset = Mth.nextFloat(this.random, 2, MAX_DIST_HORIZONTAL) + thisDims.width/2f + nextDims.width/2f;
-        float verticalOffset = Mth.nextFloat(this.random, 0, MAX_DIST_VERTICAL) - (nextDims.height - thisDims.height);
+        float horizontalOffset = Mth.nextFloat(this.random, 2, MAX_DIST_HORIZONTAL) + thisDims.width()/2f + nextDims.width()/2f;
+        float verticalOffset = Mth.nextFloat(this.random, 0, MAX_DIST_VERTICAL) - (nextDims.height() - thisDims.height());
 
         float baseAngle = (float) -Math.toDegrees(Math.atan2(fromPillarPos.y, fromPillarPos.x));
         // Minimum and maximum angles force the angle to approach 90 degrees as it gets too close or too far from the pillar
         float minRandomAngle = (float) (Math.min(Math.pow(3f, -fromPillarPos.length() + 3), 1f) * 90f);
-        double radius = EntitySculptor.testRadiusAtHeight(startLocation.y + verticalOffset + nextDims.height - pillar.getY());
+        double radius = EntitySculptor.testRadiusAtHeight(startLocation.y + verticalOffset + nextDims.height() - pillar.getY());
         float maxRandomAngle = 180f - (float) (Math.min(Math.pow(3f, fromPillarPos.length() - radius), 1f) * 90f);
         float randomAngle = Mth.nextFloat(this.random, minRandomAngle, maxRandomAngle);
         if (random.nextBoolean()) randomAngle *= -1;
@@ -249,8 +251,8 @@ public class EntityBoulderSculptor extends EntityBoulderProjectile {
             nextLocation = atPillarHeight.add(clampedOffset);
         }
 
-        if (nextLocation.y() + nextDims.height > pillar.getY() + EntitySculptor.TEST_HEIGHT) {
-            nextLocation = new Vec3(nextLocation.x(), pillar.getY() + EntitySculptor.TEST_HEIGHT - nextDims.height, nextLocation.z());
+        if (nextLocation.y() + nextDims.height() > pillar.getY() + EntitySculptor.TEST_HEIGHT) {
+            nextLocation = new Vec3(nextLocation.x(), pillar.getY() + EntitySculptor.TEST_HEIGHT - nextDims.height(), nextLocation.z());
         }
 
         return nextLocation;
@@ -262,7 +264,7 @@ public class EntityBoulderSculptor extends EntityBoulderProjectile {
         EntityDimensions nextDims = SIZE_MAP.get(nextBoulder.getTier());
         Vec3 startLocation = position();
         Vec2 fromPillarPos = new Vec2((float) (getCaster().getX() - startLocation.x), (float) (getCaster().getZ() - startLocation.z));
-        float horizontalOffset = Mth.nextFloat(this.random, 1, MAX_DIST_HORIZONTAL) + thisDims.width/2f + nextDims.width/2f;
+        float horizontalOffset = Mth.nextFloat(this.random, 1, MAX_DIST_HORIZONTAL) + thisDims.width()/2f + nextDims.width()/2f;
 
         float baseAngle = (float) -Math.toDegrees(Math.atan2(fromPillarPos.y, fromPillarPos.x));
         Vec3 offset = new Vec3(horizontalOffset, 0, 0);
@@ -283,10 +285,10 @@ public class EntityBoulderSculptor extends EntityBoulderProjectile {
         EntityDimensions nextDims = SIZE_MAP.get(next.getTier());
 
         Vec3 toNext = next.position().subtract(platform.position());
-        Vec3 startPos = platform.position().add(0, platDims.height, 0).add(toNext.multiply(1, 0, 1).normalize().scale(platDims.width/2f));
-        Vec3 endPos = next.position().add(0, nextDims.height, 0).add(toNext.multiply(1, 0, 1).normalize().scale(-nextDims.width/2f));
+        Vec3 startPos = platform.position().add(0, platDims.height(), 0).add(toNext.multiply(1, 0, 1).normalize().scale(platDims.width()/2f));
+        Vec3 endPos = next.position().add(0, nextDims.height(), 0).add(toNext.multiply(1, 0, 1).normalize().scale(-nextDims.width()/2f));
 
-        double gravity = -net.minecraftforge.common.ForgeMod.ENTITY_GRAVITY.get().getDefaultValue();
+        double gravity = -Attributes.GRAVITY.value().getDefaultValue();
         double jumpVelY = 1D; // Player y jump speed with jump boost II
         double heightDiff = endPos.y() - startPos.y();
         // Quadratic formula to solve for time it takes to complete jump
@@ -413,9 +415,9 @@ public class EntityBoulderSculptor extends EntityBoulderProjectile {
         }
 
         @Override
-        protected void defineSynchedData() {
-            super.defineSynchedData();
-            getEntityData().define(CRUMBLING, false);
+        protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
+            super.defineSynchedData(builder);
+            builder.define(CRUMBLING, false);
         }
 
         @Override

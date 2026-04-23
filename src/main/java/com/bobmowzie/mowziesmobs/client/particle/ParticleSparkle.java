@@ -6,8 +6,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Created by BobMowzie on 6/2/2017.
@@ -56,12 +54,11 @@ public class ParticleSparkle extends TextureSheetParticle {
         return MMRenderType.PARTICLE_SHEET_TRANSLUCENT_NO_DEPTH;
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public static final class SparkleFactory implements ParticleProvider<SimpleParticleType> {
+    public static final class Provider implements ParticleProvider<SimpleParticleType> {
 
         private final SpriteSet spriteSet;
 
-        public SparkleFactory(SpriteSet sprite) {
+        public Provider(SpriteSet sprite) {
             this.spriteSet = sprite;
         }
 

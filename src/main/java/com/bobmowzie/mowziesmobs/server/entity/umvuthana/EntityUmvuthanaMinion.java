@@ -1,12 +1,13 @@
 package com.bobmowzie.mowziesmobs.server.entity.umvuthana;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.ai.EntityAIUmvuthanaTrade;
 import com.bobmowzie.mowziesmobs.server.ai.EntityAIUmvuthanaTradeLook;
 import com.bobmowzie.mowziesmobs.server.ai.UmvuthanaHurtByTargetAI;
 import com.bobmowzie.mowziesmobs.server.block.BlockHandler;
-import com.bobmowzie.mowziesmobs.server.data.EntityDataHandler;
+import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.LeaderSunstrikeImmune;
+import com.bobmowzie.mowziesmobs.server.entity.elokosa.EntityElokosa;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.trade.Trade;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.trade.TradeStore;
 import com.bobmowzie.mowziesmobs.server.inventory.ContainerUmvuthanaTrade;
@@ -19,10 +20,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.players.OldUsersConverter;
 import net.minecraft.world.*;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.AbstractSkeleton;
@@ -35,6 +33,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
@@ -66,7 +65,7 @@ public class EntityUmvuthanaMinion extends EntityUmvuthana implements LeaderSuns
         .addTrade(Items.BONE, 2, Items.GOLD_NUGGET, 2, 1)
         .build();
 
-    private static final EntityDataAccessor<Optional<Trade>> TRADE = SynchedEntityData.defineId(EntityUmvuthanaMinion.class, EntityDataHandler.OPTIONAL_TRADE.get());
+    private static final EntityDataAccessor<Optional<Trade>> TRADE = SynchedEntityData.defineId(EntityUmvuthanaMinion.class, EntityHandler.OPTIONAL_TRADE.value());
     //    private static final DataParameter<Integer> NUM_SALES = EntityDataManager.createKey(EntityBarakoaya.class, DataSerializers.VARINT);
     private static final EntityDataAccessor<Optional<UUID>> MISBEHAVED_PLAYER = SynchedEntityData.defineId(EntityUmvuthanaMinion.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<Boolean> IS_TRADING = SynchedEntityData.defineId(EntityUmvuthanaMinion.class, EntityDataSerializers.BOOLEAN);
@@ -119,14 +118,15 @@ public class EntityUmvuthanaMinion extends EntityUmvuthana implements LeaderSuns
         });
         targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Zombie.class, 0, true, true, null));
         targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, AbstractSkeleton.class, 0, true, false, null));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, EntityElokosa.class, 0, true, false, null));
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        getEntityData().define(TRADE, Optional.empty());
-        this.entityData.define(MISBEHAVED_PLAYER, Optional.empty());
-        this.entityData.define(IS_TRADING, false);
+    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(TRADE, Optional.empty());
+        builder.define(MISBEHAVED_PLAYER, Optional.empty());
+        builder.define(IS_TRADING, false);
 //        getDataManager().register(NUM_SALES, MAX_SALES);
     }
 
@@ -188,7 +188,7 @@ public class EntityUmvuthanaMinion extends EntityUmvuthana implements LeaderSuns
 
     public void openGUI(Player playerEntity) {
         setCustomer(playerEntity);
-        MowziesMobs.PROXY.setReferencedMob(this);
+        MMCommon.PROXY.setReferencedMob(this);
         if (!this.level().isClientSide && getTarget() == null && isAlive()) {
             playerEntity.openMenu(new MenuProvider() {
                 @Override
@@ -217,16 +217,16 @@ public class EntityUmvuthanaMinion extends EntityUmvuthana implements LeaderSuns
         if (isTrading()) {
             return false;
         }
-        ItemStack headStack = player.getInventory().armor.get(3);
-        return headStack.getItem() instanceof UmvuthanaMask && isOfferingTrade();
+
+        return player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof UmvuthanaMask && isOfferingTrade();
     }
 
     @Nullable
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData, @Nullable CompoundTag compound) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData) {
         tradeStore = DEFAULT;
         if (reason == MobSpawnType.COMMAND) restrictTo(blockPosition(), 25);
-        return super.finalizeSpawn(world, difficulty, reason, livingData, compound);
+        return super.finalizeSpawn(world, difficulty, reason, livingData);
     }
 
     @Override
@@ -237,9 +237,9 @@ public class EntityUmvuthanaMinion extends EntityUmvuthana implements LeaderSuns
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        compound.put("tradeStore", tradeStore.serialize());
+        compound.put("tradeStore", tradeStore.serialize(registryAccess()));
         if (isOfferingTrade()) {
-            compound.put("offeringTrade", getOfferingTrade().serialize());
+            compound.put("offeringTrade", getOfferingTrade().serialize(registryAccess()));
         }
         compound.putInt("timeOffering", timeOffering);
         compound.putInt("HomePosX", this.getRestrictCenter().getX());
@@ -255,8 +255,8 @@ public class EntityUmvuthanaMinion extends EntityUmvuthana implements LeaderSuns
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        tradeStore = TradeStore.deserialize(compound.getCompound("tradeStore"));
-        setOfferingTrade(Trade.deserialize(compound.getCompound("offeringTrade")));
+        tradeStore = TradeStore.deserialize(registryAccess(), compound.getCompound("tradeStore"));
+        setOfferingTrade(Trade.deserialize(registryAccess(), compound.getCompound("offeringTrade")));
         timeOffering = compound.getInt("timeOffering");
         int i = compound.getInt("HomePosX");
         int j = compound.getInt("HomePosY");

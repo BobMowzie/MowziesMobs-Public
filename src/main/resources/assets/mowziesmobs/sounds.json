@@ -769,6 +769,106 @@
 		"sounds": [ "mowziesmobs:entity/bluff/spike_explode" ],
 		"subtitle": "subtitles.mowziesmobs.bluff.spike_explode"
 	},
+	"elokosa.day.death": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_death" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.death"
+	},
+	"elokosa.day.hurt1": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_hurt1" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.hurt"
+	},
+	"elokosa.day.hurt2": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_hurt2" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.hurt"
+	},
+	"elokosa.day.idle1": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_idle1" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.idle"
+	},
+	"elokosa.day.idle2": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_idle2" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.idle"
+	},
+	"elokosa.day.idle3": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_idle3" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.idle"
+	},
+	"elokosa.day.idle4": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_idle4" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.idle"
+	},
+	"elokosa.day.idle5": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_idle5" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.idle"
+	},
+	"elokosa.day.transform": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_day_transform" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.day.transform"
+	},
+	"elokosa.night.attack1": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_attack1" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.attack"
+	},
+	"elokosa.night.attack2": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_attack2" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.attack"
+	},
+	"elokosa.night.attack_big": {
+		"sounds": [ "mowziesmobs:entity/umvuthana/attack_big" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.attack_big"
+	},
+	"elokosa.night.death": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_death" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.death"
+	},
+	"elokosa.night.hurt2": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_hurt2" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.hurt"
+	},
+	"elokosa.night.hurt3": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_hurt3" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.hurt"
+	},
+	"elokosa.night.idle1": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_idle1" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.idle"
+	},
+	"elokosa.night.idle2": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_idle2" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.idle"
+	},
+	"elokosa.night.idle3": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_idle3" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.idle"
+	},
+	"elokosa.night.idle4": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_idle4" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.idle"
+	},
+	"elokosa.night.idle5": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_idle5" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.idle"
+	},
+	"elokosa.night.scream.long": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_scream_long" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.scream"
+	},
+	"elokosa.night.scream.short1": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_scream_short1" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.scream"
+	},
+	"elokosa.night.scream.short2": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_scream_short2" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.scream"
+	},
+	"elokosa.night.transform": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_night_transform" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.night.transform"
+	},
+	"elokosa.paw": {
+		"sounds": [ "mowziesmobs:entity/elokosa/elokosa_paw" ],
+		"subtitle": "subtitles.mowziesmobs.elokosa.paw"
+	},
 	"misc.groundhit1": {
 		"sounds": [ "mowziesmobs:entity/misc/ground_hit1" ],
 		"subtitle": "subtitles.mowziesmobs.ground_hit"

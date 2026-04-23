@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.entity.effects.geomancy;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.sound.IGeomancyRumbler;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityFallingBlock;
@@ -24,6 +24,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
+import software.bernie.geckolib.animation.AnimatableManager;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -84,7 +86,7 @@ public class EntityPillar extends EntityGeomancyBase implements IGeomancyRumbler
             playSound(MMSounds.EFFECT_GEOMANCY_BREAK_LARGE_1.get(), 2, 1);
             if (!isFalling()) startRising();
             if (level().isClientSide())
-                MowziesMobs.PROXY.playGeomancyRumbleSound(this);
+                MMCommon.PROXY.playGeomancyRumbleSound(this);
         }
 
         if (!level().isClientSide()) {
@@ -152,11 +154,11 @@ public class EntityPillar extends EntityGeomancyBase implements IGeomancyRumbler
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        getEntityData().define(HEIGHT, 0.0f);
-        getEntityData().define(RISING, true);
-        getEntityData().define(FALLING, false);
+    protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(HEIGHT, 0.0f);
+        builder.define(RISING, true);
+        builder.define(FALLING, false);
     }
 
     public float getHeight() {
@@ -270,6 +272,11 @@ public class EntityPillar extends EntityGeomancyBase implements IGeomancyRumbler
     @Override
     protected float fallingBlockCountMultiplier() {
         return 0;
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+
     }
 
     public static class EntityPillarSculptor extends EntityPillar {

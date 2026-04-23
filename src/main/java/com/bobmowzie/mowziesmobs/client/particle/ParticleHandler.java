@@ -1,95 +1,134 @@
 package com.bobmowzie.mowziesmobs.client.particle;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
-import com.bobmowzie.mowziesmobs.client.particle.util.*;
-import com.mojang.serialization.Codec;
-import net.minecraft.core.particles.ParticleOptions;
+import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.client.particle.types.AdvancedParticleType;
+import com.bobmowzie.mowziesmobs.client.particle.types.DecalParticleType;
+import com.bobmowzie.mowziesmobs.client.particle.types.RibbonParticleType;
+import com.bobmowzie.mowziesmobs.client.particle.types.TerrainParticleType;
+import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleBase;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import org.jetbrains.annotations.NotNull;
 
-
-@Mod.EventBusSubscriber(modid = MowziesMobs.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ParticleHandler {
+    public static final DeferredRegister<ParticleType<?>> REG = DeferredRegister.create(Registries.PARTICLE_TYPE, MMCommon.MODID);
 
-    public static final DeferredRegister<ParticleType<?>> REG = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, MowziesMobs.MODID);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SPARKLE = REG.register("sparkle", () -> new SimpleParticleType(false));
 
-    public static final RegistryObject<SimpleParticleType> SPARKLE = register("sparkle", false);
-    public static final RegistryObject<ParticleType<ParticleVanillaCloudExtended.VanillaCloudData>> VANILLA_CLOUD_EXTENDED = REG.register("vanilla_cloud_extended", () -> new ParticleType<ParticleVanillaCloudExtended.VanillaCloudData>(false, ParticleVanillaCloudExtended.VanillaCloudData.DESERIALIZER) {
+    public static final DeferredHolder<ParticleType<?>, ParticleType<ParticleVanillaCloudExtended.Data>> VANILLA_CLOUD_EXTENDED = REG.register("vanilla_cloud_extended", () -> new ParticleType<>(false) {
         @Override
-        public Codec<ParticleVanillaCloudExtended.VanillaCloudData> codec() {
-            return ParticleVanillaCloudExtended.VanillaCloudData.CODEC(VANILLA_CLOUD_EXTENDED.get());
+        public @NotNull MapCodec<ParticleVanillaCloudExtended.Data> codec() {
+            return ParticleVanillaCloudExtended.Data.CODEC;
         }
-    });
-    public static final RegistryObject<ParticleType<ParticleSnowFlake.SnowflakeData>> SNOWFLAKE = REG.register("snowflake", () -> new ParticleType<ParticleSnowFlake.SnowflakeData>(false, ParticleSnowFlake.SnowflakeData.DESERIALIZER) {
+
         @Override
-        public Codec<ParticleSnowFlake.SnowflakeData> codec() {
-            return ParticleSnowFlake.SnowflakeData.CODEC(SNOWFLAKE.get());
-        }
-    });
-    public static final RegistryObject<ParticleType<ParticleCloud.CloudData>> CLOUD = REG.register("cloud_soft", () -> new ParticleType<ParticleCloud.CloudData>(false, ParticleCloud.CloudData.DESERIALIZER) {
-        @Override
-        public Codec<ParticleCloud.CloudData> codec() {
-            return ParticleCloud.CloudData.CODEC(CLOUD.get());
-        }
-    });
-    public static final RegistryObject<ParticleType<ParticleOrb.OrbData>> ORB = REG.register("orb_0", () -> new ParticleType<ParticleOrb.OrbData>(false, ParticleOrb.OrbData.DESERIALIZER) {
-        @Override
-        public Codec<ParticleOrb.OrbData> codec() {
-            return ParticleOrb.OrbData.CODEC(ORB.get());
-        }
-    });
-    public static final RegistryObject<ParticleType<ParticleRing.RingData>> RING = REG.register("ring_0", () -> new ParticleType<ParticleRing.RingData>(false, ParticleRing.RingData.DESERIALIZER) {
-        @Override
-        public Codec<ParticleRing.RingData> codec() {
-            return ParticleRing.RingData.CODEC(RING.get());
+        public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, ParticleVanillaCloudExtended.Data> streamCodec() {
+            return ParticleVanillaCloudExtended.Data.STREAM_CODEC;
         }
     });
 
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> RING2 = register("ring", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> RING_BIG = register("ring_big", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> PIXEL = register("pixel", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> ORB2 = register("orb", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> EYE = register("eye", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> BUBBLE = register("bubble", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> SUN = register("sun", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> SUN_NOVA = register("sun_nova", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> FLARE = register("flare", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> FLARE_RADIAL = register("flare_radial", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> BURST_IN = register("ring1", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> BURST_MESSY = register("burst_messy", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> RING_SPARKS = register("sparks_ring", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> BURST_OUT = register("ring2", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> GLOW = register("glow", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> ARROW_HEAD = register("arrow_head", AdvancedParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<AdvancedParticleData>> LEAF = register("leaf", AdvancedParticleData.DESERIALIZER);
+    public static final DeferredHolder<ParticleType<?>, ParticleType<ParticleSnowFlake.Data>> SNOWFLAKE = REG.register("snowflake", () -> new ParticleType<>(false) {
+        @Override
+        public @NotNull MapCodec<ParticleSnowFlake.Data> codec() {
+            return ParticleSnowFlake.Data.CODEC;
+        }
 
-    public static final RegistryObject<ParticleType<TerrainParticleData>> TERRAIN = registerTerrain("terrain", TerrainParticleData.DESERIALIZER);
+        @Override
+        public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, ParticleSnowFlake.Data> streamCodec() {
+            return ParticleSnowFlake.Data.STREAM_CODEC;
+        }
+    });
 
-    public static final RegistryObject<ParticleType<DecalParticleData>> STRIX_FOOTPRINT = registerDecal("strix_footprint", DecalParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<DecalParticleData>> GROUND_CRACK = registerDecal("crack", DecalParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<DecalParticleData>> PLAYER_FOOTPRINT = registerDecal("player_footprint", DecalParticleData.DESERIALIZER);
+    public static final DeferredHolder<ParticleType<?>, ParticleType<ParticleCloud.Data>> CLOUD = REG.register("cloud_soft", () -> new ParticleType<>(false) {
+        @Override
+        public @NotNull MapCodec<ParticleCloud.Data> codec() {
+            return ParticleCloud.Data.CODEC;
+        }
 
-    public static final RegistryObject<ParticleType<RibbonParticleData>> RIBBON_FLAT = registerRibbon("ribbon_flat", RibbonParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<RibbonParticleData>> RIBBON_STREAKS = registerRibbon("ribbon_streaks", RibbonParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<RibbonParticleData>> RIBBON_GLOW = registerRibbon("ribbon_glow", RibbonParticleData.DESERIALIZER);
-    public static final RegistryObject<ParticleType<RibbonParticleData>> RIBBON_SQUIGGLE = registerRibbon("ribbon_squiggle", RibbonParticleData.DESERIALIZER);
+        @Override
+        public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, ParticleCloud.Data> streamCodec() {
+            return ParticleCloud.Data.STREAM_CODEC;
+        }
+    });
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<ParticleOrb.Data>> ORB = REG.register("orb_0", () -> new ParticleType<>(false) {
+        @Override
+        public @NotNull MapCodec<ParticleOrb.Data> codec() {
+            return ParticleOrb.Data.CODEC;
+        }
+
+        @Override
+        public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, ParticleOrb.Data> streamCodec() {
+            return ParticleOrb.Data.STREAM_CODEC;
+        }
+    });
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<ParticleRing.Data>> RING = REG.register("ring_0", () -> new ParticleType<>(false) {
+        @Override
+        public @NotNull MapCodec<ParticleRing.Data> codec() {
+            return ParticleRing.Data.CODEC;
+        }
+
+        @Override
+        public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, ParticleRing.Data> streamCodec() {
+            return ParticleRing.Data.STREAM_CODEC;
+        }
+    });
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> RING2 = registerAdvanced("ring");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> RING_BIG = registerAdvanced("ring_big");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> PIXEL = registerAdvanced("pixel");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> ORB2 = registerAdvanced("orb");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> EYE = registerAdvanced("eye");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> BUBBLE = registerAdvanced("bubble");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> SUN = registerAdvanced("sun");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> SUN_NOVA = registerAdvanced("sun_nova");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> FLARE = registerAdvanced("flare");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> FLARE_RADIAL = registerAdvanced("flare_radial");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> BURST_IN = registerAdvanced("ring1");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> BURST_MESSY = registerAdvanced("burst_messy");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> RING_SPARKS = registerAdvanced("sparks_ring");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> BURST_OUT = registerAdvanced("ring2");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> GLOW = registerAdvanced("glow");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> ARROW_HEAD = registerAdvanced("arrow_head");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> LEAF = registerAdvanced("leaf");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> MOON_FULL = registerAdvanced("moon_full");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> MOON_GIBBOUS = registerAdvanced("moon_gibbous");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> MOON_HALF = registerAdvanced("moon_half");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> MOON_CRESCENT = registerAdvanced("moon_crescent");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> MOON_NEW = registerAdvanced("moon_new");
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<TerrainParticleType>> TERRAIN = registerTerrain("terrain");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<DecalParticleType>> PLAYER_FOOTPRINT = registerDecal("player_footprint");
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<DecalParticleType>> STRIX_FOOTPRINT = registerDecal("strix_footprint");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<DecalParticleType>> GROUND_CRACK = registerDecal("crack");
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<RibbonParticleType>> RIBBON_FLAT = registerRibbon("ribbon_flat");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<RibbonParticleType>> RIBBON_STREAKS = registerRibbon("ribbon_streaks");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<RibbonParticleType>> RIBBON_GLOW = registerRibbon("ribbon_glow");
+    public static final DeferredHolder<ParticleType<?>, ParticleType<RibbonParticleType>> RIBBON_SQUIGGLE = registerRibbon("ribbon_squiggle");
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void registerParticles(RegisterParticleProvidersEvent event) {
-        event.registerSpriteSet(ParticleHandler.SPARKLE.get(), ParticleSparkle.SparkleFactory::new);
-        event.registerSpriteSet(ParticleHandler.VANILLA_CLOUD_EXTENDED.get(), ParticleVanillaCloudExtended.CloudFactory::new);
-        event.registerSpriteSet(ParticleHandler.SNOWFLAKE.get(), ParticleSnowFlake.SnowFlakeFactory::new);
-        event.registerSpriteSet(ParticleHandler.CLOUD.get(), ParticleCloud.CloudFactory::new);
-        event.registerSpriteSet(ParticleHandler.ORB.get(), ParticleOrb.OrbFactory::new);
-        event.registerSpriteSet(ParticleHandler.RING.get(), ParticleRing.RingFactory::new);
+        event.registerSpriteSet(ParticleHandler.SPARKLE.get(), ParticleSparkle.Provider::new);
+        event.registerSpriteSet(ParticleHandler.VANILLA_CLOUD_EXTENDED.get(), ParticleVanillaCloudExtended.Provider::new);
+        event.registerSpriteSet(ParticleHandler.SNOWFLAKE.get(), ParticleSnowFlake.Provider::new);
+        event.registerSpriteSet(ParticleHandler.CLOUD.get(), ParticleCloud.Provider::new);
+        event.registerSpriteSet(ParticleHandler.ORB.get(), ParticleOrb.Provider::new);
+        event.registerSpriteSet(ParticleHandler.RING.get(), ParticleRing.Provider::new);
 
         event.registerSpriteSet(ParticleHandler.RING2.get(), AdvancedParticleBase.Factory::new);
         event.registerSpriteSet(ParticleHandler.RING_BIG.get(), AdvancedParticleBase.Factory::new);
@@ -109,48 +148,74 @@ public class ParticleHandler {
         event.registerSpriteSet(ParticleHandler.ARROW_HEAD.get(), AdvancedParticleBase.Factory::new);
         event.registerSpriteSet(ParticleHandler.LEAF.get(), AdvancedParticleBase.Factory::new);
         event.registerSpriteSet(ParticleHandler.TERRAIN.get(), AdvancedTerrainParticle.Factory::new);
-        event.registerSpriteSet(ParticleHandler.STRIX_FOOTPRINT.get(), ParticleDecal.Factory::new);
-        event.registerSpriteSet(ParticleHandler.GROUND_CRACK.get(), ParticleDecal.Factory::new);
-        event.registerSpriteSet(ParticleHandler.PLAYER_FOOTPRINT.get(), ParticleDecal.Factory::new);
+        event.registerSpriteSet(ParticleHandler.MOON_FULL.get(), AdvancedParticleBase.Factory::new);
+        event.registerSpriteSet(ParticleHandler.MOON_GIBBOUS.get(), AdvancedParticleBase.Factory::new);
+        event.registerSpriteSet(ParticleHandler.MOON_HALF.get(), AdvancedParticleBase.Factory::new);
+        event.registerSpriteSet(ParticleHandler.MOON_CRESCENT.get(), AdvancedParticleBase.Factory::new);
+        event.registerSpriteSet(ParticleHandler.MOON_NEW.get(), AdvancedParticleBase.Factory::new);
 
-        event.registerSpriteSet(ParticleHandler.RIBBON_FLAT.get(), ParticleRibbon.Factory::new);
-        event.registerSpriteSet(ParticleHandler.RIBBON_STREAKS.get(), ParticleRibbon.Factory::new);
-        event.registerSpriteSet(ParticleHandler.RIBBON_GLOW.get(), ParticleRibbon.Factory::new);
-        event.registerSpriteSet(ParticleHandler.RIBBON_SQUIGGLE.get(), ParticleRibbon.Factory::new);
+        event.registerSpriteSet(ParticleHandler.STRIX_FOOTPRINT.get(), ParticleDecal.Provider::new);
+        event.registerSpriteSet(ParticleHandler.GROUND_CRACK.get(), ParticleDecal.Provider::new);
+        event.registerSpriteSet(ParticleHandler.PLAYER_FOOTPRINT.get(), ParticleDecal.Provider::new);
+
+        event.registerSpriteSet(ParticleHandler.RIBBON_FLAT.get(), ParticleRibbon.Provider::new);
+        event.registerSpriteSet(ParticleHandler.RIBBON_STREAKS.get(), ParticleRibbon.Provider::new);
+        event.registerSpriteSet(ParticleHandler.RIBBON_GLOW.get(), ParticleRibbon.Provider::new);
+        event.registerSpriteSet(ParticleHandler.RIBBON_SQUIGGLE.get(), ParticleRibbon.Provider::new);
     }
 
-    private static RegistryObject<SimpleParticleType> register(String key, boolean alwaysShow) {
-        return REG.register(key, () -> new SimpleParticleType(alwaysShow));
-    }
+    private static DeferredHolder<ParticleType<?>, ParticleType<AdvancedParticleType>> registerAdvanced(String key) {
+        return REG.register(key, location -> new ParticleType<>(false) {
+            @Override
+            public @NotNull MapCodec<AdvancedParticleType> codec() {
+                return AdvancedParticleType.CODEC;
+            }
 
-    private static RegistryObject<ParticleType<AdvancedParticleData>> register(String key, ParticleOptions.Deserializer<AdvancedParticleData> deserializer) {
-        return REG.register(key, () -> new ParticleType<AdvancedParticleData>(false, deserializer) {
-            public Codec<AdvancedParticleData> codec() {
-                return AdvancedParticleData.CODEC(this);
+            @Override
+            public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, AdvancedParticleType> streamCodec() {
+                return AdvancedParticleType.STREAM_CODEC;
             }
         });
     }
 
-    private static RegistryObject<ParticleType<DecalParticleData>> registerDecal(String key, ParticleOptions.Deserializer<DecalParticleData> deserializer) {
-        return REG.register(key, () -> new ParticleType<DecalParticleData>(false, deserializer) {
-            public Codec<DecalParticleData> codec() {
-                return DecalParticleData.CODEC_DECAL(this);
+    private static DeferredHolder<ParticleType<?>, ParticleType<DecalParticleType>> registerDecal(String key) {
+        return REG.register(key, location -> new ParticleType<>(false) {
+            @Override
+            public @NotNull MapCodec<DecalParticleType> codec() {
+                return DecalParticleType.CODEC;
+            }
+
+            @Override
+            public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, DecalParticleType> streamCodec() {
+                return DecalParticleType.STREAM_CODEC;
             }
         });
     }
 
-    private static RegistryObject<ParticleType<RibbonParticleData>> registerRibbon(String key, ParticleOptions.Deserializer<RibbonParticleData> deserializer) {
-        return REG.register(key, () -> new ParticleType<RibbonParticleData>(false, deserializer) {
-            public Codec<RibbonParticleData> codec() {
-                return RibbonParticleData.CODEC_RIBBON(this);
+    private static DeferredHolder<ParticleType<?>, ParticleType<RibbonParticleType>> registerRibbon(String key) {
+        return REG.register(key, location -> new ParticleType<>(false) {
+            @Override
+            public @NotNull MapCodec<RibbonParticleType> codec() {
+                return RibbonParticleType.CODEC;
+            }
+
+            @Override
+            public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, RibbonParticleType> streamCodec() {
+                return RibbonParticleType.STREAM_CODEC;
             }
         });
     }
 
-    private static RegistryObject<ParticleType<TerrainParticleData>> registerTerrain(String key, ParticleOptions.Deserializer<TerrainParticleData> deserializer) {
-        return REG.register(key, () -> new ParticleType<TerrainParticleData>(false, deserializer) {
-            public Codec<TerrainParticleData> codec() {
-                return TerrainParticleData.CODEC_TERRAIN(this);
+    private static DeferredHolder<ParticleType<?>, ParticleType<TerrainParticleType>> registerTerrain(String key) {
+        return REG.register(key, location -> new ParticleType<>(false) {
+            @Override
+            public @NotNull MapCodec<TerrainParticleType> codec() {
+                return TerrainParticleType.CODEC;
+            }
+
+            @Override
+            public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, TerrainParticleType> streamCodec() {
+                return TerrainParticleType.STREAM_CODEC;
             }
         });
     }

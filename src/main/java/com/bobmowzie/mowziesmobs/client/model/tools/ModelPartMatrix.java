@@ -2,7 +2,6 @@ package com.bobmowzie.mowziesmobs.client.model.tools;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelPart;
-import net.royawesome.jlibnoise.MathHelper;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;

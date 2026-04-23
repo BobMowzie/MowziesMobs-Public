@@ -1,0 +1,17 @@
+// 1.21.1	2025-01-21T23:01:52.8871998	Tags for minecraft:block mod id mowziesmobs
+6bea3c4b4273bfa5412971e6fb59af29640a9404 data/c/tags/block/sands/colorless.json
+92f6ddc3330ec33a56511a6cdb950d8f1f105ecc data/c/tags/block/sands/red.json
+bb3d880f9253672bb6a484e0d629089a029e4343 data/minecraft/tags/block/azalea_grows_on.json
+08dcf1b5f75ea74960a0a1fc1cff6dd06d924325 data/minecraft/tags/block/bamboo_plantable_on.json
+c1f991548990be5090f32886b894f3abb5ef6f49 data/minecraft/tags/block/jungle_logs.json
+08dcf1b5f75ea74960a0a1fc1cff6dd06d924325 data/minecraft/tags/block/lush_ground_replaceable.json
+29170d9c133a4c4528d4e80d91b436653b46a082 data/minecraft/tags/block/mineable/pickaxe.json
+08dcf1b5f75ea74960a0a1fc1cff6dd06d924325 data/minecraft/tags/block/mineable/shovel.json
+25ddc65da044ebe872862b42d494a40eb4811077 data/minecraft/tags/block/planks.json
+ace125a9db2d9e435d98c24f92d52f4965a0a089 data/minecraft/tags/block/wooden_slabs.json
+284e8258c59fa7310476c87608f566f8266e1941 data/mowziesmobs/tags/block/bricks.json
+5ed8edf092fe95b2c4315b78642fd223cf11846d data/mowziesmobs/tags/block/can_grottol_dig.json
+00c88debbcc08079f6a3bc306368fc341d6e6a20 data/mowziesmobs/tags/block/concrete.json
+ab7668fb7548db4a6d55afeb8513eebd593165e3 data/mowziesmobs/tags/block/concrete_powder.json
+aa298c338e6b9f52fdc0fb80f0d834b1be3fbefa data/mowziesmobs/tags/block/geomancy_tunnelable.json
+39f6b02193502af4a8a44628a9f14be7ded52d56 data/mowziesmobs/tags/block/geomancy_useable.json

@@ -20,6 +20,8 @@
   "entity.mowziesmobs.sculptor": "雕刻家-通臂大师",
   "entity.mowziesmobs.boulder": "浮砾",
   "entity.mowziesmobs.bluff": "泥峭人",
+  "entity.mowziesmobs.elokosa_follower_howler": "山魈",
+  "entity.mowziesmobs.elokosa_howler": "山魁",
 
   "_comment": "物品",
   "item.mowziesmobs.foliaath_seed": "巨噬叶芽",
@@ -114,6 +116,7 @@
 
   "item.mowziesmobs.sculptor_staff": "地卜师法杖",
   "item.mowziesmobs.sculptor_staff.text.0": "生成三个小石块，一段时间后会像弹射物一样发射出去",
+  "item.mowziesmobs.sculptor_staff.text.1": "看着你想要发射岩石的方向，然后右键单击",
 
   "item.mowziesmobs.sand_rake": "沙耙",
   "item.mowziesmobs.sand_rake.text.0": "在沙子上使用得到耙沙图案\n使用木板修复",
@@ -133,8 +136,22 @@
   "item.mowziesmobs.bluff_rod": "泥峭棒",
   "item.mowziesmobs.bluff_rod.text.0": "用于修复地卜类装备, 或交给雕刻家去开始挑战",
 
+  "item.mowziesmobs.elokosa_paw_full": "满月骇爪",
+  "item.mowziesmobs.elokosa_paw_full.text.0": "用来对附近的生物造成虚弱效果",
+  "item.mowziesmobs.elokosa_paw_gibbous": "临月骇爪",
+  "item.mowziesmobs.elokosa_paw_gibbous.text.0": "用来对附近的生物造成减速效果",
+  "item.mowziesmobs.elokosa_paw_half": "半月骇爪",
+  "item.mowziesmobs.elokosa_paw_half.text.0": "用来对附近的生物造成挖掘疲劳效果",
+  "item.mowziesmobs.elokosa_paw_crescent": "弯月骇爪",
+  "item.mowziesmobs.elokosa_paw_crescent.text.0": "用来对附近的生物造成脆弱效果",
+  "item.mowziesmobs.elokosa_paw_crescent.text.1": "脆弱效果:增加受到的伤害",
+  "item.mowziesmobs.elokosa_paw_new": "新月骇爪",
+  "item.mowziesmobs.elokosa_paw_new.text.0": "用来对附近的生物造成月蚀效果",
+  "item.mowziesmobs.elokosa_paw_new.text.1": "月蚀能清除并阻止所有状态效果",
+  "item.mowziesmobs.elokosa_paw_new.text.2": "月蚀结束时恢复所有状态效果",
+
   "item.mowziesmobs.music_disc_petiole": "音乐唱片",
-  "item.mowziesmobs.music_disc_petiole.desc": "LudoCrypt - 柄竹夜游",
+  "jukebox_song.mowziesmobs.14": "LudoCrypt - 秉竹叶游",
 
   "item.mowziesmobs.foliaath_spawn_egg": "巨噬叶刷怪蛋",
   "item.mowziesmobs.wroughtnaut_spawn_egg": "钢铁守护者刷怪蛋",
@@ -148,6 +165,8 @@
   "item.mowziesmobs.naga_spawn_egg": "飞蛇刷怪蛋",
   "item.mowziesmobs.sculptor_spawn_egg": "雕刻家-通臂大师刷怪蛋",
   "item.mowziesmobs.bluff_spawn_egg": "泥峭人刷怪蛋",
+  "item.mowziesmobs.elokosa_spawn_egg": "山魈刷怪蛋",
+  "item.mowziesmobs.elokosa_howler_spawn_egg": "山魁刷怪蛋",
 
   "_comment": "方块",
   "block.mowziesmobs.painted_acacia": "彩绘金合欢木板",
@@ -170,6 +189,10 @@
   "effect.mowziesmobs.sunblock.description": "§k小幅提升再生能力和伤害抗性。§r",
   "effect.mowziesmobs.poison_resist": "抗毒",
   "effect.mowziesmobs.poison_resist.description": "§k防止中毒状态效果。§r",
+  "effect.mowziesmobs.eclipsed": "月蚀",
+  "effect.mowziesmobs.eclipsed.description": "激活时阻止所有其他状态效果。",
+  "effect.mowziesmobs.fragility": "脆弱",
+  "effect.mowziesmobs.fragility.description": "增加所受伤害.",
   "item.minecraft.potion.effect.poison_resist": "抗毒药水",
   "item.minecraft.splash_potion.effect.poison_resist": "喷溅型抗毒药水",
   "item.minecraft.lingering_potion.effect.poison_resist": "滞留型抗毒药水",
@@ -208,7 +231,7 @@
   "config.mowziesmobs.ferrous_wroughtnaut": "钢铁守护者",
   "config.mowziesmobs.ferrous_wroughtnaut.tooltip": "",
   "config.mowziesmobs.umvuthana": "乌姆塔纳",
-  "config.mowziesmobs.umvuthana.tooltip": "控制阿巴武塔纳",
+  "config.mowziesmobs.umvuthana.tooltip": "控制乌姆塔纳",
   "config.mowziesmobs.umvuthi": "太阳鸟-乌姆武提",
   "config.mowziesmobs.umvuthi.tooltip": "控制太阳鸟-乌姆武提",
   "config.mowziesmobs.trade_which_item": "太阳祝福所需交易物品",
@@ -333,6 +356,8 @@
   "advancements.mowziesmobs.sculptor_challenge.description": "完成雕刻家-通臂大师的挑战",
   "advancements.mowziesmobs.sculptor_failure.title": "欲获其果，首担其责",
   "advancements.mowziesmobs.sculptor_failure.description": "在雕刻家-通臂大师的挑战从高处坠落致死",
+  "advancements.mowziesmobs.kill_elokosa_howler.title": "夜月平猿乱",
+  "advancements.mowziesmobs.kill_elokosa_howler.description": "杀死一只山魁",
 
   "subtitles.mowziesmobs.foliaath.bite": "巨噬叶: 啃咬",
   "subtitles.mowziesmobs.foliaath.pant": "巨噬叶: 喘息",

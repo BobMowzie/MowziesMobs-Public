@@ -1,13 +1,9 @@
 package com.ilexiconn.llibrary.client.model;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
 /**
  * @author iLexiconn
  * @since 1.0.0
  */
-@OnlyIn(Dist.CLIENT)
 public class Transform {
     private float rotationX;
     private float rotationY;

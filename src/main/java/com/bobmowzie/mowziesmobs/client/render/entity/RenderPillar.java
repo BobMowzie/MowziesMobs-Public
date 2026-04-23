@@ -13,16 +13,13 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.cache.object.GeoCube;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.util.RenderUtil;
 
-@OnlyIn(Dist.CLIENT)
 public class RenderPillar extends RenderGeomancyBase<EntityPillar> {
-    private static final ResourceLocation TEXTURE_DIRT = new ResourceLocation("textures/block/dirt.png");
+    private static final ResourceLocation TEXTURE_DIRT = ResourceLocation.withDefaultNamespace("textures/block/dirt.png");
 
     public RenderPillar(EntityRendererProvider.Context mgr) {
         super(mgr, new ModelPillar());
@@ -34,8 +31,8 @@ public class RenderPillar extends RenderGeomancyBase<EntityPillar> {
     }
 
     @Override
-    public void preRender(PoseStack poseStack, EntityPillar animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public void preRender(PoseStack poseStack, EntityPillar animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int color) {
+        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
         EntityGeomancyBase.GeomancyTier tier = getEntity().getTier();
         MowzieGeoModel<EntityPillar> mowzieModel = (MowzieGeoModel<EntityPillar>) getGeoModel();
         MowzieGeoBone tier1 = mowzieModel.getMowzieBone("tier1");
@@ -68,19 +65,19 @@ public class RenderPillar extends RenderGeomancyBase<EntityPillar> {
     }
 
     @Override
-    public void renderRecursively(PoseStack poseStack, EntityPillar animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void renderRecursively(PoseStack poseStack, EntityPillar animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int color) {
         poseStack.pushPose();
-        RenderUtils.translateMatrixToBone(poseStack, bone);
-        RenderUtils.translateToPivotPoint(poseStack, bone);
-        RenderUtils.rotateMatrixAroundBone(poseStack, bone);
-        RenderUtils.scaleMatrixForBone(poseStack, bone);
-        renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-        renderChildBones(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+        RenderUtil.translateMatrixToBone(poseStack, bone);
+        RenderUtil.translateToPivotPoint(poseStack, bone);
+        RenderUtil.rotateMatrixAroundBone(poseStack, bone);
+        RenderUtil.scaleMatrixForBone(poseStack, bone);
+        renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, color);
+        renderChildBones(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
         poseStack.popPose();
     }
 
     @Override
-    public void renderCube(PoseStack poseStack, GeoCube cube, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void renderCube(PoseStack poseStack, GeoCube cube, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
         poseStack.translate(-0.5, 0.5f, -0.5);
         BlockRenderDispatcher blockrendererdispatcher = Minecraft.getInstance().getBlockRenderer();
         blockrendererdispatcher.renderSingleBlock(getEntity().getBlock(), poseStack, getCurrentMultiBufferSource(), packedLight, packedOverlay);

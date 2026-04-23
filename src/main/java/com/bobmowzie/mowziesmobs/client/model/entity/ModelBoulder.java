@@ -307,11 +307,11 @@ public class ModelBoulder<T extends EntityBoulderBase> extends AdvancedModelBase
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-        if (size == EntityGeomancyBase.GeomancyTier.SMALL) boulder0block1.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-        else  if (size == EntityGeomancyBase.GeomancyTier.MEDIUM) boulder1.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-        else  if (size == EntityGeomancyBase.GeomancyTier.LARGE) boulder2.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-        else boulder3.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+        if (size == EntityGeomancyBase.GeomancyTier.SMALL) boulder0block1.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        else  if (size == EntityGeomancyBase.GeomancyTier.MEDIUM) boulder1.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        else  if (size == EntityGeomancyBase.GeomancyTier.LARGE) boulder2.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        else boulder3.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
     }
 
     @Override

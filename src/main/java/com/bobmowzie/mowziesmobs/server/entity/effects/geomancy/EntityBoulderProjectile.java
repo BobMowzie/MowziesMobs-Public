@@ -15,7 +15,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -28,6 +27,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
+import software.bernie.geckolib.animation.AnimatableManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ import java.util.List;
  * Created by BobMowzie on 4/14/2017.
  */
 public class EntityBoulderProjectile extends EntityBoulderBase {
-    protected final List<Entity> ridingEntities = new ArrayList<Entity>();
+    protected final List<Entity> ridingEntities = new ArrayList<>();
     protected boolean travelling = false;
     protected float speed = 1.5f;
     protected int damage = 10;
@@ -175,7 +175,7 @@ public class EntityBoulderProjectile extends EntityBoulderBase {
         if (level().isClientSide() && getEntityData().get(SHOOT_DIRECTION).length() > 0 && !didShootParticles) {
             Vec3 ringOffset = new Vec3(getEntityData().get(SHOOT_DIRECTION)).scale(-1).normalize();
             ParticleRotation.OrientVector rotation = new ParticleRotation.OrientVector(ringOffset);
-            AdvancedParticleBase.spawnAlwaysVisibleParticle(level(), ParticleHandler.RING2.get(), 64, (float) getX() + (float) ringOffset.x, (float) getY() + 0.5f + (float) ringOffset.y, (float) getZ() + (float) ringOffset.z, 0, 0, 0, rotation, 3.5F, 0.83f, 1, 0.39f, 1, 1, (int) (5 + 2 * getBbWidth()), true, true, new ParticleComponent[]{
+            AdvancedParticleBase.spawnAlwaysVisibleParticle(level(), ParticleHandler.RING2, 64, (float) getX() + (float) ringOffset.x, (float) getY() + 0.5f + (float) ringOffset.y, (float) getZ() + (float) ringOffset.z, 0, 0, 0, rotation, 3.5F, 0.83f, 1, 0.39f, 1, 1, (int) (5 + 2 * getBbWidth()), true, true, new ParticleComponent[]{
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(0.7f, 0f), false),
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(0f, (1.0f + 0.5f * getBbWidth()) * 8f * getShootRingParticleScale()), false)
             });
@@ -233,7 +233,7 @@ public class EntityBoulderProjectile extends EntityBoulderBase {
         setDeltaMovement(shootDirection);
         if (!travelling) setDeathTime(60);
         travelling = true;
-        setBoundingBox(getType().getAABB(getX(), getY(), getZ()));
+        setBoundingBox(getType().getSpawnAABB(getX(), getY(), getZ()));
 
         if (boulderSize == GeomancyTier.SMALL) {
             playSound(MMSounds.EFFECT_GEOMANCY_HIT_SMALL.get(), 1.5f, 1.3f);
@@ -258,9 +258,9 @@ public class EntityBoulderProjectile extends EntityBoulderBase {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        getEntityData().define(SHOOT_DIRECTION, new Vector3f(0, 0, 0));
+    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SHOOT_DIRECTION, new Vector3f(0, 0, 0));
     }
 
     @Override
@@ -309,5 +309,10 @@ public class EntityBoulderProjectile extends EntityBoulderBase {
 
     public void setDamage(int dam){
         damage = dam;
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+
     }
 }

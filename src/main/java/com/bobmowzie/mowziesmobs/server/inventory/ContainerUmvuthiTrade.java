@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.inventory;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthi;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -11,7 +11,7 @@ public final class ContainerUmvuthiTrade extends ContainerTradeBase {
     private final InventoryUmvuthi inventoryUmvuthi;
 
     public ContainerUmvuthiTrade(int id, Inventory playerInventory) {
-        this(id, (EntityUmvuthi) MowziesMobs.PROXY.getReferencedMob(), playerInventory);
+        this(id, (EntityUmvuthi) MMCommon.PROXY.getReferencedMob(), playerInventory);
     }
 
     public ContainerUmvuthiTrade(int id, EntityUmvuthi barako, Inventory playerInv) {

@@ -17,7 +17,6 @@ import com.bobmowzie.mowziesmobs.server.entity.MowzieEntity;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieGeckoEntity;
 import com.bobmowzie.mowziesmobs.server.entity.effects.geomancy.EntityFissure;
 import com.bobmowzie.mowziesmobs.server.entity.effects.geomancy.EntityFissurePiece;
-import com.bobmowzie.mowziesmobs.server.entity.effects.geomancy.EntityPillar;
 import com.bobmowzie.mowziesmobs.server.entity.sculptor.EntitySculptor;
 import com.bobmowzie.mowziesmobs.server.loot.LootTableHandler;
 import com.bobmowzie.mowziesmobs.server.potion.EffectGeomancy;
@@ -25,7 +24,7 @@ import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
@@ -50,15 +49,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animation.Animation;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animation.Animation;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -67,9 +66,7 @@ public class EntityBluff extends MowzieGeckoEntity {
     private float allowedHeightOffset = 0.5F;
     private int nextHeightOffsetChangeTick;
 
-    @OnlyIn(Dist.CLIENT)
     public Vec3[] feetPos;
-    @OnlyIn(Dist.CLIENT)
     public Vec3[] corePos;
 
     private GroundPathNavigation groundNav;
@@ -205,7 +202,7 @@ public class EntityBluff extends MowzieGeckoEntity {
             if (level().isClientSide) {
                 for (int i = 0; i < 4; i++) {
                     if (random.nextFloat() < 0.1f) {
-                        AdvancedParticleBase.spawnParticle(level(), ParticleHandler.PIXEL.get(), getRandomX(0.4f), getY() + 1f, getRandomZ(0.4f), 0f, random.nextFloat() / 15f, 0f, true, 0f, 0, 0f, 0, 1.3 + (random.nextFloat()*1f), 163d / 256d, 247d / 256d, 74d / 256d, 0.5, 0.9, 17 + random.nextFloat() * 10, true, true, new ParticleComponent[]{
+                        AdvancedParticleBase.spawnParticle(level(), ParticleHandler.PIXEL, getRandomX(0.4f), getY() + 1f, getRandomZ(0.4f), 0f, random.nextFloat() / 15f, 0f, true, 0f, 0, 0f, 0, 1.3 + (random.nextFloat()*1f), 163d / 256d, 247d / 256d, 74d / 256d, 0.5, 0.9, 17 + random.nextFloat() * 10, true, true, new ParticleComponent[]{
                                 new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.KeyTrack(
                                         new float[]{1f, 0},
                                         new float[]{0.0f, 1}
@@ -224,7 +221,7 @@ public class EntityBluff extends MowzieGeckoEntity {
             if (feetPos != null && feetPos.length > 0) {
                 feetPos[0] = position().add(0, 0.05f, 0);
                 if (tickCount % 4 == 0) {
-                    AdvancedParticleBase.spawnParticle(level(), ParticleHandler.RING2.get(), feetPos[0].x(), feetPos[0].y(), feetPos[0].z(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 1.5F, 0.83f, 1, 0.39f, 1, 1, 20, true, false, new ParticleComponent[]{
+                    AdvancedParticleBase.spawnParticle(level(), ParticleHandler.RING2, feetPos[0].x(), feetPos[0].y(), feetPos[0].z(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 1.5F, 0.83f, 1, 0.39f, 1, 1, 20, true, false, new ParticleComponent[]{
                             new ParticleComponent.PinLocation(feetPos),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(1f, 0f), false),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(1f, 7f), false),
@@ -238,11 +235,12 @@ public class EntityBluff extends MowzieGeckoEntity {
                     Vec3 pos = new Vec3(1, 0, 0).yRot((float) (random.nextDouble() * Math.PI * 2.0)).scale(random.nextFloat());
                     float phaseOffset = random.nextFloat();
                     float scale = (float)random.nextGaussian() * 0.2f + 0.3f;
-                    AdvancedTerrainParticle.spawnTerrainParticle(level(), ParticleHandler.TERRAIN.get(), getX() + pos.x(), getY() + pos.y() + 1, getZ() + pos.z(), 0, 0 ,0, 0, 1f, 1f, 25 + random.nextFloat() * 5, state, new ParticleComponent[]{
+//                    AdvancedParticleBase.spawnParticle(level(), ParticleHandler.PIXEL, getX() + pos.x(), getY() + pos.y() + 1, getZ() + pos.z(), 0, 0, 0, true, 0, 0, 0, 0, 10f, 1, 1, 1, 1, 1f, 25 + random.nextFloat() * 5, true, false, new ParticleComponent[]{
+                    AdvancedTerrainParticle.spawnTerrainParticle(level(), ParticleHandler.TERRAIN, getX() + pos.x(), getY() + pos.y() + 1, getZ() + pos.z(), 0, 0, 0, 0, 1f, 1f, 25 + random.nextFloat() * 5, state, new ParticleComponent[]{
                             new ParticleComponent.Orbit(feetPos, ParticleComponent.KeyTrack.startAndEnd(0 + phaseOffset, 0.8f + phaseOffset), ParticleComponent.KeyTrack.startAndEnd(random.nextFloat() * 0.75f, 0.1f + random.nextFloat()), ParticleComponent.constant(0), ParticleComponent.constant(1), ParticleComponent.constant(0), false),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.POS_Y, ParticleComponent.KeyTrack.startAndEnd(0f, 1.1f), true),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.KeyTrack(
-                                    new float[]{0, scale, scale, 0},
+                                    new float[]{0, scale * 1, scale * 1, 0},
                                     new float[]{0, 0.1f, 0.9f, 1}
                             ), false)
                     });
@@ -270,7 +268,7 @@ public class EntityBluff extends MowzieGeckoEntity {
     }
 
     @Override
-    protected ResourceLocation getDefaultLootTable() {
+    protected @NotNull ResourceKey<LootTable> getDefaultLootTable() {
         return LootTableHandler.BLUFF;
     }
 
@@ -281,7 +279,7 @@ public class EntityBluff extends MowzieGeckoEntity {
 
     @Override
     public boolean checkSpawnRules(LevelAccessor world, MobSpawnType reason) {
-        return super.checkSpawnRules(world, reason) && getEntitiesNearby(EntityPillar.EntityPillarSculptor.class, 8,  8, 8, 8).isEmpty() && getEntitiesNearby(EntitySculptor.class, 8,  8, 8, 8).isEmpty() && world.getDifficulty() != Difficulty.PEACEFUL;
+        return super.checkSpawnRules(world, reason) && getEntitiesNearby(EntitySculptor.class, 8,  8, 8, 8).isEmpty() && world.getDifficulty() != Difficulty.PEACEFUL;
     }
 
     protected void checkFallDamage(double p_29370_, boolean p_29371_, BlockState p_29372_, BlockPos p_29373_) {

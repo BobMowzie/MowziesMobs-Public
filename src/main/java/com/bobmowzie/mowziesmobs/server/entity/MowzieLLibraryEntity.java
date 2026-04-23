@@ -3,11 +3,12 @@ package com.bobmowzie.mowziesmobs.server.entity;
 import com.ilexiconn.llibrary.server.animation.Animation;
 import com.ilexiconn.llibrary.server.animation.AnimationHandler;
 import com.ilexiconn.llibrary.server.animation.IAnimatedEntity;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class MowzieLLibraryEntity extends MowzieEntity implements IAnimatedEntity {
     private int animationTick;
@@ -81,15 +82,15 @@ public abstract class MowzieLLibraryEntity extends MowzieEntity implements IAnim
     }
 
     @Override
-    public void writeSpawnData(FriendlyByteBuf buf) {
-        buf.writeInt(ArrayUtils.indexOf(this.getAnimations(), this.getAnimation()));
-        buf.writeInt(this.getAnimationTick());
+    public void writeSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
+        buffer.writeInt(ArrayUtils.indexOf(this.getAnimations(), this.getAnimation()));
+        buffer.writeInt(this.getAnimationTick());
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf buf) {
-        int animOrdinal = buf.readInt();
-        int animTick = buf.readInt();
+    public void readSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
+        int animOrdinal = buffer.readInt();
+        int animTick = buffer.readInt();
         this.setAnimation(animOrdinal == -1 ? IAnimatedEntity.NO_ANIMATION : this.getAnimations()[animOrdinal]);
         this.setAnimationTick(animTick);
     }

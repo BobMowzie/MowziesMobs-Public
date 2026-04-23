@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure.processor;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.WorldGenRegion;
@@ -18,7 +18,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 public class BaseDecoProcessor extends StructureProcessor {
     public static final BaseDecoProcessor INSTANCE = new BaseDecoProcessor();
-    public static final Codec<BaseDecoProcessor> CODEC = Codec.unit(() -> INSTANCE);
+    public static final MapCodec<BaseDecoProcessor> CODEC = MapCodec.unit(() -> INSTANCE);
 
     private static final BlockState trapDoorBottom = Blocks.DARK_OAK_TRAPDOOR.defaultBlockState();
     private static final BlockState trapDoorTop = Blocks.DARK_OAK_TRAPDOOR.defaultBlockState().setValue(TrapDoorBlock.HALF, Half.TOP);
@@ -36,8 +36,9 @@ public class BaseDecoProcessor extends StructureProcessor {
             {wall, stoneStairs, stoneStairs, stoneStairs, stoneStairs, stoneStairs, wall}
     };
 
+    @Override
     protected StructureProcessorType<?> getType() {
-        return ProcessorHandler.BASE_DECO_PROCESSOR;
+        return ProcessorHandler.BASE_DECO_PROCESSOR.value();
     }
 
     @Override

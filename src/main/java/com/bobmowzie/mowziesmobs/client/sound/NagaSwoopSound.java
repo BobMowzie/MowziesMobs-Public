@@ -5,13 +5,10 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Created by BobMowzie on 1/9/2019.
  */
-@OnlyIn(Dist.CLIENT)
 public class NagaSwoopSound extends AbstractTickableSoundInstance {
     private final Entity naga;
     int ticksExisted = 0;

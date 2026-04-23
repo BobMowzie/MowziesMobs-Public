@@ -1,16 +1,16 @@
 package com.bobmowzie.mowziesmobs.client.gui;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.BossEvent;
-import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,17 +18,17 @@ import java.util.Map;
 public class CustomBossBar {
     public static Map<ResourceLocation, CustomBossBar> customBossBars = new HashMap<>();
     static {
-        customBossBars.put(ForgeRegistries.ENTITY_TYPES.getKey(EntityHandler.UMVUTHI.get()), new CustomBossBar(
-                new ResourceLocation(MowziesMobs.MODID, "textures/gui/boss_bar/umvuthi_bar_base.png"),
-                new ResourceLocation(MowziesMobs.MODID, "textures/gui/boss_bar/umvuthi_bar_overlay.png"),
-                4, 8, 2, -12, -6, 256, 16, 21, ChatFormatting.GOLD));
-        customBossBars.put(ForgeRegistries.ENTITY_TYPES.getKey(EntityHandler.FROSTMAW.get()), new CustomBossBar(
-                new ResourceLocation(MowziesMobs.MODID, "textures/gui/boss_bar/frostmaw_bar_base.png"),
-                new ResourceLocation(MowziesMobs.MODID, "textures/gui/boss_bar/frostmaw_bar_overlay.png"),
+        customBossBars.put(BuiltInRegistries.ENTITY_TYPE.getKey(EntityHandler.UMVUTHI.get()), new CustomBossBar(
+                MMCommon.resource("textures/gui/boss_bar/umvuthi_bar_base.png"),
+                MMCommon.resource("textures/gui/boss_bar/umvuthi_bar_overlay.png"),
+                4, 8, 5, -5, -6, 256, 16, 25, ChatFormatting.GOLD));
+        customBossBars.put(BuiltInRegistries.ENTITY_TYPE.getKey(EntityHandler.FROSTMAW.get()), new CustomBossBar(
+                MMCommon.resource("textures/gui/boss_bar/frostmaw_bar_base.png"),
+                MMCommon.resource("textures/gui/boss_bar/frostmaw_bar_overlay.png"),
                 10, 32, 2, -4, -3, 256, 32, 25, ChatFormatting.WHITE));
-        customBossBars.put(ForgeRegistries.ENTITY_TYPES.getKey(EntityHandler.WROUGHTNAUT.get()), new CustomBossBar(
-                new ResourceLocation(MowziesMobs.MODID, "textures/gui/boss_bar/wroughtnaut_bar_base.png"),
-                new ResourceLocation(MowziesMobs.MODID, "textures/gui/boss_bar/wroughtnaut_bar_overlay.png"),
+        customBossBars.put(BuiltInRegistries.ENTITY_TYPE.getKey(EntityHandler.WROUGHTNAUT.get()), new CustomBossBar(
+                MMCommon.resource("textures/gui/boss_bar/wroughtnaut_bar_base.png"),
+                MMCommon.resource("textures/gui/boss_bar/wroughtnaut_bar_overlay.png"),
                 4, 8, 5, -5, -6, 256, 16, 25, ChatFormatting.RED));
     }
 

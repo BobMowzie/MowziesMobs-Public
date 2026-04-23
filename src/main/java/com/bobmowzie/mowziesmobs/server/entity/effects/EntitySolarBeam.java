@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.entity.effects;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.model.tools.ControlledAnimation;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleOrb;
@@ -8,8 +8,7 @@ import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleBase;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
 import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoPlayer;
 import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoRenderPlayer;
-import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
-import com.bobmowzie.mowziesmobs.server.capability.PlayerCapability;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.damage.DamageUtil;
 import com.bobmowzie.mowziesmobs.server.entity.LeaderSunstrikeImmune;
@@ -35,8 +34,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +67,6 @@ public class EntitySolarBeam extends Entity {
     public float prevYaw;
     public float prevPitch;
 
-    @OnlyIn(Dist.CLIENT)
     private Vec3[] attractorPos;
 
     private boolean didRaytrace;
@@ -90,7 +87,7 @@ public class EntitySolarBeam extends Entity {
         this.setDuration(duration);
         this.setPos(x, y, z);
         this.calculateEndPos();
-        MowziesMobs.PROXY.playSolarBeamSound(this);
+        MMCommon.PROXY.playSolarBeamSound(this);
         if (!world.isClientSide) {
             this.setCasterID(caster.getId());
         }
@@ -153,7 +150,7 @@ public class EntitySolarBeam extends Entity {
                 double rootY = caster.getY() + caster.getBbHeight() / 2f + 0.3f;
                 double rootZ = caster.getZ();
                 if (getHasPlayer()) {
-                    if (caster instanceof Player && !(caster == Minecraft.getInstance().player && Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON)) {
+                    if (caster instanceof Player && !(caster == MMCommon.PROXY.getLocalPlayer() && Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON)) {
                         GeckoPlayer geckoPlayer = GeckoPlayer.getGeckoPlayer((Player) caster, GeckoPlayer.Perspective.THIRD_PERSON);
                         if (geckoPlayer != null) {
                             GeckoRenderPlayer renderPlayer = (GeckoRenderPlayer) geckoPlayer.getPlayerRenderer();
@@ -178,7 +175,7 @@ public class EntitySolarBeam extends Entity {
                 else {
                     attractorPos[0] = new Vec3(rootX, rootY, rootZ);
                 }
-                AdvancedParticleBase.spawnParticle(level(), ParticleHandler.ORB2.get(), rootX + ox, rootY + oy, rootZ + oz, 0, 0, 0, true, 0, 0, 0, 0, 5F, 1, 1, 1, 1, 1, 7, true, false, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(level(), ParticleHandler.ORB2, rootX + ox, rootY + oy, rootZ + oz, 0, 0, 0, true, 0, 0, 0, 0, 5F, 1, 1, 1, 1, 1, 7, true, false, new ParticleComponent[]{
                         new ParticleComponent.Attractor(attractorPos, 1.7f, 0.0f, ParticleComponent.Attractor.EnumAttractorBehavior.EXPONENTIAL),
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.KeyTrack(
                                 new float[]{0f, 0.8f},
@@ -199,10 +196,10 @@ public class EntitySolarBeam extends Entity {
             }
             if (!level().isClientSide) {
                 for (Entity target : hit) {
+                    if (target instanceof ItemEntity) continue;
                     if (caster instanceof EntityUmvuthi && target instanceof LeaderSunstrikeImmune) {
                         continue;
                     }
-                    if (target instanceof ItemEntity) continue;
                     float damageFire = 1f;
                     float damageMob = 1.5f;
                     if (caster instanceof EntityUmvuthi) {
@@ -233,7 +230,7 @@ public class EntitySolarBeam extends Entity {
                         double o2x = (float) (-1 * Math.cos(getYaw()) * Math.cos(getPitch()));
                         double o2y = (float) (-1 * Math.sin(getPitch()));
                         double o2z = (float) (-1 * Math.sin(getYaw()) * Math.cos(getPitch()));
-                        level().addParticle(new ParticleOrb.OrbData((float) (collidePosX + o2x + ox), (float) (collidePosY + o2y + oy), (float) (collidePosZ + o2z + oz), 15), getX() + o2x + ox, getY() + o2y + oy, getZ() + o2z + oz, 0, 0, 0);
+                        level().addParticle(ParticleOrb.Data.create((float) (collidePosX + o2x + ox), (float) (collidePosY + o2y + oy), (float) (collidePosZ + o2z + oz), 15), getX() + o2x + ox, getY() + o2y + oy, getZ() + o2z + oz, 0, 0, 0);
                     }
                     particleCount = 4;
                     while (particleCount --> 0) {
@@ -246,7 +243,7 @@ public class EntitySolarBeam extends Entity {
                         double o2x = -1 * Math.cos(getYaw()) * Math.cos(getPitch());
                         double o2y = -1 * Math.sin(getPitch());
                         double o2z = -1 * Math.sin(getYaw()) * Math.cos(getPitch());
-                        level().addParticle(new ParticleOrb.OrbData((float) (collidePosX + o2x + ox), (float) (collidePosY + o2y + oy), (float) (collidePosZ + o2z + oz), 20), collidePosX + o2x, collidePosY + o2y, collidePosZ + o2z, 0, 0, 0);
+                        level().addParticle(ParticleOrb.Data.create((float) (collidePosX + o2x + ox), (float) (collidePosY + o2y + oy), (float) (collidePosZ + o2z + oz), 20), collidePosX + o2x, collidePosY + o2y, collidePosZ + o2z, 0, 0, 0);
                     }
                 }
             }
@@ -271,12 +268,12 @@ public class EntitySolarBeam extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        getEntityData().define(YAW, 0F);
-        getEntityData().define(PITCH, 0F);
-        getEntityData().define(DURATION, 0);
-        getEntityData().define(HAS_PLAYER, false);
-        getEntityData().define(CASTER, -1);
+    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
+        builder.define(YAW, 0F);
+        builder.define(PITCH, 0F);
+        builder.define(DURATION, 0);
+        builder.define(HAS_PLAYER, false);
+        builder.define(CASTER, -1);
     }
 
     public float getYaw() {
@@ -414,10 +411,7 @@ public class EntitySolarBeam extends Entity {
     public void remove(RemovalReason reason) {
         super.remove(reason);
         if (caster instanceof Player) {
-            PlayerCapability.IPlayerCapability playerCapability = CapabilityHandler.getCapability(caster, CapabilityHandler.PLAYER_CAPABILITY);
-            if (playerCapability != null) {
-                playerCapability.setUsingSolarBeam(false);
-            }
+            DataHandler.getData(caster, DataHandler.PLAYER_DATA).setUsingSolarBeam(false);
         }
     }
 

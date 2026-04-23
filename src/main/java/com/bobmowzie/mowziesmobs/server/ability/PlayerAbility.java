@@ -6,18 +6,16 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animation.Animation;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animation.Animation;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
 
 public class PlayerAbility extends Ability<Player> {
     protected RawAnimation activeFirstPersonAnimation;
@@ -34,9 +32,9 @@ public class PlayerAbility extends Ability<Player> {
     protected HandDisplay firstPersonMainHandDisplay;
     protected HandDisplay firstPersonOffHandDisplay;
 
-    private static RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
+    private static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
 
-    public PlayerAbility(AbilityType<Player, ? extends Ability> abilityType, Player user, AbilitySection[] sectionTrack, int cooldownMax) {
+    public PlayerAbility(AbilityType<Player, ? extends Ability<?>> abilityType, Player user, AbilitySection[] sectionTrack, int cooldownMax) {
         super(abilityType, user, sectionTrack, cooldownMax);
         if (user.level().isClientSide) {
             this.activeAnimation = IDLE_ANIM;
@@ -139,22 +137,18 @@ public class PlayerAbility extends Ability<Player> {
         return PlayState.CONTINUE;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public ItemStack heldItemMainHandOverride() {
         return heldItemMainHandVisualOverride;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public ItemStack heldItemOffHandOverride() {
         return heldItemOffHandVisualOverride;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public HandDisplay getFirstPersonMainHandDisplay() {
         return firstPersonMainHandDisplay;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public HandDisplay getFirstPersonOffHandDisplay() {
         return firstPersonOffHandDisplay;
     }
@@ -188,7 +182,7 @@ public class PlayerAbility extends Ability<Player> {
 
     }
 
-    public void onTakeDamage(LivingHurtEvent event) {
+    public void onTakeDamage(LivingDamageEvent.Post event) {
 
     }
 

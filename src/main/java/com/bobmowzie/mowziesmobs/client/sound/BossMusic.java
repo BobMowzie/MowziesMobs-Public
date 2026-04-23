@@ -1,13 +1,10 @@
 package com.bobmowzie.mowziesmobs.client.sound;
 
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieEntity;
 import com.ilexiconn.llibrary.client.model.tools.ControlledAnimation;
-import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class BossMusic<T extends MowzieEntity> {
     protected T boss;
     protected SoundEvent soundEvent;
@@ -45,7 +42,7 @@ public class BossMusic<T extends MowzieEntity> {
         }
 
         if (ticksPlaying % 100 == 0) {
-            Minecraft.getInstance().getMusicManager().stopPlaying();
+            MMCommon.PROXY.stopMusic();
         }
         ticksPlaying++;
     }
@@ -56,7 +53,7 @@ public class BossMusic<T extends MowzieEntity> {
         ticksPlaying = 0;
         if (soundEvent != null) {
             sound = new BossMusicSound(soundEvent, getBoss(), this);
-            Minecraft.getInstance().getSoundManager().play(sound);
+            MMCommon.PROXY.playMusic(sound);
         }
     }
 

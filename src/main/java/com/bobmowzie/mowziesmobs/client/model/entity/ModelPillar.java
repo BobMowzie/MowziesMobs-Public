@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
 import com.bobmowzie.mowziesmobs.server.entity.effects.geomancy.EntityPillar;
 import net.minecraft.resources.ResourceLocation;
@@ -12,7 +12,7 @@ public class ModelPillar extends MowzieGeoModel<EntityPillar> {
 
     @Override
     public ResourceLocation getModelResource(EntityPillar object) {
-        return new ResourceLocation(MowziesMobs.MODID, "geo/geomancy_pillar.geo.json");
+        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "geo/geomancy_pillar.geo.json");
     }
 
     @Override

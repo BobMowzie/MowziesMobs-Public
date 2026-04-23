@@ -3,8 +3,6 @@ package com.ilexiconn.llibrary.client.model.tools;
 import com.ilexiconn.llibrary.server.entity.IIntermittentEntity;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Random;
 
@@ -16,7 +14,6 @@ import java.util.Random;
  * @author RafaMv
  * @author Paul Fulham
  */
-@OnlyIn(Dist.CLIENT)
 public class IntermittentAnimation<T extends Entity & IIntermittentEntity> {
     /**
      * It is the random used to randomize the movement.

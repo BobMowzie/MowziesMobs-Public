@@ -160,10 +160,10 @@ public class ModelLantern<T extends EntityLantern> extends MowzieEntityModel<T> 
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-        this.bubbles.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-        this.center.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-        this.body.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+        this.bubbles.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        this.center.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        this.body.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
     }
 
     public void setDefaultAngles() {

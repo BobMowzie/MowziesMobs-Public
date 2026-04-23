@@ -1,5 +1,6 @@
 package com.bobmowzie.mowziesmobs.client;
 
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.MaskType;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -12,29 +13,28 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.ClientHooks;
+import net.neoforged.neoforge.client.event.ModelEvent;
 
 import java.util.List;
 import java.util.Map;
 
-@OnlyIn(Dist.CLIENT)
 public class MMModels {
     public static final String[] HAND_MODEL_ITEMS = new String[] {"wrought_axe", "spear", "earthrend_gauntlet", "sculptor_staff"};
+    // Can only register 'standalone' models which do not have this prefix
+    public static final String PREFIX = "item/";
 
     @SubscribeEvent
     public static void onModelBakeEvent(ModelEvent.ModifyBakingResult event) {
-        Map<ResourceLocation, BakedModel> map = event.getModels();
+        Map<ModelResourceLocation, BakedModel> models = event.getModels();
 
         for (String item : HAND_MODEL_ITEMS) {
-            ResourceLocation modelInventory = new ModelResourceLocation(new ResourceLocation("mowziesmobs", item), "inventory");
-            ResourceLocation modelHand = new ModelResourceLocation(new ResourceLocation("mowziesmobs", item + "_in_hand"), "inventory");
+            ModelResourceLocation modelInventory = ModelResourceLocation.inventory(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, item));
+            ModelResourceLocation modelHand = prefixed(item + "_in_hand");
 
-            BakedModel bakedModelDefault = map.get(modelInventory);
-            BakedModel bakedModelHand = map.get(modelHand);
+            BakedModel bakedModelDefault = models.get(modelInventory);
+            BakedModel bakedModelHand = models.get(modelHand);
             BakedModel modelWrapper = new BakedModel() {
                 @Override
                 public List<BakedQuad> getQuads(BlockState state, Direction side, RandomSource rand) {
@@ -78,23 +78,23 @@ public class MMModels {
                             || cameraTransformType == ItemDisplayContext.THIRD_PERSON_LEFT_HAND || cameraTransformType == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND) {
                         modelToUse = bakedModelHand;
                     }
-                    return ForgeHooksClient.handleCameraTransforms(mat, modelToUse, cameraTransformType, applyLeftHandTransform);
+                    return ClientHooks.handleCameraTransforms(mat, modelToUse, cameraTransformType, applyLeftHandTransform);
                 }
             };
-            map.put(modelInventory, modelWrapper);
+            models.put(modelInventory, modelWrapper);
         }
 
         for (MaskType type : MaskType.values()) {
-            ModelResourceLocation maskModelInventory = new ModelResourceLocation(new ResourceLocation("mowziesmobs","umvuthana_mask_" + type.name), "inventory");
-            ModelResourceLocation maskModelFrame = new ModelResourceLocation(new ResourceLocation("mowziesmobs", "umvuthana_mask_" + type.name + "_frame"), "inventory");
-            bakeMask(map, maskModelInventory, maskModelFrame);
+            ModelResourceLocation maskModelInventory = ModelResourceLocation.inventory(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID,"umvuthana_mask_" + type.name));
+            ModelResourceLocation maskModelFrame = prefixed("umvuthana_mask_" + type.name + "_frame");
+            bakeMask(models, maskModelInventory, maskModelFrame);
         }
-        ModelResourceLocation maskModelInventory = new ModelResourceLocation(new ResourceLocation("mowziesmobs", "sol_visage"), "inventory");
-        ModelResourceLocation maskModelFrame = new ModelResourceLocation(new ResourceLocation("mowziesmobs", "sol_visage_frame"), "inventory");
-        bakeMask(map, maskModelInventory, maskModelFrame);
+        ModelResourceLocation maskModelInventory = ModelResourceLocation.inventory(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "sol_visage"));
+        ModelResourceLocation maskModelFrame = prefixed("sol_visage_frame");
+        bakeMask(models, maskModelInventory, maskModelFrame);
     }
 
-    private static void bakeMask(Map<ResourceLocation, BakedModel> map, ModelResourceLocation maskModelInventory, ModelResourceLocation maskModelFrame) {
+    private static void bakeMask(Map<ModelResourceLocation, BakedModel> map, ModelResourceLocation maskModelInventory, ModelResourceLocation maskModelFrame) {
         BakedModel maskBakedModelDefault = map.get(maskModelInventory);
         BakedModel maskBakedModelFrame = map.get(maskModelFrame);
         BakedModel maskModelWrapper = new BakedModel() {
@@ -139,10 +139,14 @@ public class MMModels {
                 if (cameraTransformType == ItemDisplayContext.FIXED) {
                     modelToUse = maskBakedModelFrame;
                 }
-                return ForgeHooksClient.handleCameraTransforms(mat, modelToUse, cameraTransformType, applyLeftHandTransform);
+                return ClientHooks.handleCameraTransforms(mat, modelToUse, cameraTransformType, applyLeftHandTransform);
             }
         };
 
         map.put(maskModelInventory, maskModelWrapper);
+    }
+
+    public static ModelResourceLocation prefixed(String path) {
+        return ModelResourceLocation.standalone(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, PREFIX + path));
     }
 }

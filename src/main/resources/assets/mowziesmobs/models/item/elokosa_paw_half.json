@@ -1,0 +1,12 @@
+{
+	"parent": "mowziesmobs:item/elokosa_paw",
+	"textures": {
+		"layer0": "mowziesmobs:item/monkey_paw_half"
+	},
+	"overrides": [
+		{
+			"predicate": { "cooldown": 0.001 },
+			"model": "mowziesmobs:item/elokosa_paw_closed"
+		}
+	]
+}

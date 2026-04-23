@@ -29,9 +29,9 @@ public class ModelPoisonBall<T extends EntityPoisonBall> extends AdvancedModelBa
 	}
 
 	@Override
-	public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-		inner.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-		outer.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+	public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+		inner.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+		outer.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
 	}
 
 	@Override

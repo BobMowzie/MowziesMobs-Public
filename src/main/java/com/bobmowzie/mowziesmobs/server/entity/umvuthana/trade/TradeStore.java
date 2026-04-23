@@ -1,6 +1,7 @@
 package com.bobmowzie.mowziesmobs.server.entity.umvuthana.trade;
 
 import com.google.common.collect.ImmutableSet;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -21,7 +22,7 @@ public final class TradeStore {
     }
 
     public boolean hasStock() {
-        return trades.size() > 0;
+        return !trades.isEmpty();
     }
 
     public Trade get(RandomSource rng) {
@@ -30,7 +31,7 @@ public final class TradeStore {
         }
         int w = rng.nextInt(totalWeight);
         for (Trade t : trades) {
-            w -= t.getWeight();
+            w -= t.weight();
             if (w < 0) {
                 return t;
             }
@@ -38,25 +39,25 @@ public final class TradeStore {
         return null;
     }
 
-    public CompoundTag serialize() {
+    public CompoundTag serialize(RegistryAccess access) {
         CompoundTag compound = new CompoundTag();
         ListTag tradesList = new ListTag();
         for (Trade trade : trades) {
-            tradesList.add(trade.serialize());
+            tradesList.add(trade.serialize(access));
         }
         compound.put("trades", tradesList);
         return compound;
     }
 
-    public static TradeStore deserialize(CompoundTag compound) {
+    public static TradeStore deserialize(RegistryAccess access, CompoundTag compound) {
         ListTag tradesList = compound.getList("trades", Tag.TAG_COMPOUND);
         int totalWeight = 0;
         ImmutableSet.Builder<Trade> trades = new ImmutableSet.Builder<>();
         for (int i = 0; i < tradesList.size(); i++) {
-            Trade trade = Trade.deserialize(tradesList.getCompound(i));
+            Trade trade = Trade.deserialize(access, tradesList.getCompound(i));
             if (trade != null) {
                 trades.add(trade);
-                totalWeight += trade.getWeight();
+                totalWeight += trade.weight();
             }
         }
         return new TradeStore(trades.build(), totalWeight);
@@ -68,11 +69,7 @@ public final class TradeStore {
         private int totalWeight;
 
         public Builder addTrade(Item input, int inputCount, Item output, int outputCount, int weight) {
-            return addTrade(input, inputCount, null, output, outputCount, null, weight);
-        }
-
-        public Builder addTrade(Item input, int inputCount, CompoundTag inputMeta, Item output, int outputCount, CompoundTag outputMeta, int weight) {
-            return addTrade(new ItemStack(input, inputCount, inputMeta), new ItemStack(output, outputCount, outputMeta), weight);
+            return addTrade(new ItemStack(input, inputCount), new ItemStack(output, outputCount), weight);
         }
 
         public Builder addTrade(ItemStack input, ItemStack output, int weight) {

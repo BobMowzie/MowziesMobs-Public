@@ -1,14 +1,12 @@
 package com.bobmowzie.mowziesmobs.server.entity.effects;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleCloud;
-import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleRing;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleSnowFlake;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
-import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
-import com.bobmowzie.mowziesmobs.server.capability.FrozenCapability;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.frostmaw.EntityFrostmaw;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
@@ -49,17 +47,16 @@ public class EntityIceBreath extends EntityMagicEffect {
         super.tick();
         if (tickCount == 1) {
             if (level().isClientSide) {
-                MowziesMobs.PROXY.playIceBreathSound(this);
+                MMCommon.PROXY.playIceBreathSound(this);
             }
         }
         if (tickCount > 1 && getCaster() == null) this.discard() ;
         if (getCaster() != null && !getCaster().isAlive()) this.discard() ;
         if (tickCount == 1) playSound(MMSounds.ENTITY_FROSTMAW_ICEBREATH_START.get(), 1, 0.6f);
-        if (getCaster() instanceof Player) {
-            Player player = (Player) getCaster();
-            absMoveTo(player.getX(), player.getY() + player.getStandingEyeHeight(player.getPose(), player.getDimensions(player.getPose())) - 0.5f, player.getZ(), player.getYRot(), player.getXRot());
-            AbilityCapability.IAbilityCapability abilityCapability = AbilityHandler.INSTANCE.getAbilityCapability(player);
-            if (abilityCapability != null && !abilityCapability.getAbilityFromType(AbilityHandler.ICE_BREATH_ABILITY).isUsing()) {
+        if (getCaster() instanceof Player player) {
+            absMoveTo(player.getX(), player.getEyeY() - 0.5f, player.getZ(), player.getYRot(), player.getXRot());
+            AbilityData abilityData = DataHandler.getData(player, DataHandler.ABILITY_DATA);
+            if (!abilityData.getAbilityFromType(AbilityHandler.ICE_BREATH_ABILITY).isUsing()) {
                 this.discard();
             }
         }
@@ -75,21 +72,21 @@ public class EntityIceBreath extends EntityMagicEffect {
             Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
             boolean overrideLimiter = camera.getPosition().distanceToSqr(getX(), getY(), getZ()) < 64 * 64;
             if (tickCount % 8 == 0) {
-                level().addAlwaysVisibleParticle(new ParticleRing.RingData(yaw, -pitch, 40, 1f, 1f, 1f, 1f, 110f * spread, false, ParticleRing.EnumRingBehavior.GROW), overrideLimiter, getX(), getY(), getZ(), 0.5f * xComp, 0.5f * yComp, 0.5f * zComp);
+                level().addAlwaysVisibleParticle(new ParticleRing.Data(yaw, -pitch, 40, 1f, 1f, 1f, 1f, (int) (110 * spread), false, ParticleRing.EnumRingBehavior.GROW), overrideLimiter, getX(), getY(), getZ(), 0.5f * xComp, 0.5f * yComp, 0.5f * zComp);
             }
 
             for (int i = 0; i < 6; i++) {
                 double xSpeed = speed * 1f * xComp;// + (spread * (rand.nextFloat() * 2 - 1) * (1 - Math.abs(xComp)));
                 double ySpeed = speed * 1f * yComp;// + (spread * (rand.nextFloat() * 2 - 1) * (1 - Math.abs(yComp)));
                 double zSpeed = speed * 1f * zComp;// + (spread * (rand.nextFloat() * 2 - 1) * (1 - Math.abs(zComp)));
-                level().addParticle(new ParticleSnowFlake.SnowflakeData(37f, true), getX(), getY(), getZ(), xSpeed, ySpeed, zSpeed);
+                level().addParticle(new ParticleSnowFlake.Data(37f, true), getX(), getY(), getZ(), xSpeed, ySpeed, zSpeed);
             }
             for (int i = 0; i < 5; i++) {
                 double xSpeed = speed * xComp + (spread * 0.7 * (random.nextFloat() * 2 - 1) * (Math.sqrt(1 - xComp * xComp)));
                 double ySpeed = speed * yComp + (spread * 0.7 * (random.nextFloat() * 2 - 1) * (Math.sqrt(1 - yComp * yComp)));
                 double zSpeed = speed * zComp + (spread * 0.7 * (random.nextFloat() * 2 - 1) * (Math.sqrt(1 - zComp * zComp)));
                 float value = random.nextFloat() * 0.15f;
-                level().addAlwaysVisibleParticle(new ParticleCloud.CloudData(ParticleHandler.CLOUD.get(), 0.75f + value, 0.75f + value,1f, 10f + random.nextFloat() * 20f, 40, ParticleCloud.EnumCloudBehavior.GROW, 1f), overrideLimiter, getX(), getY(), getZ(), xSpeed, ySpeed, zSpeed);
+                level().addAlwaysVisibleParticle(new ParticleCloud.Data(0.75f + value, 0.75f + value,1f, 10f + random.nextFloat() * 20f, 40, ParticleCloud.EnumCloudBehavior.GROW, 1f), overrideLimiter, getX(), getY(), getZ(), xSpeed, ySpeed, zSpeed);
             }
         }
         if (tickCount > 10) hitEntities();
@@ -104,6 +101,7 @@ public class EntityIceBreath extends EntityMagicEffect {
         if (getCaster() instanceof EntityFrostmaw) damage *= ConfigHandler.COMMON.MOBS.FROSTMAW.combatConfig.attackMultiplier.get();
         if (getCaster() instanceof Player) damage *= ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ICE_CRYSTAL.attackMultiplier.get();
         for (Entity entityHit : entitiesHit) {
+            if (entityHit instanceof ItemEntity) continue;
             if (entityHit == getCaster()) continue;
             if (entityHit instanceof ItemEntity) continue;
 
@@ -143,8 +141,7 @@ public class EntityIceBreath extends EntityMagicEffect {
 
                 if (entityHit.hurt(damageSources().freeze(), damage) && entityHit instanceof LivingEntity) {
                     entityHit.setDeltaMovement(entityHit.getDeltaMovement().multiply(0.25, 1, 0.25));
-                    FrozenCapability.IFrozenCapability capability = CapabilityHandler.getCapability(entityHit, CapabilityHandler.FROZEN_CAPABILITY);
-                    if (capability != null) capability.addFreezeProgress((LivingEntity) entityHit, 0.23f);
+                    DataHandler.getData(entityHit, DataHandler.FROZEN_DATA).addFreezeProgress((LivingEntity) entityHit, 0.23f);
                 }
             }
         }

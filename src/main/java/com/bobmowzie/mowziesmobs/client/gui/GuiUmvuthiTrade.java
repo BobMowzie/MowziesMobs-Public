@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.gui;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthi;
 import com.bobmowzie.mowziesmobs.server.inventory.ContainerUmvuthiTrade;
 import com.bobmowzie.mowziesmobs.server.inventory.InventoryUmvuthi;
@@ -23,10 +23,11 @@ import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class GuiUmvuthiTrade extends AbstractContainerScreen<ContainerUmvuthiTrade> implements InventoryUmvuthi.ChangeListener {
-    private static final ResourceLocation TEXTURE_TRADE = new ResourceLocation(MowziesMobs.MODID, "textures/gui/container/umvuthi_trade.png");
-    private static final ResourceLocation TEXTURE_REPLENISH = new ResourceLocation(MowziesMobs.MODID, "textures/gui/container/umvuthi_replenish.png");
+    private static final ResourceLocation TEXTURE_TRADE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/gui/container/umvuthi_trade.png");
+    private static final ResourceLocation TEXTURE_REPLENISH = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/gui/container/umvuthi_replenish.png");
 
     private final EntityUmvuthi umvuthi;
     private final Player player;
@@ -61,7 +62,7 @@ public final class GuiUmvuthiTrade extends AbstractContainerScreen<ContainerUmvu
     	if (button == grantButton) {
             hasTraded = true;
             updateButton();
-            MowziesMobs.NETWORK.sendToServer(new MessageUmvuthiTrade(umvuthi));
+            PacketDistributor.sendToServer(new MessageUmvuthiTrade(umvuthi.getId()));
             if (!Minecraft.getInstance().isLocalServer()) {
                 boolean satisfied = umvuthi.hasTradedWith(player);
                 if (!satisfied) {
@@ -82,9 +83,13 @@ public final class GuiUmvuthiTrade extends AbstractContainerScreen<ContainerUmvu
         RenderSystem.setShaderTexture(0,hasTraded ? TEXTURE_REPLENISH : TEXTURE_TRADE);
         //minecraft.getTextureManager().bindForSetup(hasTraded ? TEXTURE_REPLENISH : TEXTURE_TRADE);
         guiGraphics.blit(hasTraded ? TEXTURE_REPLENISH : TEXTURE_TRADE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
-        umvuthi.renderingInGUI = true;
-        InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, leftPos + 33, topPos + 57, 10, leftPos + 33 - x, topPos + 21 - y, umvuthi);
-        umvuthi.renderingInGUI = false;
+        if (umvuthi != null) {
+            umvuthi.renderingInGUI = true;
+            // x and y values are chosen as the first and last pixel of the black (entity) box of the gui texture
+            // The two x and y values determine the size for the 'GuiGraphics#enableScissor' call (their middle point is also where the entity will be rendered)
+            InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, leftPos + 8, topPos + 8, leftPos + 59, topPos + 69, 20, 0.25f, x, y, umvuthi);
+            umvuthi.renderingInGUI = false;
+        }
     }
 
     @Override

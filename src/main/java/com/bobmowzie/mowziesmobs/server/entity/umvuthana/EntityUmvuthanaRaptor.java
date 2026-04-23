@@ -5,7 +5,6 @@ import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.LeaderSunstrikeImmune;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieEntity;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
@@ -20,6 +19,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.neoforged.neoforge.event.EventHooks;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -54,7 +54,8 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
 
     public static AttributeSupplier.Builder createAttributes() {
         return MowzieEntity.createAttributes().add(Attributes.ATTACK_DAMAGE, 6)
-                .add(Attributes.MAX_HEALTH, 10);
+                .add(Attributes.MAX_HEALTH, 10)
+                .add(Attributes.STEP_HEIGHT, 1);
     }
 
     @Override
@@ -80,7 +81,7 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
 
         if (!this.level().isClientSide && this.level().getDifficulty() == Difficulty.PEACEFUL)
         {
-            this.discard() ;
+            this.discard();
         }
     }
 
@@ -103,13 +104,13 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
         }
     }
 
-    public void removePackMember(EntityUmvuthanaFollowerToRaptor tribeHunter) {
-        pack.remove(tribeHunter);
+    public void removePackMember(EntityUmvuthanaFollowerToRaptor member) {
+        pack.remove(member);
         sortPackMembers();
     }
 
-    public void addPackMember(EntityUmvuthanaFollowerToRaptor tribeHunter) {
-        pack.add(tribeHunter);
+    public void addPackMember(EntityUmvuthanaFollowerToRaptor member) {
+        pack.add(member);
         sortPackMembers();
     }
 
@@ -122,8 +123,9 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
             double x = getX() + packRadius * Math.cos(targetTheta);
             double z = getZ() + packRadius * Math.sin(targetTheta);
             for (int n = 0; n < pack.size(); n++) {
-                EntityUmvuthanaFollowerToRaptor tribeHunter = pack.get(n);
-                double diffSq = (x - tribeHunter.getX()) * (x - tribeHunter.getX()) + (z - tribeHunter.getZ()) * (z - tribeHunter.getZ());
+                EntityUmvuthanaFollowerToRaptor packMember = pack.get(n);
+                if (packMember == null) continue;
+                double diffSq = (x - packMember.getX()) * (x - packMember.getX()) + (z - packMember.getZ()) * (z - packMember.getZ());
                 if (diffSq < smallestDiffSq) {
                     smallestDiffSq = diffSq;
                     nearestIndex = n;
@@ -140,19 +142,31 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
         return pack.size();
     }
 
+    @Override
+    public int getAttackChance() {
+        if (getPackSize() < 0) return super.getAttackChance();
+        return 8 * getPackSize() + 40;
+    }
+
+    @Override
+    public int getAttackCooldown() {
+        if (getPackSize() < 0) return super.getAttackCooldown();
+        return 8 * getPackSize() + 40;
+    }
+
     @Nullable
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData, @Nullable CompoundTag compound) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData) {
         int size = random.nextInt(2) + 3;
         float theta = (2 * (float) Math.PI / size);
         for (int i = 0; i <= size; i++) {
-            EntityUmvuthanaFollowerToRaptor tribeHunter = new EntityUmvuthanaFollowerToRaptor(EntityHandler.UMVUTHANA_FOLLOWER_TO_RAPTOR.get(), this.level(), this);
-            tribeHunter.setPos(getX() + 0.1 * Mth.cos(theta * i), getY(), getZ() + 0.1 * Mth.sin(theta * i));
+            EntityUmvuthanaFollowerToRaptor packMember = new EntityUmvuthanaFollowerToRaptor(EntityHandler.UMVUTHANA_FOLLOWER_TO_RAPTOR.get(), this.level(), this);
+            packMember.setPos(getX() + 0.1 * Mth.cos(theta * i), getY(), getZ() + 0.1 * Mth.sin(theta * i));
             int weapon = random.nextInt(3) == 0 ? 1 : 0;
-            tribeHunter.setWeapon(weapon);
-            world.addFreshEntity(tribeHunter);
+            packMember.setWeapon(weapon);
+            world.addFreshEntity(packMember);
         }
-        return super.finalizeSpawn(world, difficulty, reason, livingData, compound);
+        return super.finalizeSpawn(world, difficulty, reason, livingData);
     }
 
     @Override
@@ -184,70 +198,36 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
 
     @Override
     public void checkDespawn() {
-        if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
-            this.discard() ;
-        } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
-            Entity entity = this.level().getNearestPlayer(this, -1.0D);
-            net.minecraftforge.eventbus.api.Event.Result result = net.minecraftforge.event.ForgeEventFactory.canEntityDespawn(this, (ServerLevelAccessor) level());
-            if (result == net.minecraftforge.eventbus.api.Event.Result.DENY) {
-                noActionTime = 0;
-                entity = null;
-            } else if (result == net.minecraftforge.eventbus.api.Event.Result.ALLOW) {
-                this.discard() ;
-                entity = null;
-            }
-            if (entity != null) {
-                double d0 = entity.distanceToSqr(this);
-                if (d0 > 16384.0D && this.removeWhenFarAway(d0) && pack != null) {
-                    pack.forEach(EntityUmvuthanaFollowerToRaptor::setShouldSetDead);
-                    this.discard() ;
-                }
-
-                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > 1024.0D && this.removeWhenFarAway(d0) && pack != null) {
-                    pack.forEach(EntityUmvuthanaFollowerToRaptor::setShouldSetDead);
-                    this.discard() ;
-                } else if (d0 < 1024.0D) {
-                    this.noActionTime = 0;
-                }
-            }
-
-        } else {
-            this.noActionTime = 0;
-        }
-
-
+        if (EventHooks.checkMobDespawn(this)) return;
         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
             this.discard();
         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
-            Entity entity = this.level().getNearestPlayer(this, -1.0D);
-            net.minecraftforge.eventbus.api.Event.Result result = net.minecraftforge.event.ForgeEventFactory.canEntityDespawn(this, (ServerLevelAccessor) this.level());
-            if (result == net.minecraftforge.eventbus.api.Event.Result.DENY) {
-                noActionTime = 0;
-                entity = null;
-            } else if (result == net.minecraftforge.eventbus.api.Event.Result.ALLOW) {
-                if (pack != null) pack.forEach(EntityUmvuthanaFollowerToRaptor::setShouldSetDead);
-                this.discard();
-                entity = null;
-            }
+            Entity entity = this.level().getNearestPlayer(this, -1);
+
             if (entity != null) {
-                double d0 = entity.distanceToSqr(this);
-                int i = this.getType().getCategory().getDespawnDistance();
-                int j = i * i;
-                if (d0 > (double)j && this.removeWhenFarAway(d0)) {
-                    if (pack != null) pack.forEach(EntityUmvuthanaFollowerToRaptor::setShouldSetDead);
+                double distance = entity.distanceToSqr(this);
+                int despawnDistance = getDespawnDistance();
+                int despawnRadius = despawnDistance * despawnDistance;
+
+                if (distance > despawnRadius && this.removeWhenFarAway(distance)) {
+                    if (pack != null) {
+                        pack.forEach(EntityUmvuthanaFollowerToRaptor::setShouldSetDead);
+                    }
                     this.discard();
                 }
 
-                int k = this.getType().getCategory().getNoDespawnDistance();
-                int l = k * k;
-                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double)l && this.removeWhenFarAway(d0)) {
-                    if (pack != null) pack.forEach(EntityUmvuthanaFollowerToRaptor::setShouldSetDead);
+                int noDespawnDistance = getNoDespawnDistance();
+                int noDespawnRadius = noDespawnDistance * noDespawnDistance;
+
+                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && distance > noDespawnRadius && this.removeWhenFarAway(distance)) {
+                    if (pack != null) {
+                        pack.forEach(EntityUmvuthanaFollowerToRaptor::setShouldSetDead);
+                    }
                     this.discard();
-                } else if (d0 < (double)l) {
+                } else if (distance < noDespawnRadius) {
                     this.noActionTime = 0;
                 }
             }
-
         } else {
             this.noActionTime = 0;
         }

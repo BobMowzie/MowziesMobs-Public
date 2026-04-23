@@ -1,12 +1,13 @@
 package com.bobmowzie.mowziesmobs.server.ai;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.pathfinder.NodeEvaluator;
+import net.minecraft.world.level.pathfinder.PathType;
 
 public class MMEntityMoveHelper extends MoveControl
 {
@@ -46,7 +47,7 @@ public class MMEntityMoveHelper extends MoveControl
             {
                 NodeEvaluator nodeprocessor = pathnavigate.getNodeEvaluator();
 
-                if (nodeprocessor != null && nodeprocessor.getBlockPathType(this.mob.level(), Mth.floor(this.mob.getX() + (double)f7), Mth.floor(this.mob.getY()), Mth.floor(this.mob.getZ() + (double)f8)) != BlockPathTypes.WALKABLE)
+                if (nodeprocessor != null && nodeprocessor.getPathType(this.mob, BlockPos.containing(this.mob.getX() + f7, this.mob.getY(), this.mob.getZ() + f8)) != PathType.WALKABLE)
                 {
                     this.strafeForwards = 1.0F;
                     this.strafeRight = 0.0F;

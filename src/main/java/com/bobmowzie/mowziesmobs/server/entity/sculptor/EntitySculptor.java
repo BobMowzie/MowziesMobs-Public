@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.entity.sculptor;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.model.tools.dynamics.GeckoDynamicChain;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
 import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleBase;
@@ -18,8 +18,8 @@ import com.bobmowzie.mowziesmobs.server.advancement.AdvancementHandler;
 import com.bobmowzie.mowziesmobs.server.ai.UseAbilityAI;
 import com.bobmowzie.mowziesmobs.server.bossinfo.BossInfoSculptor;
 import com.bobmowzie.mowziesmobs.server.bossinfo.MMBossInfoServer;
-import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
-import com.bobmowzie.mowziesmobs.server.capability.PlayerCapability;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.capability.PlayerData;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieEntity;
@@ -33,16 +33,17 @@ import com.bobmowzie.mowziesmobs.server.item.ItemHandler;
 import com.bobmowzie.mowziesmobs.server.item.ItemSculptorStaff;
 import com.bobmowzie.mowziesmobs.server.loot.LootTableHandler;
 import com.bobmowzie.mowziesmobs.server.potion.EffectGeomancy;
-import com.bobmowzie.mowziesmobs.server.potion.EffectHandler;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -71,26 +72,27 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.*;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.Animation;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.Animation;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.RawAnimation;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -99,7 +101,7 @@ import java.util.function.Predicate;
 public class EntitySculptor extends MowzieGeckoEntity {
     public static int TEST_HEIGHT = 60;
     public static int TEST_RADIUS_BOTTOM = 6;
-    public static int TEST_RADIUS = 13;
+    public static int TEST_RADIUS = 12;
     public static int TEST_MAX_RADIUS_HEIGHT = 20;
     public static double TEST_RADIUS_FALLOFF = 5;
     private static final int HEAL_PAUSE = 75;
@@ -129,7 +131,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
     public static final AbilityType<EntitySculptor, GuardAbility> GUARD_ABILITY = new AbilityType<>("guard", GuardAbility::new);
     public static final AbilityType<EntitySculptor, DisappearAbility> DISAPPEAR_ABILITY = new AbilityType<>("disappear", DisappearAbility::new);
 
-    public static final AbilityType<EntitySculptor, SimpleAnimationAbility<EntitySculptor>> TALK_ABILITY = new AbilityType<>("talk", (type, entity) -> new SimpleAnimationAbility<>(type, entity,RawAnimation.begin().thenPlay("talk"), 27, true) {
+    public static final AbilityType<EntitySculptor, SimpleAnimationAbility<EntitySculptor>> TALK_ABILITY = new AbilityType<>("talk", (type, entity) -> new SimpleAnimationAbility<>(type, entity, RawAnimation.begin().thenPlay("talk"), 27, true) {
         @Override
         public void start() {
             getUser().playSound(MMSounds.ENTITY_SCULPTOR_GREETING.get(), 1, 1);
@@ -285,13 +287,12 @@ public class EntitySculptor extends MowzieGeckoEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        Item tradeItem = ForgeRegistries.ITEMS.getValue(new ResourceLocation(ConfigHandler.COMMON.MOBS.SCULPTOR.whichItem.get()));
-        getEntityData().define(DESIRES, new ItemStack(tradeItem, ConfigHandler.COMMON.MOBS.SCULPTOR.howMany.get()));
-        getEntityData().define(IS_TRADING, false);
-        getEntityData().define(IS_FIGHTING, false);
-        getEntityData().define(TESTING_PLAYER, Optional.empty());
+    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DESIRES, new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(ConfigHandler.COMMON.MOBS.SCULPTOR.whichItem.get())), ConfigHandler.COMMON.MOBS.SCULPTOR.howMany.get()));
+        builder.define(IS_TRADING, false);
+        builder.define(IS_FIGHTING, false);
+        builder.define(TESTING_PLAYER, Optional.empty());
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -379,7 +380,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
 
     @Override
     public PushReaction getPistonPushReaction() {
-        return PushReaction.BLOCK;
+        return PushReaction.IGNORE;
     }
 
     public void setDesires(ItemStack stack) {
@@ -469,7 +470,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
         }
 
 //        if (getActiveAbility() == null && tickCount % 60 == 0) {
-//            sendAbilityMessage(DISAPPEAR_ABILITY);
+//            sendAbilityMessage(PASS_TEST);
 //        }
 
 //        if (level().isClientSide() && dc != null && dc.p.length > 0 && dc.p[0] != null) {
@@ -529,15 +530,15 @@ public class EntitySculptor extends MowzieGeckoEntity {
                     if (!(checkState.isAir() || checkState.is(Blocks.LIGHT))) {
                         isTestObstructed = true;
                         isTestObstructedSoFar = true;
-                        if (level().isClientSide() && isPlayerInTestZone(MowziesMobs.PROXY.getPlayer()) && blockHasExposedSide(checkPos)) {
-                            MowziesMobs.PROXY.sculptorMarkBlock(this.getId(), checkPos);
+                        if (level().isClientSide() && isPlayerInTestZone(MMCommon.PROXY.getLocalPlayer()) && blockHasExposedSide(checkPos)) {
+                            MMCommon.PROXY.sculptorMarkBlock(this.getId(), checkPos);
                             ParticleRotation.FaceCamera faceCamera = new ParticleRotation.FaceCamera(0);
-                            AdvancedParticleBase.spawnAlwaysVisibleParticle(level(), ParticleHandler.RING2.get(), 64, checkPos.getX() + 0.5, checkPos.getY() + 0.5, checkPos.getZ() + 0.5, 0, 0, 0, faceCamera, 3.5F, 0.83f, 1, 0.39f, 1, 1, 20, true, false, new ParticleComponent[]{
+                            AdvancedParticleBase.spawnAlwaysVisibleParticle(level(), ParticleHandler.RING2, 64, checkPos.getX() + 0.5, checkPos.getY() + 0.5, checkPos.getZ() + 0.5, 0, 0, 0, faceCamera, 3.5F, 0.83f, 1, 0.39f, 1, 1, 20, true, false, new ParticleComponent[]{
                                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(0.7f, 0f), false),
                                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(0f, 16.0f), false)
                             });
                             if (!hasPingedBlockThisPass) {
-                                AdvancedParticleBase.spawnAlwaysVisibleParticle(level(), ParticleHandler.ORB2.get(), 64, getX(), getY() + getBbHeight() / 2.0, getZ(), 0, 0, 0, faceCamera, 6F, 0.83f, 1, 0.39f, 0.7, 1, 30, true, false, new ParticleComponent[]{
+                                AdvancedParticleBase.spawnAlwaysVisibleParticle(level(), ParticleHandler.ORB2, 64, getX(), getY() + getBbHeight() / 2.0, getZ(), 0, 0, 0, faceCamera, 6F, 0.83f, 1, 0.39f, 0.7, 1, 30, true, false, new ParticleComponent[]{
                                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.POS_X, ParticleComponent.KeyTrack.startAndEnd((float) getX(), (float) (checkPos.getX() + 0.5)), false),
                                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.POS_Y, ParticleComponent.KeyTrack.startAndEnd((float) getY() + getBbHeight() / 2.0f, (float) (checkPos.getY() + 0.5)), false),
                                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.POS_Z, ParticleComponent.KeyTrack.startAndEnd((float) getZ(), (float) (checkPos.getZ() + 0.5)), false)
@@ -620,7 +621,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
     }
 
     public void playerCheated() {
-        if (isTesting() && testingPlayer != null) {
+        if (isTesting() && testingPlayer != null && getActiveAbilityType() != FAIL_TEST && getActiveAbilityType() != PASS_TEST) {
             sendAbilityMessage(FAIL_TEST);
         }
     }
@@ -687,9 +688,10 @@ public class EntitySculptor extends MowzieGeckoEntity {
     public void setTestingPlayer(Player testingPlayer) {
         this.testingPlayer = testingPlayer;
         setTestingPlayerID(testingPlayer == null ? null : testingPlayer.getUUID());
-        PlayerCapability.IPlayerCapability playerCapability = CapabilityHandler.getCapability(testingPlayer, CapabilityHandler.PLAYER_CAPABILITY);
-        if (playerCapability != null) {
-            playerCapability.setTestingSculptor(this);
+
+        if (testingPlayer != null) {
+            PlayerData data = DataHandler.getData(testingPlayer, DataHandler.PLAYER_DATA);
+            data.setTestingSculptor(this);
         }
     }
 
@@ -699,7 +701,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
 
     public void openGUI(Player playerEntity) {
         setCustomer(playerEntity);
-        MowziesMobs.PROXY.setReferencedMob(this);
+        MMCommon.PROXY.setReferencedMob(this);
         if (!this.level().isClientSide && getTarget() == null && isAlive()) {
             playerEntity.openMenu(new MenuProvider() {
                 @Override
@@ -720,9 +722,11 @@ public class EntitySculptor extends MowzieGeckoEntity {
         if (isTesting() && getPillar() != null && !getPillar().isRising()) {
             if (player == testingPlayer && getActiveAbilityType() != FAIL_TEST && player.distanceToSqr(this) <= 20) {
                 sendAbilityMessage(PASS_TEST);
-                if (player instanceof ServerPlayer) {
-                    AdvancementHandler.SCULPTOR_CHALLENGE_TRIGGER.trigger((ServerPlayer)player);
+
+                if (player instanceof ServerPlayer serverPlayer) {
+                    AdvancementHandler.SCULPTOR_CHALLENGE_TRIGGER.get().trigger(serverPlayer);
                 }
+                return InteractionResult.SUCCESS;
             }
         }
         else {
@@ -761,13 +765,13 @@ public class EntitySculptor extends MowzieGeckoEntity {
         controller.setSoundKeyframeHandler(state -> {
             String sound = state.getKeyframeData().getSound();
             if (sound.equals("make_gauntlet_effects")) {
-                this.level().playSound(MowziesMobs.PROXY.getPlayer(), getX(), getY(), getZ(), MMSounds.ENTITY_SCULPTOR_MAKE_GAUNTLET_EFFECTS.get(), SoundSource.NEUTRAL, 1, 1);
+                this.level().playSound(MMCommon.PROXY.getLocalPlayer(), getX(), getY(), getZ(), MMSounds.ENTITY_SCULPTOR_MAKE_GAUNTLET_EFFECTS.get(), SoundSource.NEUTRAL, 1, 1);
             }
             else if (sound.equals("make_gauntlet_piece")) {
-                this.level().playSound(MowziesMobs.PROXY.getPlayer(), getX(), getY(), getZ(), MMSounds.ENTITY_SCULPTOR_MAKE_GAUNTLET_PIECE.get(), SoundSource.NEUTRAL, 1, 0.7f + 0.6f * random.nextFloat());
+                this.level().playSound(MMCommon.PROXY.getLocalPlayer(), getX(), getY(), getZ(), MMSounds.ENTITY_SCULPTOR_MAKE_GAUNTLET_PIECE.get(), SoundSource.NEUTRAL, 1, 0.7f + 0.6f * random.nextFloat());
             }
             else if (sound.equals("clap1")) {
-                this.level().playSound(MowziesMobs.PROXY.getPlayer(), getX(), getY(), getZ(), MMSounds.ENTITY_SCULPTOR_CLAP.get(), SoundSource.NEUTRAL, 1, 0.7f + 0.6f * random.nextFloat());
+                this.level().playSound(MMCommon.PROXY.getLocalPlayer(), getX(), getY(), getZ(), MMSounds.ENTITY_SCULPTOR_CLAP.get(), SoundSource.NEUTRAL, 1, 0.7f + 0.6f * random.nextFloat());
             }
         });
     }
@@ -799,6 +803,10 @@ public class EntitySculptor extends MowzieGeckoEntity {
     }
 
     public boolean isPlayerInTestZone(Player player) {
+        if (player == null) {
+            return false;
+        }
+
         double yDistMax = 12;
         double yBase = getY();
         if (getPillar() != null) {
@@ -812,7 +820,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
     @Override
     protected int getDeathDuration() {
         AbilityType deathAbilityType = getDeathAbility();
-        Ability deathAbility = getAbility(deathAbilityType);
+        Ability<?>deathAbility = getAbility(deathAbilityType);
         if (deathAbility == null || !deathAbility.isUsing()) {
             return 9;
         }
@@ -823,7 +831,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
     }
 
     @Override
-    protected ResourceLocation getDefaultLootTable() {
+    protected @NotNull ResourceKey<LootTable> getDefaultLootTable() {
         return LootTableHandler.SCULPTOR;
     }
 
@@ -835,15 +843,19 @@ public class EntitySculptor extends MowzieGeckoEntity {
         return ConfigHandler.COMMON.MOBS.SCULPTOR.testTimeLimit.get() * 20;
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public BossMusic getBossMusic() {
-        return BossMusicPlayer.SCULPTOR_MUSIC;
+    protected ConfigHandler.CombatConfig getCombatConfig() {
+        return ConfigHandler.COMMON.MOBS.SCULPTOR.combatConfig;
     }
 
     @Override
     public boolean hasBossMusic() {
         return true;
+    }
+
+    @Override
+    public BossMusic<?> getBossMusic() {
+        return BossMusicPlayer.SCULPTOR_MUSIC;
     }
 
     @Override
@@ -860,7 +872,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
     }
 
     @Override
-    public boolean canBeLeashed(Player player) {
+    public boolean canBeLeashed() {
         return false;
     }
 
@@ -1082,26 +1094,52 @@ public class EntitySculptor extends MowzieGeckoEntity {
             if (getCurrentSection().sectionType == AbilitySection.AbilitySectionType.RECOVERY && getTicksInSection() == 40) {
                 getUser().playSound(MMSounds.ENTITY_SCULPTOR_MAKE_GAUNTLET.get());
             }
-//            if (getCurrentSection().sectionType == AbilitySection.AbilitySectionType.RECOVERY && getTicksInSection() == 103) {
-//                getUser().playSound(MMSounds.ENTITY_SCULPTOR_FINISH_GAUNTLET.get());
-//            }
+
             if (getCurrentSection().sectionType == AbilitySection.AbilitySectionType.RECOVERY && getTicksInSection() == 134 && !getUser().level().isClientSide()) {
-                Vec3 polarOffset = new Vec3(1.2, 0, 0).yRot((float)Math.toRadians(-getUser().yBodyRot - 90));
-                Vec3 itemPos = getUser().position().add(0, 1.2, 0).add(polarOffset);
-                Vec3 itemVelocity = new Vec3(0.1f, 0.1f, 0).yRot((float)Math.toRadians(-getUser().yBodyRot - 90));
-                ItemEntity itementity = new ItemEntity(getUser().level(), itemPos.x, itemPos.y, itemPos.z, ItemHandler.EARTHREND_GAUNTLET.get().getDefaultInstance(), itemVelocity.x, itemVelocity.y, itemVelocity.z);
-                itementity.setDefaultPickUpDelay();
-                if (getUser().captureDrops() != null) {
-                    getUser().captureDrops().add(itementity);
-                }
-                else {
-                    getUser().level().addFreshEntity(itementity);
-                }
+                dropFromLootTable();
             }
 
             if (getCurrentSection().sectionType == AbilitySection.AbilitySectionType.ACTIVE && getTicksInSection() % 9 == 0) {
                 getUser().playSound(MMSounds.ENTITY_SCULPTOR_CLAP.get(), 1, 0.8f + getUser().random.nextFloat() * 0.3f);
             }
+        }
+
+        protected void dropFromLootTable() {
+            ResourceKey<LootTable> resourcekey = LootTableHandler.SCULPTOR_TEST;
+            LootTable loottable = getUser().level().getServer().reloadableRegistries().getLootTable(resourcekey);
+            DamageSource damageSource = getUser().damageSources().genericKill();
+            if (getUser().getTestingPlayer() != null) {
+                getUser().getTestingPlayer().damageSources().genericKill();
+            }
+            LootParams.Builder lootparams$builder = new LootParams.Builder((ServerLevel)getUser().level())
+                    .withParameter(LootContextParams.THIS_ENTITY, getUser())
+                    .withParameter(LootContextParams.ORIGIN, getUser().position())
+                    .withParameter(LootContextParams.DAMAGE_SOURCE, damageSource)
+                    .withOptionalParameter(LootContextParams.ATTACKING_ENTITY, damageSource.getEntity())
+                    .withOptionalParameter(LootContextParams.DIRECT_ATTACKING_ENTITY, damageSource.getDirectEntity());
+            if (getUser().getTestingPlayer() != null) {
+                lootparams$builder = lootparams$builder.withParameter(LootContextParams.LAST_DAMAGE_PLAYER, getUser().getTestingPlayer())
+                        .withLuck(getUser().getTestingPlayer().getLuck());
+            }
+
+            LootParams lootparams = lootparams$builder.create(LootContextParamSets.ENTITY);
+            loottable.getRandomItems(lootparams, getUser().getLootTableSeed(), this::spawnAtLocationInDirection);
+        }
+
+        @Nullable
+        public ItemEntity spawnAtLocationInDirection(ItemStack stack) {
+            Vec3 polarOffset = new Vec3(1.2, 0, 0).yRot((float)Math.toRadians(-getUser().yBodyRot - 90));
+            Vec3 itemPos = getUser().position().add(0, 1.2, 0).add(polarOffset);
+            Vec3 itemVelocity = new Vec3(0.1f, 0.1f, 0).yRot((float)Math.toRadians(-getUser().yBodyRot - 90));
+            ItemEntity itementity = new ItemEntity(getUser().level(), itemPos.x, itemPos.y, itemPos.z, stack, itemVelocity.x, itemVelocity.y, itemVelocity.z);
+            itementity.setDefaultPickUpDelay();
+            if (getUser().captureDrops() != null) {
+                getUser().captureDrops().add(itementity);
+            }
+            else {
+                getUser().level().addFreshEntity(itementity);
+            }
+            return itementity;
         }
 
         @Override
@@ -1356,7 +1394,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
                     double yaw = getUser().random.nextDouble() * Math.PI/2d;
                     double pitch = getUser().random.nextDouble() * Math.PI/2d;
                     double roll = getUser().random.nextDouble() * Math.PI/2d;
-                    AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.LEAF.get(), x, y, z, 0, 0, 0, false, yaw, pitch, roll, 0, 1f, (247d + colorVariation) / 256d, (185d + colorVariation) / 256d, (220d + colorVariation) / 256d, 1, 0.9, 35 + getUser().random.nextFloat() * 20, false, true, new ParticleComponent[]{
+                    AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.LEAF, x, y, z, 0, 0, 0, false, yaw, pitch, roll, 0, 1f, (247d + colorVariation) / 256d, (185d + colorVariation) / 256d, (220d + colorVariation) / 256d, 1, 0.9, 35 + getUser().random.nextFloat() * 20, false, true, new ParticleComponent[]{
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.KeyTrack(
                                     new float[]{0, 1f, 0},
                                     new float[]{0, 0.5f, 1}
@@ -1373,7 +1411,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
                     float x = (float) (getUser().getX() + getUser().random.nextGaussian() * (bounds.maxX - bounds.minX)/3.0);
                     float y = (float) (getUser().getY() + getUser().random.nextGaussian() * (bounds.maxY - bounds.minY)/5.0 + getUser().getBbHeight()/2.0);
                     float z = (float) (getUser().getZ() + getUser().random.nextGaussian() * (bounds.maxZ - bounds.minZ)/3.0);
-                    AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.PIXEL.get(), x, y, z, 0, 0, 0, true, 0, 0 ,0, 0, 1f, 255d / 256d, 248d / 256d, 148d / 256d, 1, 0.9, 35 + getUser().random.nextFloat() * 20, true, true, new ParticleComponent[]{
+                    AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.PIXEL, x, y, z, 0, 0, 0, true, 0, 0 ,0, 0, 1f, 255d / 256d, 248d / 256d, 148d / 256d, 1, 0.9, 35 + getUser().random.nextFloat() * 20, true, true, new ParticleComponent[]{
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.KeyTrack(
                                     new float[]{0, 2f, 0},
                                     new float[]{0, 0.5f, 1}
@@ -1540,7 +1578,7 @@ public class EntitySculptor extends MowzieGeckoEntity {
                 sculptor.prevPlayerPosition = Optional.empty();
                 sculptor.prevPlayerVelY = Optional.empty();
             }
-            else if (sculptor.testing) {
+            else if (sculptor.testing && sculptor.getActiveAbilityType() != FAIL_TEST && sculptor.getActiveAbilityType() != PASS_TEST) {
                 sculptor.checkIfPlayerCheats();
             }
 

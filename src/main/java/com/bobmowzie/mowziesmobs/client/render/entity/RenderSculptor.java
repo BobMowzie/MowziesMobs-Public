@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelSculptor;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.render.entity.layer.GeckoSunblockLayer;
@@ -15,13 +15,13 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.object.Color;
+import software.bernie.geckolib.util.Color;
 
 import java.util.Optional;
 
 public class RenderSculptor extends MowzieGeoEntityRenderer<EntitySculptor> {
-    public final ResourceLocation staff_geo_location = new ResourceLocation(MowziesMobs.MODID, "geo/sculptor_staff.geo.json");
-    public final ResourceLocation staff_tex_location = new ResourceLocation(MowziesMobs.MODID, "textures/item/sculptor_staff.png");
+    public final ResourceLocation staff_geo_location = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "geo/sculptor_staff.geo.json");
+    public final ResourceLocation staff_tex_location = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/item/sculptor_staff.png");
 
     public RenderSculptor(EntityRendererProvider.Context renderManager) {
         super(renderManager, new ModelSculptor());
@@ -35,13 +35,20 @@ public class RenderSculptor extends MowzieGeoEntityRenderer<EntitySculptor> {
     }
 
     @Override
-    public void preRender(PoseStack poseStack, EntitySculptor animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public void preRender(PoseStack poseStack, EntitySculptor animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int color) {
+        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
     }
 
     @Override
     public void render(EntitySculptor entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        Optional<GeoBone> frontCloth = model.getBone("clothFront");
+        frontCloth.ifPresent(geoBone -> entity.frontClothRot = geoBone instanceof MowzieGeoBone ? ((MowzieGeoBone)geoBone).getModelRotationMat() : null);
+    }
+
+    @Override
+    public void renderUpdates(EntitySculptor entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        super.renderUpdates(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
 
         Optional<GeoBone> disappearControllerBone = model.getBone("disappearController");
         disappearControllerBone.ifPresent(geoBone -> entity.disappearController = geoBone.getPosX());
@@ -56,7 +63,6 @@ public class RenderSculptor extends MowzieGeoEntityRenderer<EntitySculptor> {
         Optional<GeoBone> skirtFrontLocLeft = model.getBone("skirtFrontLocLeft");
         Optional<GeoBone> skirtBackLocRight = model.getBone("skirtBackLocRight");
         Optional<GeoBone> skirtBackLocLeft = model.getBone("skirtBackLocLeft");
-        Optional<GeoBone> frontCloth = model.getBone("clothFront");
         calfRight.ifPresent(geoBone -> entity.calfRPos = geoBone.getModelPosition());
         calfLeft.ifPresent(geoBone -> entity.calfLPos = geoBone.getModelPosition());
         thighRight.ifPresent(geoBone -> entity.thighRPos = geoBone.getModelPosition());
@@ -67,7 +73,6 @@ public class RenderSculptor extends MowzieGeoEntityRenderer<EntitySculptor> {
         skirtFrontLocLeft.ifPresent(geoBone -> entity.skirtLocFrontLPos = geoBone.getModelPosition());
         skirtBackLocRight.ifPresent(geoBone -> entity.skirtLocBackRPos = geoBone.getModelPosition());
         skirtBackLocLeft.ifPresent(geoBone -> entity.skirtLocBackLPos = geoBone.getModelPosition());
-        frontCloth.ifPresent(geoBone -> entity.frontClothRot = geoBone instanceof MowzieGeoBone ? ((MowzieGeoBone)geoBone).getModelRotationMat() : null);
 
         this.shadowRadius = 0.7f * (1.0f - entity.disappearController);
     }

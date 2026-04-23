@@ -1,6 +1,5 @@
 package com.bobmowzie.mowziesmobs.server.entity.effects;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.ILinkedEntity;
 import com.bobmowzie.mowziesmobs.server.entity.sculptor.EntitySculptor;
@@ -16,6 +15,7 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
@@ -28,7 +28,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -93,10 +94,10 @@ public class EntityBlockSwapper extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        getEntityData().define(ORIG_BLOCK_STATE, Blocks.DIRT.defaultBlockState());
-        getEntityData().define(RESTORE_TIME, 20);
-        getEntityData().define(POS, new BlockPos(0, 0, 0));
+    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
+        builder.define(ORIG_BLOCK_STATE, Blocks.DIRT.defaultBlockState());
+        builder.define(RESTORE_TIME, 20);
+        builder.define(POS, new BlockPos(0, 0, 0));
     }
 
     public int getRestoreTime() {
@@ -202,9 +203,9 @@ public class EntityBlockSwapper extends Entity {
         }
 
         @Override
-        protected void defineSynchedData() {
-            super.defineSynchedData();
-            getEntityData().define(TUNNELER, Optional.empty());
+        protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
+            super.defineSynchedData(builder);
+            builder.define(TUNNELER, Optional.empty());
         }
 
         public Optional<UUID> getTunnelerID() {
@@ -222,7 +223,7 @@ public class EntityBlockSwapper extends Entity {
                 Entity entity = ((ServerLevel)this.level()).getEntity(this.getTunnelerID().get());
                 if (entity instanceof LivingEntity) {
                     cachedTunneler = (LivingEntity) entity;
-                    MowziesMobs.NETWORK.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> this), new MessageLinkEntities(this, cachedTunneler));
+                    PacketDistributor.sendToPlayersTrackingEntityAndSelf(this, MessageLinkEntities.fromEntity(this, cachedTunneler));
                 }
                 return this.cachedTunneler;
             } else {
@@ -268,10 +269,17 @@ public class EntityBlockSwapper extends Entity {
         }
 
         @Override
+        public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket(@NotNull ServerEntity entity) {
+            return new ClientboundAddEntityPacket(this, entity, cachedTunneler == null ? 0 : cachedTunneler.getId());
+        }
+
+        /*
+        @Override
         public Packet<ClientGamePacketListener> getAddEntityPacket() {
             LivingEntity entity = this.cachedTunneler;
             return new ClientboundAddEntityPacket(this, entity == null ? 0 : entity.getId());
         }
+        */
 
         @Override
         public void recreateFromPacket(ClientboundAddEntityPacket packet) {

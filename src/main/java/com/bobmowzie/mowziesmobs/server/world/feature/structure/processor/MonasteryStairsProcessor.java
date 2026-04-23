@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure.processor;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.WorldGenRegion;
@@ -14,10 +14,11 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import org.jetbrains.annotations.NotNull;
 
 public class MonasteryStairsProcessor extends StructureProcessor {
     public static final MonasteryStairsProcessor INSTANCE = new MonasteryStairsProcessor();
-    public static final Codec<MonasteryStairsProcessor> CODEC = Codec.unit(() -> INSTANCE);
+    public static final MapCodec<MonasteryStairsProcessor> CODEC = MapCodec.unit(() -> INSTANCE);
 
     private static final BlockState andesiteStairs = Blocks.ANDESITE_STAIRS.defaultBlockState();
     private static final BlockState cobbledDeepslate = Blocks.COBBLED_DEEPSLATE.defaultBlockState();
@@ -26,10 +27,6 @@ public class MonasteryStairsProcessor extends StructureProcessor {
 
     private static final BlockState[] STAIR = { Blocks.AIR.defaultBlockState(), andesiteStairs };
     private static final BlockState[] RAIL = { cobbledDeepslateWall, cobbledDeepslate };
-
-    protected StructureProcessorType<?> getType() {
-        return ProcessorHandler.STAIRS_PROCESSOR;
-    }
 
     @Override
     public StructureTemplate.StructureBlockInfo process(LevelReader levelReader, BlockPos jigsawPiecePos, BlockPos jigsawPieceBottomCenterPos, StructureTemplate.StructureBlockInfo blockInfoLocal, StructureTemplate.StructureBlockInfo blockInfoGlobal, StructurePlaceSettings structurePlacementData, StructureTemplate template) {
@@ -90,4 +87,8 @@ public class MonasteryStairsProcessor extends StructureProcessor {
         else return Blocks.COBBLED_DEEPSLATE.defaultBlockState();
     }
 
+    @Override
+    protected @NotNull StructureProcessorType<?> getType() {
+        return ProcessorHandler.STAIRS_PROCESSOR.value();
+    }
 }

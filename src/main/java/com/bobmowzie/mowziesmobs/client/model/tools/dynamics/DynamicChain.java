@@ -215,11 +215,11 @@ public class DynamicChain {
         }
     }
 
-    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha, AdvancedModelRenderer[] dynModelRenderers) {
+    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color, AdvancedModelRenderer[] dynModelRenderers) {
         if (dynModelRenderers == null) return;
         for (int i = 0; i < dynModelRenderers.length - 1; i++) {
             if (dynModelRenderers[i] == null) return;
-            dynModelRenderers[i].render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+            dynModelRenderers[i].render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
         }
     }
 

@@ -8,7 +8,7 @@ import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityAxeAttack;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
-import software.bernie.geckolib.core.animation.Animation;
+import software.bernie.geckolib.animation.Animation;
 
 import static com.bobmowzie.mowziesmobs.server.entity.effects.EntityAxeAttack.SWING_DURATION_HOR;
 
@@ -44,7 +44,7 @@ public class WroughtAxeSwingAbility extends PlayerAbility {
     public void tickUsing() {
         super.tickUsing();
         if (getTicksInUse() == SWING_DURATION_HOR && getUser() instanceof Player) {
-            Player player = (Player) getUser();
+            Player player = getUser();
             player.resetAttackStrengthTicker();
         }
     }

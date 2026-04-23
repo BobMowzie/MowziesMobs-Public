@@ -14,7 +14,7 @@ import software.bernie.geckolib.loading.json.raw.ModelProperties;
 import software.bernie.geckolib.loading.object.BakedModelFactory;
 import software.bernie.geckolib.loading.object.BoneStructure;
 import software.bernie.geckolib.loading.object.GeometryTree;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.util.RenderUtil;
 
 import java.util.List;
 
@@ -35,8 +35,8 @@ public class MowzieModelFactory implements BakedModelFactory {
     public GeoBone constructBone(BoneStructure boneStructure, ModelProperties properties, @Nullable GeoBone parent) {
         Bone bone = boneStructure.self();
         MowzieGeoBone newBone = new MowzieGeoBone(parent, bone.name(), bone.mirror(), bone.inflate(), bone.neverRender(), bone.reset());
-        Vec3 rotation = RenderUtils.arrayToVec(bone.rotation());
-        Vec3 pivot = RenderUtils.arrayToVec(bone.pivot());
+        Vec3 rotation = RenderUtil.arrayToVec(bone.rotation());
+        Vec3 pivot = RenderUtil.arrayToVec(bone.pivot());
 
         newBone.updateRotation((float)Math.toRadians(-rotation.x), (float)Math.toRadians(-rotation.y), (float)Math.toRadians(rotation.z));
         newBone.updatePivot((float)-pivot.x, (float)pivot.y, (float)pivot.z);
@@ -56,10 +56,10 @@ public class MowzieModelFactory implements BakedModelFactory {
     public GeoCube constructCube(Cube cube, ModelProperties properties, GeoBone bone) {
         boolean mirror = cube.mirror() == Boolean.TRUE;
         double inflate = cube.inflate() != null ? cube.inflate() / 16f : (bone.getInflate() == null ? 0 : bone.getInflate() / 16f);
-        Vec3 size = RenderUtils.arrayToVec(cube.size());
-        Vec3 origin = RenderUtils.arrayToVec(cube.origin());
-        Vec3 rotation = RenderUtils.arrayToVec(cube.rotation());
-        Vec3 pivot = RenderUtils.arrayToVec(cube.pivot());
+        Vec3 size = RenderUtil.arrayToVec(cube.size());
+        Vec3 origin = RenderUtil.arrayToVec(cube.origin());
+        Vec3 rotation = RenderUtil.arrayToVec(cube.rotation());
+        Vec3 pivot = RenderUtil.arrayToVec(cube.pivot());
         origin = new Vec3(-(origin.x + size.x) / 16d, origin.y / 16d, origin.z / 16d);
         Vec3 vertexSize = size.multiply(1 / 16d, 1 / 16d, 1 / 16d);
 

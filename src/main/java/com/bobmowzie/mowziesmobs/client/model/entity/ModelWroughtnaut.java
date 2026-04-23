@@ -6,10 +6,7 @@ import com.ilexiconn.llibrary.client.model.tools.BasicModelRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class ModelWroughtnaut<T extends EntityWroughtnaut> extends MowzieEntityModel<T> {
     public AdvancedModelRenderer waist;
     public AdvancedModelRenderer groin;
@@ -478,8 +475,8 @@ public class ModelWroughtnaut<T extends EntityWroughtnaut> extends MowzieEntityM
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-        this.rootBox.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+        this.rootBox.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
     }
 
     public void setDefaultAngles(EntityWroughtnaut entity, float limbSwing, float limbSwingAmount, float headYaw, float headPitch, float delta) {

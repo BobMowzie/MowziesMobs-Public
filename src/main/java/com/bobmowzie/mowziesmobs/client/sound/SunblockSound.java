@@ -8,10 +8,7 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class SunblockSound extends AbstractTickableSoundInstance {
     private final LivingEntity entity;
     int ticksExisted = 0;
@@ -47,7 +44,7 @@ public class SunblockSound extends AbstractTickableSoundInstance {
                 EntityUmvuthana umvuthana = (EntityUmvuthana) entity;
                 umvuthanaHealing = umvuthana.getActiveAbilityType() == EntityUmvuthana.HEAL_ABILITY;
             }
-            boolean hasSunblock = entity.hasEffect(EffectHandler.SUNBLOCK.get());
+            boolean hasSunblock = entity.hasEffect(EffectHandler.SUNBLOCK);
             active = umvuthanaHealing || hasSunblock;
             if (!entity.isAlive()) {
                 active = false;

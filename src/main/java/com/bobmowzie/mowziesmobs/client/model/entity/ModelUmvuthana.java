@@ -1,15 +1,14 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthana;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.MaskType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.data.EntityModelData;
 
 public class ModelUmvuthana extends MowzieGeoModel<EntityUmvuthana> {
@@ -19,22 +18,24 @@ public class ModelUmvuthana extends MowzieGeoModel<EntityUmvuthana> {
 
     @Override
     public ResourceLocation getModelResource(EntityUmvuthana object) {
-        return new ResourceLocation(MowziesMobs.MODID, "geo/umvuthana.geo.json");
+        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "geo/umvuthana.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(EntityUmvuthana entity) {
         boolean isElite = entity.getMaskType() == MaskType.FAITH || entity.getMaskType() == MaskType.FURY;
-        return new ResourceLocation(MowziesMobs.MODID, isElite ? "textures/entity/umvuthana_elite.png" : "textures/entity/umvuthana.png");
+        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, isElite ? "textures/entity/umvuthana_elite.png" : "textures/entity/umvuthana.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(EntityUmvuthana object) {
-        return new ResourceLocation(MowziesMobs.MODID, "animations/umvuthana.animation.json");
+        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "animations/umvuthana.animation.json");
     }
 
     @Override
     public void setCustomAnimations(EntityUmvuthana entity, long instanceId, AnimationState<EntityUmvuthana> animationState) {
+        super.setCustomAnimations(entity, instanceId, animationState);
+
         boolean isRaptor = entity.getMaskType() == MaskType.FURY;
         boolean isElite = entity.getMaskType() == MaskType.FAITH || isRaptor;
         getMowzieBone("crestRight").setHidden(!isElite);
@@ -92,20 +93,19 @@ public class ModelUmvuthana extends MowzieGeoModel<EntityUmvuthana> {
 //        Vec3 moveVec = new Vec3(1.0, 0, 0);
 //        moveVec = moveVec.yRot(angle);
 
-        Vec3 moveVec = entity.getDeltaMovement().normalize().yRot((float) Math.toRadians(entity.yBodyRot + 90.0));
-        float forward = (float) Math.max(0, new Vec3(1.0, 0, 0).dot(moveVec));
-        float backward = (float) Math.max(0, new Vec3(-1.0, 0, 0).dot(moveVec));
-        float left = (float) Math.max(0, new Vec3(0, 0, -1.0).dot(moveVec));
-        float right = (float) Math.max(0, new Vec3(0, 0, 1.0).dot(moveVec));
+        double forward = Mth.lerp(animationState.getPartialTick(), entity.prevMoveDirForward, entity.moveDirForward);
+        double backward = Mth.lerp(animationState.getPartialTick(), entity.prevMoveDirBackward, entity.moveDirBackward);
+        double left = Mth.lerp(animationState.getPartialTick(), entity.prevMoveDirLeft, entity.moveDirLeft);
+        double right = Mth.lerp(animationState.getPartialTick(), entity.prevMoveDirRight, entity.moveDirRight);
         limbSwingAmount *= 2;
         limbSwingAmount = Math.min(0.7f, limbSwingAmount);
         float locomotionAnimController = getControllerValue("locomotionAnimController");
         float runAnim = getControllerValue("walkRunSwitchController");
         float walkAnim = 1.0f - runAnim;
-        walkForwardAnim(forward * locomotionAnimController * walkAnim, limbSwing, limbSwingAmount, animSpeed);
-        walkBackwardAnim(backward * locomotionAnimController * walkAnim, limbSwing, limbSwingAmount, animSpeed);
-        walkLeftAnim(left * locomotionAnimController * walkAnim, limbSwing, limbSwingAmount, animSpeed);
-        walkRightAnim(right * locomotionAnimController * walkAnim, limbSwing, limbSwingAmount, animSpeed);
+        walkForwardAnim((float) (forward * locomotionAnimController * walkAnim), limbSwing, limbSwingAmount, animSpeed);
+        walkBackwardAnim((float) (backward * locomotionAnimController * walkAnim), limbSwing, limbSwingAmount, animSpeed);
+        walkLeftAnim((float) (left * locomotionAnimController * walkAnim), limbSwing, limbSwingAmount, animSpeed);
+        walkRightAnim((float) (right * locomotionAnimController * walkAnim), limbSwing, limbSwingAmount, animSpeed);
 
         runAnim(locomotionAnimController * runAnim, limbSwing, limbSwingAmount, animSpeed);
     }

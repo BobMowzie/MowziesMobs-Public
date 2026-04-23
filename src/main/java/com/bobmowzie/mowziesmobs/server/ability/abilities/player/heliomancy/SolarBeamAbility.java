@@ -11,7 +11,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.animation.RawAnimation;
 
 public class SolarBeamAbility extends HeliomancyAbilityBase {
     protected EntitySolarBeam solarBeam;
@@ -51,13 +51,13 @@ public class SolarBeamAbility extends HeliomancyAbilityBase {
         super.beginSection(section);
         if (section.sectionType == AbilitySection.AbilitySectionType.ACTIVE) {
             if (!getLevel().isClientSide()) {
-                MobEffectInstance sunsBlessingInstance = getUser().getEffect(EffectHandler.SUNS_BLESSING.get());
+                MobEffectInstance sunsBlessingInstance = getUser().getEffect(EffectHandler.SUNS_BLESSING);
                 if (sunsBlessingInstance != null) {
                     int duration = sunsBlessingInstance.getDuration();
-                    getUser().removeEffect(EffectHandler.SUNS_BLESSING.get());
+                    getUser().removeEffect(EffectHandler.SUNS_BLESSING);
                     int solarBeamCost = ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.solarBeamCost.get() * 60 * 20;
                     if (duration - solarBeamCost > 0) {
-                        getUser().addEffect(new MobEffectInstance(EffectHandler.SUNS_BLESSING.get(), duration - solarBeamCost, 0, false, false));
+                        getUser().addEffect(new MobEffectInstance(EffectHandler.SUNS_BLESSING, duration - solarBeamCost, 0, false, false));
                     }
                 }
             }

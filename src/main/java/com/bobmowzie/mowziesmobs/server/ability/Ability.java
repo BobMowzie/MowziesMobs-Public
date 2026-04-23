@@ -5,7 +5,8 @@ import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
 import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoPlayer;
 import com.bobmowzie.mowziesmobs.server.ability.AbilitySection.AbilitySectionDuration;
 import com.bobmowzie.mowziesmobs.server.ability.AbilitySection.AbilitySectionInstant;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieGeckoEntity;
 import com.bobmowzie.mowziesmobs.server.potion.EffectHandler;
 import net.minecraft.nbt.CompoundTag;
@@ -14,13 +15,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
 
 import java.util.List;
 import java.util.Random;
@@ -30,7 +30,7 @@ public class Ability<T extends LivingEntity> {
     protected int cooldownMax;
     private final AbilityType<T, ? extends Ability> abilityType;
     private final T user;
-    private final AbilityCapability.IAbilityCapability abilityCapability;
+    private final AbilityData abilityData;
 
     private int ticksInUse;
     private int ticksInSection;
@@ -45,7 +45,7 @@ public class Ability<T extends LivingEntity> {
     public Ability(AbilityType<T, ? extends Ability> abilityType, T user, AbilitySection[] sectionTrack, int cooldownMax) {
         this.abilityType = abilityType;
         this.user = user;
-        this.abilityCapability = AbilityHandler.INSTANCE.getAbilityCapability(user);
+        this.abilityData = DataHandler.getData(user, DataHandler.ABILITY_DATA);
         this.sectionTrack = sectionTrack;
         this.cooldownMax = cooldownMax;
         this.rand = new Random();
@@ -56,7 +56,7 @@ public class Ability<T extends LivingEntity> {
     }
 
     public void start() {
-        if (!runsInBackground()) abilityCapability.setActiveAbility(this);
+        if (!runsInBackground()) abilityData.setActiveAbility(this);
         ticksInUse = 0;
         ticksInSection = 0;
         currentSectionIndex = 0;
@@ -111,7 +111,7 @@ public class Ability<T extends LivingEntity> {
         isUsing = false;
         cooldownTimer = getMaxCooldown();
         currentSectionIndex = 0;
-        if (!runsInBackground()) abilityCapability.setActiveAbility(null);
+        if (!runsInBackground()) abilityData.setActiveAbility(null);
     }
 
     public void interrupt() {
@@ -127,14 +127,14 @@ public class Ability<T extends LivingEntity> {
      * @return Whether or not the ability can be used
      */
     public boolean canUse() {
-        if (getUser().hasEffect(EffectHandler.FROZEN.get())) return false;
+        if (getUser().hasEffect(EffectHandler.FROZEN)) return false;
         boolean toReturn = (!isUsing() || canCancelSelf()) && cooldownTimer == 0;
-        if (!runsInBackground()) toReturn = toReturn && (abilityCapability.getActiveAbility() == null || canCancelActiveAbility() || abilityCapability.getActiveAbility().canBeCanceledByAbility(this));
+        if (!runsInBackground()) toReturn = toReturn && (abilityData.getActiveAbility() == null || canCancelActiveAbility() || abilityData.getActiveAbility().canBeCanceledByAbility(this));
         return toReturn;
     }
 
     /**
-     * Both sides check and behavior when user tries to use this ability. Ability only starts if this returns true.
+     * Both sides check and behavior when user tries to use this ability. Ability<?>only starts if this returns true.
      * Called after packet is received.
      * @return Whether or not the ability try succeeded
      */
@@ -146,9 +146,9 @@ public class Ability<T extends LivingEntity> {
         return false;
     }
 
-    public Ability getActiveAbility() {
-        AbilityCapability.IAbilityCapability capability = getAbilityCapability();
-        if (capability == null) return null;
+    public Ability<?> getActiveAbility() {
+        AbilityData data = getAbilityCapability();
+        if (data == null) return null;
         return getAbilityCapability().getActiveAbility();
     }
 
@@ -156,12 +156,12 @@ public class Ability<T extends LivingEntity> {
         return false;
     }
 
-    public boolean canBeCanceledByAbility(Ability ability) {
+    public boolean canBeCanceledByAbility(Ability<?> ability) {
         return false;
     }
 
     protected boolean canContinueUsing() {
-        return !getUser().hasEffect(EffectHandler.FROZEN.get());
+        return !getUser().hasEffect(EffectHandler.FROZEN);
     }
 
     public boolean isUsing() {
@@ -225,8 +225,12 @@ public class Ability<T extends LivingEntity> {
         return false;
     }
 
-    public void onTakeDamage(LivingHurtEvent event) {
-        if (isUsing() && event.getResult() != Event.Result.DENY && event.getAmount() > 0.0 && damageInterrupts()) AbilityHandler.INSTANCE.sendInterruptAbilityMessage(getUser(), getAbilityType());
+    public int damageInterruptThreshold() {
+        return 3;
+    }
+
+    public void onTakeDamage(LivingDamageEvent.Post event) {
+        if (isUsing() && event.getNewDamage() >= damageInterruptThreshold() && damageInterrupts()) AbilityHandler.INSTANCE.sendInterruptAbilityMessage(getUser(), getAbilityType());
     }
 
     /**
@@ -279,8 +283,8 @@ public class Ability<T extends LivingEntity> {
         return cooldownMax;
     }
 
-    public AbilityCapability.IAbilityCapability getAbilityCapability() {
-        return abilityCapability;
+    public AbilityData getAbilityCapability() {
+        return abilityData;
     }
 
     public <E extends GeoEntity> PlayState animationPredicate(AnimationState<E> e, GeckoPlayer.Perspective perspective) {
@@ -341,7 +345,7 @@ public class Ability<T extends LivingEntity> {
     }
 
     // Client events
-    public void onRenderTick(TickEvent.RenderTickEvent event) {
+    public void onRenderTick(RenderFrameEvent event) {
 
     }
 }

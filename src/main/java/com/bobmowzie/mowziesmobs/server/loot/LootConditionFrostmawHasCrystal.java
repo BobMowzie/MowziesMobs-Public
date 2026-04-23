@@ -1,59 +1,26 @@
 package com.bobmowzie.mowziesmobs.server.loot;
 
 import com.bobmowzie.mowziesmobs.server.entity.frostmaw.EntityFrostmaw;
-import com.google.common.collect.ImmutableSet;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import net.minecraft.world.entity.Entity;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.world.level.storage.loot.LootContext;
-import net.minecraft.world.level.storage.loot.Serializer;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Set;
-
-public class LootConditionFrostmawHasCrystal implements LootItemCondition {
-
-    private static final LootConditionFrostmawHasCrystal INSTANCE = new LootConditionFrostmawHasCrystal();
-
-    private LootConditionFrostmawHasCrystal() {
-    }
-
-    @Override
-    public LootItemConditionType getType() {
-        return LootTableHandler.FROSTMAW_HAS_CRYSTAL.get();
-    }
-
-    public Set<LootContextParam<?>> getReferencedContextParams() {
-        return ImmutableSet.of(LootContextParams.LAST_DAMAGE_PLAYER);
-    }
+public record LootConditionFrostmawHasCrystal() implements LootItemCondition {
+    public static final MapCodec<LootConditionFrostmawHasCrystal> CODEC = MapCodec.unit(LootConditionFrostmawHasCrystal::new);
 
     public boolean test(LootContext context) {
-        Entity entity = context.getParamOrNull(LootContextParams.THIS_ENTITY);
-        if (entity instanceof EntityFrostmaw) {
-            EntityFrostmaw frostmaw = (EntityFrostmaw) entity;
+        if (context.getParamOrNull(LootContextParams.THIS_ENTITY) instanceof EntityFrostmaw frostmaw) {
             return frostmaw.getHasCrystal();
         }
+
         return false;
     }
 
-    public static Builder builder() {
-        return () -> {
-            return INSTANCE;
-        };
-    }
-
-    public static class ConditionSerializer implements Serializer<LootConditionFrostmawHasCrystal> {
-        @Override
-        public void serialize(JsonObject json, LootConditionFrostmawHasCrystal value, JsonSerializationContext context) {
-        }
-
-        @Override
-        public LootConditionFrostmawHasCrystal deserialize(JsonObject json, JsonDeserializationContext context) {
-            return LootConditionFrostmawHasCrystal.INSTANCE;
-        }
+    @Override
+    public @NotNull LootItemConditionType getType() {
+        return LootTableHandler.FROSTMAW_HAS_CRYSTAL.get();
     }
 }

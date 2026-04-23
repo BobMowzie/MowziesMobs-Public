@@ -4,27 +4,27 @@ loaderVersion="[43,)"
 issueTrackerURL="https://github.com/BobMowzie/MowziesMobs/issues"
 [[mods]]
     modId="mowziesmobs"
-    version="1.7.3"
+    version="1.8.2"
     displayName="Mowzie's Mobs"
     displayURL="https://www.curseforge.com/minecraft/mc-mods/mowzies-mobs"
     authors="BobMowzie, Wadoo, Vakypanda, Noonyez, pau101"
     description="Mowzie's Mobs adds a variety of high-quality fantasy creatures to your Minecraft world."
     logoFile="banner.png"
 [[dependencies.mowziesmobs]]
-    modId="forge"
+    modId="neoforge"
     mandatory=true
-    versionRange="[47.1.3,)"
+    versionRange="[21.1.162,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.mowziesmobs]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.20.1,)"
+    versionRange="[1.21.1,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.mowziesmobs]]
     modId="geckolib"
     mandatory=true
-    versionRange="[4.4.2,)"
+    versionRange="[4.8.3,)"
     ordering="BEFORE"
     side="BOTH"

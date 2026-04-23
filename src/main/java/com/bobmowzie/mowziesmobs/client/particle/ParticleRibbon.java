@@ -1,23 +1,23 @@
 package com.bobmowzie.mowziesmobs.client.particle;
 
+import com.bobmowzie.mowziesmobs.client.particle.types.AdvancedParticleType;
+import com.bobmowzie.mowziesmobs.client.particle.types.RibbonParticleType;
 import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleBase;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleRotation;
 import com.bobmowzie.mowziesmobs.client.particle.util.RibbonComponent.PropertyOverLength;
 import com.bobmowzie.mowziesmobs.client.particle.util.RibbonComponent.PropertyOverLength.EnumRibbonProperty;
-import com.bobmowzie.mowziesmobs.client.particle.util.RibbonParticleData;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
@@ -168,10 +168,10 @@ public class ParticleRibbon extends AdvancedParticleBase {
             float f2 = this.getV0();
             float f3 = this.getV1();
 
-            buffer.vertex(vertices2[0].x(), vertices2[0].y(), vertices2[0].z()).uv(f1, f3).color(prevR, prevG, prevB, prevA).uv2(j).endVertex();
-            buffer.vertex(vertices2[1].x(), vertices2[1].y(), vertices2[1].z()).uv(f1, f2).color(prevR, prevG, prevB, prevA).uv2(j).endVertex();
-            buffer.vertex(vertices2[2].x(), vertices2[2].y(), vertices2[2].z()).uv(f, f2).color(r, g, b, a).uv2(j).endVertex();
-            buffer.vertex(vertices2[3].x(), vertices2[3].y(), vertices2[3].z()).uv(f, f3).color(r, g, b, a).uv2(j).endVertex();
+            buffer.addVertex(vertices2[0].x(), vertices2[0].y(), vertices2[0].z()).setUv(f1, f3).setColor(prevR, prevG, prevB, prevA).setLight(j);
+            buffer.addVertex(vertices2[1].x(), vertices2[1].y(), vertices2[1].z()).setUv(f1, f2).setColor(prevR, prevG, prevB, prevA).setLight(j);
+            buffer.addVertex(vertices2[2].x(), vertices2[2].y(), vertices2[2].z()).setUv(f, f2).setColor(r, g, b, a).setLight(j);
+            buffer.addVertex(vertices2[3].x(), vertices2[3].y(), vertices2[3].z()).setUv(f, f3).setColor(r, g, b, a).setLight(j);
 
             prevR = r;
             prevG = g;
@@ -221,28 +221,28 @@ public class ParticleRibbon extends AdvancedParticleBase {
         return getV1();
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public static final class Factory implements ParticleProvider<RibbonParticleData> {
+    public static final class Provider implements ParticleProvider<RibbonParticleType> {
         private final SpriteSet spriteSet;
 
-        public Factory(SpriteSet spriteSet) {
+        public Provider(SpriteSet spriteSet) {
             this.spriteSet = spriteSet;
         }
 
         @Override
-        public Particle createParticle(RibbonParticleData typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            ParticleRibbon particle = new ParticleRibbon(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.getRotation(), typeIn.getScale(), typeIn.getRed(), typeIn.getGreen(), typeIn.getBlue(), typeIn.getAlpha(), typeIn.getAirDrag(), typeIn.getDuration(), typeIn.isEmissive(), typeIn.getLength(), typeIn.getComponents());
+        public Particle createParticle(RibbonParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+            ParticleRibbon particle = new ParticleRibbon(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.rotation(), typeIn.scale(), typeIn.red(), typeIn.green(), typeIn.blue(), typeIn.alpha(), typeIn.airDrag(), typeIn.duration(), typeIn.emissive(), typeIn.length(), typeIn.components());
             particle.setSpriteFromAge(spriteSet);
             return particle;
         }
     }
 
-    public static void spawnRibbon(Level world, ParticleType<? extends RibbonParticleData> particle, int length, double x, double y, double z, double motionX, double motionY, double motionZ, boolean faceCamera, double yaw, double pitch, double roll, double scale, double r, double g, double b, double a, double drag, double duration, boolean emissive) {
+    public static void spawnRibbon(Level world, Holder<ParticleType<?>> particle, int length, double x, double y, double z, double motionX, double motionY, double motionZ, boolean faceCamera, double yaw, double pitch, double roll, double scale, double r, double g, double b, double a, double drag, double duration, boolean emissive) {
         spawnRibbon(world, particle, length, x, y, z, motionX, motionY, motionZ, faceCamera, yaw, pitch, roll, scale, r, g, b, a, drag, duration, emissive, new ParticleComponent[]{});
     }
 
-    public static void spawnRibbon(Level world, ParticleType<? extends RibbonParticleData> particle, int length, double x, double y, double z, double motionX, double motionY, double motionZ, boolean faceCamera, double yaw, double pitch, double roll, double scale, double r, double g, double b, double a, double drag, double duration, boolean emissive, ParticleComponent[] components) {
+    public static void spawnRibbon(Level world, Holder<ParticleType<?>> particle, int length, double x, double y, double z, double motionX, double motionY, double motionZ, boolean faceCamera, double yaw, double pitch, double roll, double scale, double red, double green, double blue, double alpha, double airDrag, double duration, boolean emissive, ParticleComponent[] components) {
         ParticleRotation rotation = faceCamera ? new ParticleRotation.FaceCamera((float) 0) : new ParticleRotation.EulerAngles((float)yaw, (float)pitch, (float)roll);
-        world.addParticle(new RibbonParticleData(particle, rotation, scale, r, g, b, a, drag, duration, emissive, length, components), x, y, z, motionX, motionY, motionZ);
+        AdvancedParticleType base = new AdvancedParticleType(particle, rotation, components, (float) red, (float) green, (float) blue, (float) alpha, (float) scale, (float) duration, (float) airDrag, emissive, false);
+        world.addParticle(new RibbonParticleType(base, length), x, y, z, motionX, motionY, motionZ);
     }
 }

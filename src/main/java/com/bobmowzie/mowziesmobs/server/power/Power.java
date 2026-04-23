@@ -1,26 +1,26 @@
 package com.bobmowzie.mowziesmobs.server.power;
 
-import com.bobmowzie.mowziesmobs.server.capability.PlayerCapability;
+import com.bobmowzie.mowziesmobs.server.capability.PlayerData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.List;
 
 public abstract class Power {
 
-    private final PlayerCapability.PlayerCapabilityImp capability;
+    private final PlayerData data;
 
-    public Power(PlayerCapability.PlayerCapabilityImp capability) {
-        this.capability = capability;
+    public Power(PlayerData data) {
+        this.data = data;
     }
 
-    public void tick(TickEvent.PlayerTickEvent event) {
+    public void tick(PlayerTickEvent event) {
 
     }
 
@@ -52,7 +52,7 @@ public abstract class Power {
 
     }
 
-    public void onTakeDamage(LivingHurtEvent event) {
+    public void onTakeDamage(LivingDamageEvent.Post event) {
 
     }
 
@@ -88,8 +88,8 @@ public abstract class Power {
         return true;
     }
 
-    public PlayerCapability.PlayerCapabilityImp getProperties() {
-        return capability;
+    public PlayerData getProperties() {
+        return data;
     }
 
     public List<LivingEntity> getEntityLivingBaseNearby(LivingEntity player, double distanceX, double distanceY, double distanceZ, double radius) {

@@ -3,8 +3,8 @@ package com.ilexiconn.llibrary.server.event;
 import com.ilexiconn.llibrary.server.animation.Animation;
 import com.ilexiconn.llibrary.server.animation.IAnimatedEntity;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.eventbus.api.Cancelable;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.ICancellableEvent;
 
 public class AnimationEvent<T extends Entity & IAnimatedEntity> extends Event {
     protected Animation animation;
@@ -23,8 +23,7 @@ public class AnimationEvent<T extends Entity & IAnimatedEntity> extends Event {
         return this.animation;
     }
 
-    @Cancelable
-    public static class Start<T extends Entity & IAnimatedEntity> extends AnimationEvent<T> {
+    public static class Start<T extends Entity & IAnimatedEntity> extends AnimationEvent<T> implements ICancellableEvent {
         public Start(T entity, Animation animation) {
             super(entity, animation);
         }

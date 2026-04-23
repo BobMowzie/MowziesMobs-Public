@@ -35,11 +35,11 @@ public class ModelSuperNova<T extends EntitySuperNova> extends AdvancedModelBase
 	}
 
 	@Override
-	public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-		body4.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-		body3.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-		body2.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-		body1.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+	public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+		body4.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+		body3.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+		body2.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+		body1.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
 	}
 
 	@Override

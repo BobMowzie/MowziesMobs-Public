@@ -6,7 +6,7 @@ import com.bobmowzie.mowziesmobs.server.ability.PlayerAbility;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
-import software.bernie.geckolib.core.animation.Animation;
+import software.bernie.geckolib.animation.Animation;
 
 public class SimplePlayerAnimationAbility extends PlayerAbility {
     private String animationName;
@@ -50,8 +50,8 @@ public class SimplePlayerAnimationAbility extends PlayerAbility {
                 else {
                     heldItemMainHandVisualOverride = getUser().getMainHandItem();
                 }
-            }
-            else {
+        }
+        else {
                 if (getUser().isUsingItem()) {
                     heldItemOffHandVisualOverride = getUser().getUseItem();
                 }

@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_clawed_log": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mowziesmobs:clawed_log"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mowziesmobs:charcoal"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_clawed_log"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mowziesmobs:charcoal"
+    ]
+  }
+}

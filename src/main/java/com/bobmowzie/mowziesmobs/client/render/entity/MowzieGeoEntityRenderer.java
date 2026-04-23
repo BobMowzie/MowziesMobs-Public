@@ -16,12 +16,13 @@ import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.util.RenderUtil;
 
 public abstract class MowzieGeoEntityRenderer<T extends MowzieGeckoEntity> extends GeoEntityRenderer<T> {
 
@@ -44,7 +45,21 @@ public abstract class MowzieGeoEntityRenderer<T extends MowzieGeckoEntity> exten
     }
 
     @Override
-    public void actuallyRender(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        float currentTime = entity.tickCount + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+        if (entity != null && currentTime != entity.lastRenderUpdateTime) {
+            renderUpdates(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        }
+        entity.lastRenderUpdateTime = currentTime;
+    }
+
+    public void renderUpdates(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+
+    }
+
+    @Override
+    public void actuallyRender(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int color) {
         if (animatable.dynamicChains != null) {
             for (GeckoDynamicChain chain : animatable.dynamicChains) {
                 if (chain.chainOrig != null) {
@@ -55,43 +70,43 @@ public abstract class MowzieGeoEntityRenderer<T extends MowzieGeckoEntity> exten
                 }
             }
         }
-        super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+        super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
         if (animatable.dynamicChains != null) {
             for (GeckoDynamicChain chain : animatable.dynamicChains) {
                 if (!isReRender) {
                     chain.setChain();
-                    chain.updateChain(Minecraft.getInstance().getFrameTime(), 0.1f, 0.1f, 0.5f, 0.02f, 10, true);
+                    chain.updateChain(partialTick, this);
                 }
                 poseStack.pushPose();
                 if (chain.chainDynamic != null) {
                     for (GeoBone group : chain.chainDynamic) {
-                        renderRecursively(poseStack, animatable, group, renderType, bufferSource, buffer, isReRender, partialTick, packedLight,
-                                packedOverlay, red, green, blue, alpha);
+                        renderRecursively(poseStack, animatable, group, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
                     }
                 }
                 poseStack.popPose();
 
-                for (int i = 0; i < chain.chainOrig.length; i++) {
-                    chain.chainOrig[i].setHidden(false);
+                if (chain.chainOrig != null) {
+                    for (int i = 0; i < chain.chainOrig.length; i++) {
+                        chain.chainOrig[i].setHidden(false);
+                    }
                 }
             }
         }
     }
 
     @Override
-    public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight,
-                                  int packedOverlay, float red, float green, float blue, float alpha) {
+    public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int color) {
         if (bone == null) return;
         poseStack.pushPose();
         if (bone instanceof MowzieGeoBone mowzieGeoBone && mowzieGeoBone.isForceMatrixTransform()) {
             PoseStack.Pose last = poseStack.last();
             float lerpBodyRot = animatable == null ? 0 : Mth.rotLerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
-//            double d0 = Mth.lerp(partialTick, animatable.xOld, animatable.getX());
-//            double d1 = Mth.lerp(partialTick, animatable.yOld, animatable.getY());
-//            double d2 = Mth.lerp(partialTick, animatable.zOld, animatable.getZ());
-            double d0 = animatable.getX();
-            double d1 = animatable.getY();
-            double d2 = animatable.getZ();
+            double d0 = Mth.lerp(partialTick, animatable.xOld, animatable.getX());
+            double d1 = Mth.lerp(partialTick, animatable.yOld, animatable.getY());
+            double d2 = Mth.lerp(partialTick, animatable.zOld, animatable.getZ());
+//            double d0 = animatable.getX();
+//            double d1 = animatable.getY();
+//            double d2 = animatable.getZ();
             Matrix4f matrix4f = new Matrix4f();
             matrix4f = matrix4f.translate(0, -0.01f, 0);
             matrix4f = matrix4f.translate((float) -d0, (float) -d1, (float) -d2);
@@ -100,7 +115,7 @@ public abstract class MowzieGeoEntityRenderer<T extends MowzieGeckoEntity> exten
             last.pose().mul(matrix4f);
             last.normal().mul(bone.getWorldSpaceNormal());
 
-            RenderUtils.translateAwayFromPivotPoint(poseStack, bone);
+            RenderUtil.translateAwayFromPivotPoint(poseStack, bone);
         }
         else {
             boolean rotOverride = false;
@@ -108,8 +123,8 @@ public abstract class MowzieGeoEntityRenderer<T extends MowzieGeckoEntity> exten
                 rotOverride = mowzieGeoBone.rotationOverride != null;
             }
 
-            RenderUtils.translateMatrixToBone(poseStack, bone);
-            RenderUtils.translateToPivotPoint(poseStack, bone);
+            RenderUtil.translateMatrixToBone(poseStack, bone);
+            RenderUtil.translateToPivotPoint(poseStack, bone);
 
             if (bone instanceof MowzieGeoBone mowzieGeoBone) {
                 if (!mowzieGeoBone.inheritRotation && !mowzieGeoBone.inheritTranslation) {
@@ -130,39 +145,52 @@ public abstract class MowzieGeoEntityRenderer<T extends MowzieGeckoEntity> exten
                 poseStack.last().pose().mul(mowzieGeoBone.rotationOverride);
                 poseStack.last().normal().mul(new Matrix3f(mowzieGeoBone.rotationOverride));
             } else {
-                RenderUtils.rotateMatrixAroundBone(poseStack, bone);
+                RenderUtil.rotateMatrixAroundBone(poseStack, bone);
             }
 
-            RenderUtils.scaleMatrixForBone(poseStack, bone);
+            RenderUtil.scaleMatrixForBone(poseStack, bone);
 
             if (bone.isTrackingMatrices()) {
                 Matrix4f poseState = new Matrix4f(poseStack.last().pose());
-                Matrix4f localMatrix = RenderUtils.invertAndMultiplyMatrices(poseState, this.entityRenderTranslations);
+                Matrix4f localMatrix = RenderUtil.invertAndMultiplyMatrices(poseState, this.entityRenderTranslations);
 
-                bone.setModelSpaceMatrix(RenderUtils.invertAndMultiplyMatrices(poseState, this.modelRenderTranslations));
-                bone.setLocalSpaceMatrix(RenderUtils.translateMatrix(localMatrix, getRenderOffset(this.animatable, 1).toVector3f()));
-                bone.setWorldSpaceMatrix(RenderUtils.translateMatrix(new Matrix4f(localMatrix), this.animatable.position().toVector3f()));
+                if (bone instanceof MowzieGeoBone mowzieGeoBone) {
+                    mowzieGeoBone.setPose(poseState);
+                }
+                bone.setModelSpaceMatrix(RenderUtil.invertAndMultiplyMatrices(poseState, this.modelRenderTranslations));
+                bone.setLocalSpaceMatrix(RenderUtil.translateMatrix(localMatrix, getRenderOffset(this.animatable, 1).toVector3f()));
+                double d0 = Mth.lerp(partialTick, animatable.xOld, animatable.getX());
+                double d1 = Mth.lerp(partialTick, animatable.yOld, animatable.getY());
+                double d2 = Mth.lerp(partialTick, animatable.zOld, animatable.getZ());
+                bone.setWorldSpaceMatrix(RenderUtil.translateMatrix(new Matrix4f(localMatrix), new Vector3f((float) d0, (float) d1, (float) d2)));
             }
 
-            RenderUtils.translateAwayFromPivotPoint(poseStack, bone);
+            RenderUtil.translateAwayFromPivotPoint(poseStack, bone);
         }
 
-        renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+        // FIXME 1.21 :: seems to be needed due to render changes - will be removed in a future geckolib version
+        buffer = checkAndRefreshBuffer(isReRender, buffer, bufferSource, renderType);
+
+        renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, color);
 
         if (!isReRender)
             applyRenderLayersForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 
-        renderChildBones(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+        renderChildBones(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
 
         poseStack.popPose();
     }
 
     @Override
-    public void renderChildBones(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void renderChildBones(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int color) {
         for (GeoBone childBone : bone.getChildBones()) {
             if (!bone.isHidingChildren() || (childBone instanceof MowzieGeoBone mowzieGeoBone && mowzieGeoBone.isDynamicJoint())) {
-                renderRecursively(poseStack, animatable, childBone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+                renderRecursively(poseStack, animatable, childBone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
             }
         }
+    }
+
+    public Matrix4f getModelRenderMatrix() {
+        return modelRenderTranslations;
     }
 }

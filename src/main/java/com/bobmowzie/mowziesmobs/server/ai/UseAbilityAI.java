@@ -14,6 +14,8 @@ public class UseAbilityAI<T extends MowzieGeckoEntity> extends Goal {
 
     protected AbilityType abilityType;
 
+    protected boolean interruptAbilityOnEnd = true;
+
     public UseAbilityAI(T entity, AbilityType ability) {
         this(entity, ability, true);
     }
@@ -21,6 +23,13 @@ public class UseAbilityAI<T extends MowzieGeckoEntity> extends Goal {
     public UseAbilityAI(T entity, AbilityType ability, boolean interruptsAI) {
         this.entity = entity;
         this.abilityType = ability;
+        if (interruptsAI) this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+    }
+
+    public UseAbilityAI(T entity, AbilityType ability, boolean interruptsAI, boolean interruptAbilityOnEnd) {
+        this.entity = entity;
+        this.abilityType = ability;
+        this.interruptAbilityOnEnd = interruptAbilityOnEnd;
         if (interruptsAI) this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
@@ -38,9 +47,11 @@ public class UseAbilityAI<T extends MowzieGeckoEntity> extends Goal {
     @Override
     public void stop() {
         super.stop();
-        Ability ability = entity.getActiveAbility();
-        if (ability != null && ability.getAbilityType() == abilityType) {
-            AbilityHandler.INSTANCE.sendInterruptAbilityMessage(entity, ability.getAbilityType());
+        if (interruptAbilityOnEnd) {
+            Ability<?> ability = entity.getActiveAbility();
+            if (ability != null && ability.getAbilityType() == abilityType) {
+                AbilityHandler.INSTANCE.sendInterruptAbilityMessage(entity, ability.getAbilityType());
+            }
         }
     }
 

@@ -12,7 +12,7 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class RenderGeomancyBase<T extends EntityGeomancyBase & GeoEntity> extends GeoEntityRenderer<T> {
-    private static final ResourceLocation TEXTURE_STONE = new ResourceLocation("textures/blocks/stone.png");
+    private static final ResourceLocation TEXTURE_STONE = ResourceLocation.withDefaultNamespace("textures/blocks/stone.png");
     private MultiBufferSource multiBufferSource;
     private T entity;
 
@@ -26,10 +26,10 @@ public class RenderGeomancyBase<T extends EntityGeomancyBase & GeoEntity> extend
     }
 
     @Override
-    public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int color) {
         this.multiBufferSource = bufferSource;
         this.entity = animatable;
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, color);
     }
 
     public void setCurrentMultiBufferSource(MultiBufferSource rtb) {

@@ -1,12 +1,13 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelUmvuthi;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.render.MMRenderType;
 import com.bobmowzie.mowziesmobs.client.render.entity.layer.GeckoSunblockLayer;
 import com.bobmowzie.mowziesmobs.client.render.entity.layer.UmvuthiSunLayer;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthi;
+import com.ilexiconn.llibrary.client.util.ClientUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -16,17 +17,14 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
 
-@OnlyIn(Dist.CLIENT)
 public class RenderUmvuthi extends MowzieGeoEntityRenderer<EntityUmvuthi> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/umvuthi.png");
-    public static final ResourceLocation SUN = new ResourceLocation(MowziesMobs.MODID, "textures/effects/sun_effect.png");
+    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/umvuthi.png");
+    public static final ResourceLocation SUN = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/effects/sun_effect.png");
 
     public static final float BURST_RADIUS = 3.5f;
     public static final int BURST_FRAME_COUNT = 10;
@@ -70,7 +68,7 @@ public class RenderUmvuthi extends MowzieGeoEntityRenderer<EntityUmvuthi> {
         }
 
 //        matrixStackIn.pushPose();
-//        VertexConsumer ivertexbuilder = bufferIn.getBuffer(MMRenderType.getSolarFlare( new ResourceLocation(MowziesMobs.MODID, "textures/effects/super_nova_8.png")));
+//        VertexConsumer ivertexbuilder = bufferIn.getBuffer(MMRenderType.getSolarFlare( ResourceLocation.fromNamespaceAndPath(MowziesMobs.MODID, "textures/effects/super_nova_8.png")));
 //        PoseStack.Pose matrixstack$entry = matrixStackIn.last();
 //        matrixStackIn.scale(1.2f,1.2f,1.2f);
 //        Matrix4f matrix4f = matrixstack$entry.pose();
@@ -78,11 +76,15 @@ public class RenderUmvuthi extends MowzieGeoEntityRenderer<EntityUmvuthi> {
 //        drawSun(matrix4f, matrix3f, ivertexbuilder, packedLightIn);
 //        matrixStackIn.popPose();
         super.render(umvuthi, entityYaw, delta, matrixStackIn, bufferIn, packedLightIn);
+    }
 
+    @Override
+    public void renderUpdates(EntityUmvuthi umvuthi, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        super.renderUpdates(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
         MowzieGeoBone sunRender = getMowzieGeoModel().getMowzieBone("sun_render");
         Vector3d sunRenderPos = sunRender.getWorldPosition();
         if (umvuthi.headPos != null && umvuthi.headPos.length > 0)
-        umvuthi.headPos[0] = new Vec3(sunRenderPos.x, sunRenderPos.y, sunRenderPos.z);
+            umvuthi.headPos[0] = new Vec3(sunRenderPos.x, sunRenderPos.y, sunRenderPos.z);
 
         if (umvuthi.getActiveAbilityType() == EntityUmvuthi.SUPERNOVA_ABILITY && umvuthi.betweenHandPos != null && umvuthi.betweenHandPos.length > 0) {
             Vector3d novaRenderPos = getMowzieGeoModel().getMowzieBone("superNovaCenter").getWorldPosition();
@@ -93,7 +95,7 @@ public class RenderUmvuthi extends MowzieGeoEntityRenderer<EntityUmvuthi> {
             if (ticksInUse <= blendDuration + blendStart) {
                 Vec3 sunRenderPosVec3 = new Vec3(sunRenderPos.x, sunRenderPos.y, sunRenderPos.z);
                 Vec3 novaRenderPosVec3 = new Vec3(novaRenderPos.x, novaRenderPos.y, novaRenderPos.z);
-                float alpha = (umvuthi.getActiveAbility().getTicksInUse() + delta - blendStart) / (blendDuration);
+                float alpha = (umvuthi.getActiveAbility().getTicksInUse() + partialTick - blendStart) / (blendDuration);
                 alpha = Math.max(0, alpha);
                 Vec3 newPos = novaRenderPosVec3.add(sunRenderPosVec3.subtract(novaRenderPosVec3).scale(1.0 - alpha));
                 novaRenderPos.set(newPos.x, newPos.y, newPos.z);
@@ -149,6 +151,7 @@ public class RenderUmvuthi extends MowzieGeoEntityRenderer<EntityUmvuthi> {
     }
 
     public static void drawVertex(Matrix4f matrix, Matrix3f normals, VertexConsumer vertexBuilder, float offsetX, float offsetY, float offsetZ, float textureX, float textureY, float alpha, int packedLightIn) {
-        vertexBuilder.vertex(matrix, offsetX, offsetY, offsetZ).color(1, 1, 1, 1 * alpha).uv(textureX, textureY).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(packedLightIn).normal(normals, 0.0F, 1.0F, 0.0F).endVertex();
+        VertexConsumer vertex = vertexBuilder.addVertex(matrix, offsetX, offsetY, offsetZ).setColor(1, 1, 1, 1 * alpha).setUv(textureX, textureY).setOverlay(OverlayTexture.NO_OVERLAY).setLight(packedLightIn);
+        ClientUtils.transformNormals(vertex, normals, 1, 0, 1);
     }
 }

@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure.jigsaw;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.util.RandomSource;
@@ -12,16 +12,16 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElementType;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
 
 public class FallbackPoolElement extends StructurePoolElement {
-    public static final Codec<FallbackPoolElement> CODEC = Codec.unit(() -> {
-        return FallbackPoolElement.INSTANCE;
-    });
+    public static final MapCodec<FallbackPoolElement> CODEC = MapCodec.unit(() -> FallbackPoolElement.INSTANCE);
     public static final FallbackPoolElement INSTANCE = new FallbackPoolElement();
 
     private FallbackPoolElement() {
@@ -40,7 +40,8 @@ public class FallbackPoolElement extends StructurePoolElement {
         throw new IllegalStateException("Invalid call to MowzieFallbackElement.getBoundingBox, filter me!");
     }
 
-    public boolean place(StructureTemplateManager p_210180_, WorldGenLevel p_210181_, StructureManager p_210182_, ChunkGenerator p_210183_, BlockPos p_210184_, BlockPos p_210185_, Rotation p_210186_, BoundingBox p_210187_, RandomSource p_210188_, boolean p_210189_) {
+    @Override
+    public boolean place(@NotNull StructureTemplateManager structureTemplateManager, @NotNull WorldGenLevel level, @NotNull StructureManager structureManager, @NotNull ChunkGenerator generator, @NotNull BlockPos offset, @NotNull BlockPos pos, @NotNull Rotation rotation, @NotNull BoundingBox box, @NotNull RandomSource random, @NotNull LiquidSettings liquidSettings, boolean keepJigsaws) {
         return true;
     }
 

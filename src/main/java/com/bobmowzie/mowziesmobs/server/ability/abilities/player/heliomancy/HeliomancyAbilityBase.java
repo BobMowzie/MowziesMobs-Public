@@ -21,16 +21,16 @@ public abstract class HeliomancyAbilityBase extends PlayerAbility {
     @Override
     public void start() {
         super.start();
-        MobEffectInstance effectInstance = getUser().getEffect(EffectHandler.SUNS_BLESSING.get());
+        MobEffectInstance effectInstance = getUser().getEffect(EffectHandler.SUNS_BLESSING);
         if (effectInstance != null && effectInstance.isInfiniteDuration()) {
-            getUser().removeEffect(EffectHandler.SUNS_BLESSING.get());
-            getUser().addEffect(new MobEffectInstance(EffectHandler.SUNS_BLESSING.get(), ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.effectDuration.get() * 60 * 20, 0, false, false));
+            getUser().removeEffect(EffectHandler.SUNS_BLESSING);
+            getUser().addEffect(new MobEffectInstance(EffectHandler.SUNS_BLESSING, ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.effectDuration.get() * 60 * 20, 0, false, false));
         }
     }
 
     @Override
     public boolean canUse() {
         if (getUser() == null || !getUser().getInventory().getSelected().isEmpty()) return false;
-        return getUser().hasEffect(EffectHandler.SUNS_BLESSING.get()) && super.canUse();
+        return getUser().hasEffect(EffectHandler.SUNS_BLESSING) && super.canUse();
     }
 }

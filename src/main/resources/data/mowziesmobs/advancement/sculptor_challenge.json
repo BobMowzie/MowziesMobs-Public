@@ -1,0 +1,21 @@
+{
+  "display": {
+    "icon": {
+      "count": 1,
+      "id": "mowziesmobs:earthrend_gauntlet"
+    },
+    "title": {
+      "translate": "advancements.mowziesmobs.sculptor_challenge.title"
+    },
+    "description": {
+      "translate": "advancements.mowziesmobs.sculptor_challenge.description"
+    },
+    "frame": "challenge"
+  },
+  "parent": "mowziesmobs:root",
+  "criteria": {
+    "sculptor_challenge": {
+      "trigger": "mowziesmobs:sculptor_challenge"
+    }
+  }
+}

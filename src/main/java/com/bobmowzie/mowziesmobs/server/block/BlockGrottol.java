@@ -1,5 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.block;
 
+import com.mojang.serialization.MapCodec;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -18,12 +19,14 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 public class BlockGrottol extends HorizontalDirectionalBlock {
+    public static final MapCodec<BlockGrottol> CODEC = simpleCodec(BlockGrottol::new);
     public static final EnumProperty<Variant> VARIANT = EnumProperty.create("variant",Variant.class);
 
     private static final VoxelShape BOUNDS = Shapes.box(
@@ -86,6 +89,11 @@ public class BlockGrottol extends HorizontalDirectionalBlock {
 
     private static boolean hasSupport(BlockGetter world, BlockPos pos) {
         return world.getBlockState(pos.below()).isSolid();
+    }
+
+    @Override
+    protected @NotNull MapCodec<? extends HorizontalDirectionalBlock> codec() {
+        return CODEC;
     }
 
     public enum Variant implements StringRepresentable {

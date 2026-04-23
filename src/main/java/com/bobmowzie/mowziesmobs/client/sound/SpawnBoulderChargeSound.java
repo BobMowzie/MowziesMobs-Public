@@ -3,16 +3,14 @@ package com.bobmowzie.mowziesmobs.client.sound;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
 import com.bobmowzie.mowziesmobs.server.ability.AbilitySection;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.geomancy.SpawnBoulderAbility;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class SpawnBoulderChargeSound extends AbstractTickableSoundInstance {
     private final LivingEntity user;
     private final SpawnBoulderAbility ability;
@@ -26,11 +24,8 @@ public class SpawnBoulderChargeSound extends AbstractTickableSoundInstance {
         y = (float) user.getY();
         z = (float) user.getZ();
 
-        AbilityCapability.IAbilityCapability capability = AbilityHandler.INSTANCE.getAbilityCapability(user);
-        if (capability != null) {
-            ability = (SpawnBoulderAbility) capability.getAbilityMap().get(AbilityHandler.SPAWN_BOULDER_ABILITY);
-        }
-        else ability = null;
+        AbilityData data = DataHandler.getData(user, DataHandler.ABILITY_DATA);
+        ability = (SpawnBoulderAbility) data.getAbilityMap().get(AbilityHandler.SPAWN_BOULDER_ABILITY);
     }
 
     @Override

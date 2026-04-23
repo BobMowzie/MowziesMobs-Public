@@ -5,11 +5,8 @@ import com.ilexiconn.llibrary.server.animation.Animation;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class EntityDynamicsTester extends MowzieLLibraryEntity {
-    @OnlyIn(Dist.CLIENT)
     public DynamicChain dc;
 
     public EntityDynamicsTester(Level world) {

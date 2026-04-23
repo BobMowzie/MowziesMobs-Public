@@ -4,10 +4,7 @@ import com.bobmowzie.mowziesmobs.server.entity.foliaath.EntityBabyFoliaath;
 import com.ilexiconn.llibrary.client.model.tools.AdvancedModelRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class ModelFoliaathBaby<T extends EntityBabyFoliaath> extends MowzieEntityModel<T> {
     public AdvancedModelRenderer infantBase;
     public AdvancedModelRenderer juvenileBase;
@@ -107,9 +104,9 @@ public class ModelFoliaathBaby<T extends EntityBabyFoliaath> extends MowzieEntit
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-        infantBase.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-        juvenileBase.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+        infantBase.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        juvenileBase.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
     }
 
     public void setDefaultAngles(EntityBabyFoliaath entity, float limbSwing, float limbSwingAmount, float headYaw, float headPitch, float delta) {

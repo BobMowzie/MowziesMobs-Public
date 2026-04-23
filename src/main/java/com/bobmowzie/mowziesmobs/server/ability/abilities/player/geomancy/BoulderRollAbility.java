@@ -6,11 +6,11 @@ import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoPlayer;
 import com.bobmowzie.mowziesmobs.server.ability.*;
 import com.bobmowzie.mowziesmobs.server.potion.EffectHandler;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
 
 public class BoulderRollAbility extends PlayerAbility {
     private static int START_UP = 15;
@@ -71,7 +71,7 @@ public class BoulderRollAbility extends PlayerAbility {
     @Override
     public boolean canUse() {
         if (getUser() != null && !getUser().getInventory().getSelected().isEmpty()) return false;
-        return getUser().hasEffect(EffectHandler.GEOMANCY.get()) && getUser().isSprinting() && super.canUse();
+        return getUser().hasEffect(EffectHandler.GEOMANCY) && getUser().isSprinting() && super.canUse();
     }
 
     @Override

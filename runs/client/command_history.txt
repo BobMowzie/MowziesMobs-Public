@@ -1,1 +1,50 @@
-/gamerule doMobSpawning false
+//set vines
+//set vine
+//set grass
+//set grass_block
+//contract down 1
+//contract 1 down
+//set vine
+//shift 1 me
+//undo
+//shift 2 back
+//redo
+//set vine
+//set vine[up=true]
+//set vine[north=true]
+/kill @e[type=mowziesmobs:elokosa_follower_howler]
+//move 15 up
+//shift 3 up
+//set vine[north=true]
+/kill @e[type=mowziesmobs:elokosa_follower_howler]
+/give Dev minecraft:structure_block
+/locate structure mowziesmobs:wrought_chamber
+/tp @s 80 ~ -128
+/tp ~ ~ ~20000
+/locate structure mowziesmobs:wrought_chamber
+/tp @s 48 ~ 19680
+/locate structure mowziesmobs:wrought_chamber
+/tp @s -368 ~ -384
+/time set day
+/setworldspaw
+/setworldspawn
+/time set night
+/time set day
+/time set night
+/summon mowziesmobs:elokosa_follower_howler ~ ~ ~ {prevent_transform: true}
+/summon mowziesmobs:elokosa_follower_howler ~ ~ ~ {prevent_transform: true, is_night_form: true}
+/time set day
+/time set night
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler] {prevent_transform: true, is_night_form: true}
+/data merge entity @n {prevent_transform: true, is_night_form: true}
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler,limit=1] {prevent_transform: true, is_night_form: true}
+/time set day
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler,limit=1] {prevent_transform: true, is_night_form: true}
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler,limit=1,sort=nearest] {prevent_transform: true, is_night_form: true}
+/kill @e[type=mowziesmobs:elokosa_follower_howler]
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler,limit=1,sort=nearest] {prevent_transform: true, is_night_form: true}
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler,limit=1,sort=nearest] {prevent_transform: true}
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler,limit=1,sort=nearest] {prevent_transform: false}
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler,limit=1,sort=nearest] {night_form: true}
+/data merge entity @e[type=mowziesmobs:elokosa_follower_howler,limit=1,sort=nearest] {prevent_transform: true, is_night_form: true}
+/time set night

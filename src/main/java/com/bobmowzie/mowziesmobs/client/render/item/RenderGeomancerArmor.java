@@ -38,25 +38,25 @@ public class RenderGeomancerArmor extends MowzieGeoArmorRenderer<ItemGeomancerAr
 
         switch (currentSlot) {
             case HEAD -> {
-                setBoneVisible(this.getBodyBone(), true);
+                setBoneVisible(this.getBodyBone(model), true);
                 setBoneVisible(this.beads, true);
-                setBoneVisible(this.getHeadBone(), true);
+                setBoneVisible(this.getHeadBone(model), true);
             }
             case CHEST -> {
-                setBoneVisible(this.getBodyBone(), true);
+                setBoneVisible(this.getBodyBone(model), true);
                 setBoneVisible(this.robe, true);
-                setBoneVisible(this.getRightArmBone(), true);
-                setBoneVisible(this.getLeftArmBone(), true);
+                setBoneVisible(this.getRightArmBone(model), true);
+                setBoneVisible(this.getLeftArmBone(model), true);
             }
             case LEGS -> {
-                setBoneVisible(this.getBodyBone(), true);
+                setBoneVisible(this.getBodyBone(model), true);
                 setBoneVisible(this.belt, true);
-                setBoneVisible(this.getRightLegBone(), true);
-                setBoneVisible(this.getLeftLegBone(), true);
+                setBoneVisible(this.getRightLegBone(model), true);
+                setBoneVisible(this.getLeftLegBone(model), true);
             }
             case FEET -> {
-                setBoneVisible(this.getRightBootBone(), true);
-                setBoneVisible(this.getLeftBootBone(), true);
+                setBoneVisible(this.getRightBootBone(model), true);
+                setBoneVisible(this.getLeftBootBone(model), true);
             }
             default -> {
             }

@@ -1,0 +1,15 @@
+{
+  "pools": [
+    {
+      "name": "earthrend_gauntlet",
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "name": "mowziesmobs:earthrend_gauntlet",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

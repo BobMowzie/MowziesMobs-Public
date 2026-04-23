@@ -4,6 +4,7 @@ import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.grottol.EntityGrottol;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -45,13 +47,13 @@ public class ItemCapturedGrottol extends Item {
         }
         if (!world.isClientSide) {
             EntityGrottol grottol = new EntityGrottol(EntityHandler.GROTTOL.get(), world);
-            CompoundTag compound = stack.getTagElement("EntityTag");
-            if (compound != null) {
-                setData(grottol, compound);
+            CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+            if (data != null) {
+                setData(grottol, data.copyTag().getCompound("EntityTag"));
             }
             grottol.moveTo(location, 0, 0);
             lookAtPlayer(grottol, player);
-            grottol.finalizeSpawn((ServerLevelAccessor) world, world.getCurrentDifficultyAt(location), MobSpawnType.MOB_SUMMONED, null, null);
+            grottol.finalizeSpawn((ServerLevelAccessor) world, world.getCurrentDifficultyAt(location), MobSpawnType.MOB_SUMMONED, null);
             world.addFreshEntity(grottol);
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
@@ -61,10 +63,10 @@ public class ItemCapturedGrottol extends Item {
     }
 
     private void setData(EntityGrottol grottol, CompoundTag compound) {
-        CompoundTag data = grottol.serializeNBT();
+        CompoundTag data = grottol.serializeNBT(grottol.registryAccess());
         UUID id = grottol.getUUID();
         data.merge(compound);
-        grottol.deserializeNBT(data);
+        grottol.deserializeNBT(grottol.registryAccess(), data);
         grottol.setUUID(id);
     }
 
@@ -84,7 +86,8 @@ public class ItemCapturedGrottol extends Item {
 
     public ItemStack create(EntityGrottol grottol) {
         ItemStack stack = new ItemStack(this);
-        stack.addTagElement("EntityTag", grottol.serializeNBT());
+        // FIXME 1.21 :: will need to use item component in the future
+        stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).update(tag -> tag.put("EntityTag", grottol.serializeNBT(grottol.registryAccess())));
         return stack;
     }
 }

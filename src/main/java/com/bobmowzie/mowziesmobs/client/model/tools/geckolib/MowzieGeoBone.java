@@ -19,11 +19,15 @@ public class MowzieGeoBone extends GeoBone {
     public boolean inheritTranslation = true;
     protected boolean forceMatrixTransform = false;
 
+    private Matrix4f pose;
+
     private boolean isDynamicJoint = false;
 
     public MowzieGeoBone(@Nullable GeoBone parent, String name, Boolean mirror, @Nullable Double inflate, @Nullable Boolean dontRender, @Nullable Boolean reset) {
         super(parent, name, mirror, inflate, dontRender, reset);
         rotationOverride = null;
+
+        pose = new Matrix4f();
     }
 
     public MowzieGeoBone(MowzieGeoBone geoBone) {
@@ -37,7 +41,9 @@ public class MowzieGeoBone extends GeoBone {
 
         this.getCubes().addAll(geoBone.getCubes());
         this.saveInitialSnapshot();
-        this.getChildBones().addAll(geoBone.getChildBones());
+        this.getChildBones().addAll(geoBone.getChildBones().stream().filter(b -> !(b instanceof MowzieGeoBone && ((MowzieGeoBone)b).isDynamicJoint())).toList());
+
+        pose = new Matrix4f();
     }
 
     public MowzieGeoBone getParent() {
@@ -55,16 +61,34 @@ public class MowzieGeoBone extends GeoBone {
         addPosZ(z);
     }
 
+    public void addPos(double x, double y, double z) {
+        addPosX(x);
+        addPosY(y);
+        addPosZ(z);
+    }
+
     public void addPosX(float x) {
         setPosX(getPosX() + x);
+    }
+
+    public void addPosX(double x) {
+        setPosX(getPosX() + (float)x);
     }
 
     public void addPosY(float y) {
         setPosY(getPosY() + y);
     }
 
+    public void addPosY(double y) {
+        setPosY(getPosY() + (float) y);
+    }
+
     public void addPosZ(float z) {
         setPosZ(getPosZ() + z);
+    }
+
+    public void addPosZ(double z) {
+        setPosZ(getPosZ() + (float)z);
     }
 
     public void setPos(Vec3 vec) {
@@ -102,6 +126,24 @@ public class MowzieGeoBone extends GeoBone {
 
     public void addRotZ(float z) {
         setRotZ(getRotZ() + z);
+    }
+
+    public void addRot(double x, double y, double z) {
+        addRotX(x);
+        addRotY(y);
+        addRotZ(z);
+    }
+
+    public void addRotX(double x) {
+        setRotX(getRotX() + (float)x);
+    }
+
+    public void addRotY(double y) {
+        setRotY(getRotY() + (float)y);
+    }
+
+    public void addRotZ(double z) {
+        setRotZ(getRotZ() + (float)z);
     }
 
     public void setRot(Vector3d vec) {
@@ -213,5 +255,14 @@ public class MowzieGeoBone extends GeoBone {
 
     public boolean isDynamicJoint() {
         return isDynamicJoint;
+    }
+
+    public void setPose(Matrix4f pose) {
+        this.pose = pose;
+    }
+
+    public Matrix4f getPose() {
+        setTrackingMatrices(true);
+        return pose;
     }
 }

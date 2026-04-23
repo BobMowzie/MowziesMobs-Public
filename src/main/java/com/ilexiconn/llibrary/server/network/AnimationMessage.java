@@ -1,54 +1,44 @@
 package com.ilexiconn.llibrary.server.network;
 
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.ilexiconn.llibrary.server.animation.IAnimatedEntity;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+public record AnimationMessage(int entityId, int index) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<AnimationMessage> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "animation_message"));
 
-public class AnimationMessage {
-    private int entityID;
-    private int index;
+    public static final StreamCodec<ByteBuf, AnimationMessage> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT,
+            AnimationMessage::entityId,
+            ByteBufCodecs.INT,
+            AnimationMessage::index,
+            AnimationMessage::new
+    );
 
-    public AnimationMessage() {
+    public static void handleClient(final AnimationMessage packet, final IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Level level = MMCommon.PROXY.getClientLevel();
 
-    }
-
-    public AnimationMessage(int entityID, int index) {
-        this.entityID = entityID;
-        this.index = index;
-    }
-
-    public static void serialize(final AnimationMessage message, final FriendlyByteBuf buf) {
-        buf.writeVarInt(message.entityID);
-        buf.writeVarInt(message.index);
-    }
-
-    public static AnimationMessage deserialize(final FriendlyByteBuf buf) {
-        final AnimationMessage message = new AnimationMessage();
-        message.entityID = buf.readVarInt();
-        message.index = buf.readVarInt();
-        return message;
-    }
-
-    public static class Handler implements BiConsumer<AnimationMessage, Supplier<NetworkEvent.Context>> {
-        @Override
-        public void accept(final AnimationMessage message, final Supplier<NetworkEvent.Context> contextSupplier) {
-            final NetworkEvent.Context context = contextSupplier.get();
-            context.enqueueWork(() -> {
-                IAnimatedEntity entity = (IAnimatedEntity) Minecraft.getInstance().level.getEntity(message.entityID);
-                if (entity != null) {
-                    if (message.index == -1) {
-                        entity.setAnimation(IAnimatedEntity.NO_ANIMATION);
-                    } else {
-                        entity.setAnimation(entity.getAnimations()[message.index]);
-                    }
-                    entity.setAnimationTick(0);
+            if (level != null && level.getEntity(packet.entityId()) instanceof IAnimatedEntity entity) {
+                if (packet.index() == -1) {
+                    entity.setAnimation(IAnimatedEntity.NO_ANIMATION);
+                } else {
+                    entity.setAnimation(entity.getAnimations()[packet.index()]);
                 }
-            });
-            context.setPacketHandled(true);
-        }
+                entity.setAnimationTick(0);
+            }
+        });
+    }
+
+    @Override
+    public @NotNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

@@ -11,8 +11,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 
 public class EntityCameraShake extends Entity {
     private static final EntityDataAccessor<Float> RADIUS = SynchedEntityData.defineId(EntityCameraShake.class, EntityDataSerializers.FLOAT);
@@ -33,7 +32,6 @@ public class EntityCameraShake extends Entity {
         setPos(position.x(), position.y(), position.z());
     }
 
-    @OnlyIn(Dist.CLIENT)
     public float getShakeAmount(Player player, float delta) {
         float ticksDelta = tickCount + delta;
         float timeFrac = 1.0f - (ticksDelta - getDuration()) / (getFadeDuration() + 1.0f);
@@ -50,11 +48,11 @@ public class EntityCameraShake extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        getEntityData().define(RADIUS, 10.0f);
-        getEntityData().define(MAGNITUDE, 1.0f);
-        getEntityData().define(DURATION, 0);
-        getEntityData().define(FADE_DURATION, 5);
+    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
+        builder.define(RADIUS, 10.0f);
+        builder.define(MAGNITUDE, 1.0f);
+        builder.define(DURATION, 0);
+        builder.define(FADE_DURATION, 5);
     }
 
     public float getRadius() {

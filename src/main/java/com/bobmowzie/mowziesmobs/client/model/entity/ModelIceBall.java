@@ -47,10 +47,10 @@ public class ModelIceBall<T extends EntityIceBall> extends AdvancedModelBase<T> 
 	}
 
 	@Override
-	public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
-		core.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-		body1.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
-		body2.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+	public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+		core.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+		body1.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+		body2.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
 	}
 
 	public void setRotationAngle(BasicModelRenderer modelRenderer, float x, float y, float z) {

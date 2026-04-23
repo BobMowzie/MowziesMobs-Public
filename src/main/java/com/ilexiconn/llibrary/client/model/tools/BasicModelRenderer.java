@@ -7,8 +7,6 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectListIterator;
 import net.minecraft.core.Direction;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -16,7 +14,6 @@ import org.joml.Vector4f;
 
 import java.util.Random;
 
-@OnlyIn(Dist.CLIENT)
 public class BasicModelRenderer {
     public float textureWidth;
     public float textureHeight;
@@ -130,23 +127,23 @@ public class BasicModelRenderer {
     }
 
     public void render(PoseStack p_228308_1_, VertexConsumer p_228308_2_, int p_228308_3_, int p_228308_4_) {
-        this.render(p_228308_1_, p_228308_2_, p_228308_3_, p_228308_4_, 1.0F, 1.0F, 1.0F, 1.0F);
+        this.render(p_228308_1_, p_228308_2_, p_228308_3_, p_228308_4_, -1);
     }
 
-    public void render(PoseStack p_228309_1_, VertexConsumer p_228309_2_, int p_228309_3_, int p_228309_4_, float p_228309_5_, float p_228309_6_, float p_228309_7_, float p_228309_8_) {
+    public void render(PoseStack pose, VertexConsumer consumer, int packedLight, int packedOverlay, int color) {
         if (this.showModel) {
             if (!this.cubeList.isEmpty() || !this.childModels.isEmpty()) {
-                p_228309_1_.pushPose();
-                this.translateRotate(p_228309_1_);
-                this.doRender(p_228309_1_.last(), p_228309_2_, p_228309_3_, p_228309_4_, p_228309_5_, p_228309_6_, p_228309_7_, p_228309_8_);
+                pose.pushPose();
+                this.translateRotate(pose);
+                this.doRender(pose.last(), consumer, packedLight, packedOverlay, color);
                 ObjectListIterator var9 = this.childModels.iterator();
 
                 while(var9.hasNext()) {
                     BasicModelRenderer lvt_10_1_ = (BasicModelRenderer)var9.next();
-                    lvt_10_1_.render(p_228309_1_, p_228309_2_, p_228309_3_, p_228309_4_, p_228309_5_, p_228309_6_, p_228309_7_, p_228309_8_);
+                    lvt_10_1_.render(pose, consumer, packedLight, packedOverlay, color);
                 }
 
-                p_228309_1_.popPose();
+                pose.popPose();
             }
         }
     }
@@ -167,9 +164,9 @@ public class BasicModelRenderer {
 
     }
 
-    private void doRender(PoseStack.Pose p_228306_1_, VertexConsumer p_228306_2_, int p_228306_3_, int p_228306_4_, float p_228306_5_, float p_228306_6_, float p_228306_7_, float p_228306_8_) {
-        Matrix4f lvt_9_1_ = p_228306_1_.pose();
-        Matrix3f lvt_10_1_ = p_228306_1_.normal();
+    private void doRender(PoseStack.Pose pose, VertexConsumer consumer, int packedLight, int packedOverlay, int color) {
+        Matrix4f lvt_9_1_ = pose.pose();
+        Matrix3f lvt_10_1_ = pose.normal();
         ObjectListIterator var11 = this.cubeList.iterator();
 
         while(var11.hasNext()) {
@@ -192,7 +189,7 @@ public class BasicModelRenderer {
                     float lvt_25_1_ = lvt_22_1_.position.z() / 16.0F;
                     Vector4f lvt_26_1_ = new Vector4f(lvt_23_1_, lvt_24_1_, lvt_25_1_, 1.0F);
                     lvt_26_1_.mul(lvt_9_1_);
-                    p_228306_2_.vertex(lvt_26_1_.x(), lvt_26_1_.y(), lvt_26_1_.z(), p_228306_5_, p_228306_6_, p_228306_7_, p_228306_8_, lvt_22_1_.textureU, lvt_22_1_.textureV, p_228306_4_, p_228306_3_, lvt_18_1_, lvt_19_1_, lvt_20_1_);
+                    consumer.addVertex(lvt_26_1_.x(), lvt_26_1_.y(), lvt_26_1_.z(), color, lvt_22_1_.textureU, lvt_22_1_.textureV, packedOverlay, packedLight, lvt_18_1_, lvt_19_1_, lvt_20_1_);
                 }
             }
         }
@@ -209,7 +206,6 @@ public class BasicModelRenderer {
         return (BasicModelRenderer.ModelBox)this.cubeList.get(p_228310_1_.nextInt(this.cubeList.size()));
     }
 
-    @OnlyIn(Dist.CLIENT)
     static class PositionTextureVertex {
         public final Vector3f position;
         public final float textureU;
@@ -230,7 +226,6 @@ public class BasicModelRenderer {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     static class TexturedQuad {
         public final BasicModelRenderer.PositionTextureVertex[] vertexPositions;
         public final Vector3f normal;
@@ -261,7 +256,6 @@ public class BasicModelRenderer {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static class ModelBox {
         private final BasicModelRenderer.TexturedQuad[] quads;
         public final float posX1;

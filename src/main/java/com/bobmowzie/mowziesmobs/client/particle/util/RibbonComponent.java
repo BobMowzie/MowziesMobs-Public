@@ -1,18 +1,19 @@
 package com.bobmowzie.mowziesmobs.client.particle.util;
 
 import com.bobmowzie.mowziesmobs.client.particle.ParticleRibbon;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.world.phys.Vec3;
 
 public class RibbonComponent extends ParticleComponent {
     int length;
-    ParticleType<? extends RibbonParticleData> ribbon;
+    Holder<ParticleType<?>> ribbon;
     double yaw, pitch, roll, scale, r, g, b, a;
     boolean faceCamera;
     boolean emissive;
     ParticleComponent[] components;
 
-    public RibbonComponent(ParticleType<? extends RibbonParticleData> particle, int length, double yaw, double pitch, double roll, double scale, double r, double g, double b, double a, boolean faceCamera, boolean emissive, ParticleComponent[] components) {
+    public RibbonComponent(Holder<ParticleType<?>> particle, int length, double yaw, double pitch, double roll, double scale, double r, double g, double b, double a, boolean faceCamera, boolean emissive, ParticleComponent[] components) {
         this.length = length;
         this.yaw = yaw;
         this.pitch = pitch;
@@ -38,7 +39,7 @@ public class RibbonComponent extends ParticleComponent {
             newComponents[components.length] = new AttachToParticle(particle);
             newComponents[components.length + 1] = new Trail();
 
-            ParticleRibbon.spawnRibbon(particle.getWorld(), ribbon, length, particle.getPosX(), particle.getPosY(), particle.getPosZ(), 0, 0, 0, faceCamera, yaw, pitch, roll, scale, r, g, b, a, 0, particle.getLifetime() + length, emissive, newComponents);
+            ParticleRibbon.spawnRibbon(particle.getLevel(), ribbon, length, particle.getPosX(), particle.getPosY(), particle.getPosZ(), 0, 0, 0, faceCamera, yaw, pitch, roll, scale, r, g, b, a, 0, particle.getLifetime() + length, emissive, newComponents);
         }
     }
 
@@ -81,8 +82,7 @@ public class RibbonComponent extends ParticleComponent {
     public static class Trail extends ParticleComponent {
         @Override
         public void postUpdate(AdvancedParticleBase particle) {
-            if (particle instanceof ParticleRibbon) {
-                ParticleRibbon ribbon = (ParticleRibbon) particle;
+            if (particle instanceof ParticleRibbon ribbon) {
                 for (int i = ribbon.positions.length - 1; i > 0; i--) {
                     ribbon.positions[i] = ribbon.positions[i - 1];
                     ribbon.prevPositions[i] = ribbon.prevPositions[i - 1];
@@ -133,8 +133,7 @@ public class RibbonComponent extends ParticleComponent {
 
         @Override
         public void preRender(AdvancedParticleBase particle, float partialTicks) {
-            if (particle instanceof ParticleRibbon) {
-                ParticleRibbon ribbon = (ParticleRibbon) particle;
+            if (particle instanceof ParticleRibbon ribbon) {
                 float time = (ribbon.getAge() - 1 + partialTicks) / (ribbon.getLifetime());
                 float t = (startOffset + time * speed) % 1.0f;
                 ribbon.texPanOffset = (ribbon.getMaxUPublic() - ribbon.getMinUPublic()) / 2 * t;

@@ -1,6 +1,7 @@
 package com.bobmowzie.mowziesmobs.server.entity.umvuthana;
 
 import com.google.common.base.Defaults;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 
@@ -17,7 +18,7 @@ public enum MaskType {
 
     public static final int COUNT = MaskType.values().length;
 
-    public final MobEffect potion;
+    public final Holder<MobEffect> potion;
 
     public final float entityWidth;
 
@@ -27,11 +28,11 @@ public enum MaskType {
 
     public final String name;
 
-    MaskType(MobEffect potion) {
+    MaskType(Holder<MobEffect> potion) {
         this(potion, 0.8F, 1.8F, false);
     }
 
-    MaskType(MobEffect potion, float entityWidth, float entityHeight, boolean canBlock) {
+    MaskType(Holder<MobEffect> potion, float entityWidth, float entityHeight, boolean canBlock) {
         this.potion = potion;
         this.entityWidth = entityWidth;
         this.entityHeight = entityHeight;

@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "cagedmobs:dnasamplerdiamond",
+      "required": false
+    },
+    {
+      "id": "cagedmobs:dnasamplernetherite",
+      "required": false
+    }
+  ]
+}

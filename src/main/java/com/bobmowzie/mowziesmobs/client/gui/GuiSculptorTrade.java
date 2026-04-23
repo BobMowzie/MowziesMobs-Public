@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.gui;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.entity.sculptor.EntitySculptor;
 import com.bobmowzie.mowziesmobs.server.inventory.ContainerSculptorTrade;
 import com.bobmowzie.mowziesmobs.server.inventory.InventorySculptor;
@@ -20,27 +20,23 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class GuiSculptorTrade extends AbstractContainerScreen<ContainerSculptorTrade> implements InventorySculptor.ChangeListener {
-    private static final ResourceLocation TEXTURE_TRADE = new ResourceLocation(MowziesMobs.MODID, "textures/gui/container/umvuthi_trade.png");
+    private static final ResourceLocation TEXTURE_TRADE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/gui/container/umvuthi_trade.png");
 
     private final EntitySculptor sculptor;
-    private final Player player;
-
     private final InventorySculptor inventory;
 
     private final ItemStack output = new ItemStack(ItemHandler.EARTHREND_GAUNTLET.get());
 
     private Button beginButton;
-
     private boolean prevBlocked;
 
     public GuiSculptorTrade(ContainerSculptorTrade screenContainer, Inventory inv, Component titleIn) {
         super(screenContainer, inv, titleIn);
         this.sculptor = screenContainer.getSculptor();
-        this.player = inv.player;
         this.inventory = screenContainer.getInventorySculptor();
         inventory.addListener(this);
     }
@@ -53,9 +49,9 @@ public final class GuiSculptorTrade extends AbstractContainerScreen<ContainerScu
         updateButton();
     }
 
-    protected void actionPerformed(Button button) {
+    private void actionPerformed(Button button) {
     	if (button == beginButton) {
-            MowziesMobs.NETWORK.sendToServer(new MessageSculptorTrade(sculptor));
+            PacketDistributor.sendToServer(new MessageSculptorTrade(sculptor.getId()));
     	}
     }
 
@@ -65,21 +61,29 @@ public final class GuiSculptorTrade extends AbstractContainerScreen<ContainerScu
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE_TRADE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
-        InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, leftPos + 33, topPos + 56, 14, leftPos + 33 - x, topPos + 21 - y, sculptor);
+        if (sculptor != null) {
+            sculptor.renderingInGUI = true;
+            // x and y values are chosen as the first and last pixel of the black (entity) box of the gui texture
+            // The two x and y values determine the size for the 'GuiGraphics#enableScissor' call (their middle point is also where the entity will be rendered)
+            InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, leftPos + 8, topPos + 8, leftPos + 59, topPos + 69, 14, 0, x, y, sculptor);
+            sculptor.renderingInGUI = false;
+        }
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int x, int y) {
         guiGraphics.drawString(font, title, (int) (imageWidth / 2f - font.width(title) / 2f) + 30, 6, 0x404040, false);
         guiGraphics.drawString(font, I18n.get("container.inventory"), 8, imageHeight - 96 + 2, 0x404040, false);
-        if (sculptor.isTestObstructed()) {
-            String blocked = I18n.get("entity.mowziesmobs.sculptor.trade.blocked");
-            guiGraphics.drawString(font, blocked, (int) (imageWidth / 2f - font.width(blocked) / 2f) + 30, 42, 0x404040, false);
+        if (sculptor != null) {
+            if (sculptor.isTestObstructed()) {
+                String blocked = I18n.get("entity.mowziesmobs.sculptor.trade.blocked");
+                guiGraphics.drawString(font, blocked, (int) (imageWidth / 2f - font.width(blocked) / 2f) + 30, 42, 0x404040, false);
+            }
+            if (prevBlocked != sculptor.isTestObstructed()) {
+                onChange(inventory);
+            }
+            prevBlocked = sculptor.isTestObstructed();
         }
-        if (prevBlocked != sculptor.isTestObstructed()) {
-            onChange(inventory);
-        }
-        prevBlocked = sculptor.isTestObstructed();
     }
 
     @Override

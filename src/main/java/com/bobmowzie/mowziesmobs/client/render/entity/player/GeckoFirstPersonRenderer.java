@@ -1,14 +1,13 @@
 package com.bobmowzie.mowziesmobs.client.render.entity.player;
 
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelGeckoPlayerFirstPerson;
-import com.bobmowzie.mowziesmobs.client.model.tools.MathUtils;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.render.MowzieRenderUtils;
 import com.bobmowzie.mowziesmobs.server.ability.Ability;
-import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
 import com.bobmowzie.mowziesmobs.server.ability.AbilitySection;
 import com.bobmowzie.mowziesmobs.server.ability.PlayerAbility;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
+import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -24,24 +23,21 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector4f;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoRenderer;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.util.RenderUtil;
 
 import java.util.HashMap;
 
-@OnlyIn(Dist.CLIENT)
 public class GeckoFirstPersonRenderer extends ItemInHandRenderer implements GeoRenderer<GeckoPlayer> {
     public MultiBufferSource rtb;
 
@@ -76,25 +72,24 @@ public class GeckoFirstPersonRenderer extends ItemInHandRenderer implements GeoR
             long instanceId = getInstanceId(geckoPlayer);
 
             AnimatableManager<GeckoPlayer> animatableManager = geckoPlayer.getAnimatableInstanceCache().getManagerForId(instanceId);
-            animationState.setData(DataTickets.TICK, geckoPlayer.getTick(geckoPlayer) + animatableManager.getFirstTickTime() +  + Minecraft.getInstance().getFrameTime());
+            animationState.setData(DataTickets.TICK, geckoPlayer.getTick(geckoPlayer) + animatableManager.getFirstTickTime() + partialTicks);
             AbstractClientPlayer entity = (AbstractClientPlayer) geckoPlayer.getPlayer();
             animationState.setData(DataTickets.ENTITY, entity);
             this.geoModel.addAdditionalStateData(geckoPlayer, instanceId, animationState::setData);
-            this.geoModel.handleAnimations(geckoPlayer, instanceId, animationState);
+            this.geoModel.handleAnimations(geckoPlayer, instanceId, animationState, partialTicks);
 
             RenderType rendertype = RenderType.itemEntityTranslucentCull(getTextureLocation(geckoPlayer));
             VertexConsumer ivertexbuilder = bufferIn.getBuffer(rendertype);
             matrixStackIn.translate(0, -2, -1);
-            actuallyRender(matrixStackIn, geckoPlayer, getGeoModel().getBakedModel(getGeoModel().getModelResource(geckoPlayer)), rendertype, bufferIn, ivertexbuilder, false, partialTicks, combinedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+            actuallyRender(matrixStackIn, geckoPlayer, getGeoModel().getBakedModel(getGeoModel().getModelResource(geckoPlayer)), rendertype, bufferIn, ivertexbuilder, false, partialTicks, combinedLightIn, OverlayTexture.NO_OVERLAY, -1);
         }
 
         PlayerAbility.HandDisplay handDisplay = PlayerAbility.HandDisplay.DEFAULT;
         float offHandEquipProgress = 0.0f;
-        AbilityCapability.IAbilityCapability abilityCapability = AbilityHandler.INSTANCE.getAbilityCapability(player);
-        if (abilityCapability != null && abilityCapability.getActiveAbility() != null) {
-            Ability ability = abilityCapability.getActiveAbility();
-            if (ability instanceof PlayerAbility) {
-                PlayerAbility playerAbility = (PlayerAbility) ability;
+        AbilityData data = DataHandler.getData(player, DataHandler.ABILITY_DATA);
+        if (data.getActiveAbility() != null) {
+            Ability<?>ability = data.getActiveAbility();
+            if (ability instanceof PlayerAbility playerAbility) {
                 ItemStack stackOverride = flag ? playerAbility.heldItemMainHandOverride() : playerAbility.heldItemOffHandOverride();
                 if (stackOverride != null) stack = stackOverride;
 
@@ -136,8 +131,8 @@ public class GeckoFirstPersonRenderer extends ItemInHandRenderer implements GeoR
 
             PoseStack toWorldSpace = new PoseStack();
             toWorldSpace.translate(player.getX(), player.getY() + player.getEyeHeight(), player.getZ());
-            toWorldSpace.mulPose(MathUtils.quatFromRotationXYZ(0,-player.getYRot() + 180, 0, true));
-            toWorldSpace.mulPose(MathUtils.quatFromRotationXYZ(-player.getXRot(),0, 0, true));
+//            toWorldSpace.mulPose(MathUtils.quatFromRotationXYZ(0,-player.getYRot() + 180, 0, true));
+//            toWorldSpace.mulPose(MathUtils.quatFromRotationXYZ(-player.getXRot(),0, 0, true));
             MowzieGeoBone particleEmitterRootBone = geoModel.getMowzieBone("ParticleEmitterRoot");
             Vector4f emitterRootPos = new Vector4f(0, 0, 0, 1);
             emitterRootPos.mul(particleEmitterRootBone.getWorldSpaceMatrix());
@@ -166,7 +161,7 @@ public class GeckoFirstPersonRenderer extends ItemInHandRenderer implements GeoR
 
     @Override
     public ResourceLocation getTextureLocation(GeckoPlayer geckoPlayer) {
-        return ((AbstractClientPlayer)geckoPlayer.getPlayer()).getSkinTextureLocation();
+        return ((AbstractClientPlayer)geckoPlayer.getPlayer()).getSkin().texture();
     }
 
     @Override
@@ -190,19 +185,19 @@ public class GeckoFirstPersonRenderer extends ItemInHandRenderer implements GeoR
     }
 
     @Override
-    public void renderRecursively(PoseStack matrixStack, GeckoPlayer animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferIn, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+    public void renderRecursively(PoseStack matrixStack, GeckoPlayer animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferIn, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLightIn, int packedOverlayIn, int color) {
         matrixStack.pushPose();
         if (mirror) {
             MowzieRenderUtils.translateMirror(matrixStack, bone);
             MowzieRenderUtils.moveToPivotMirror(matrixStack, bone);
             MowzieRenderUtils.rotateMirror(matrixStack, bone);
-            RenderUtils.scaleMatrixForBone(matrixStack, bone);
+            RenderUtil.scaleMatrixForBone(matrixStack, bone);
         }
         else {
-            RenderUtils.translateMatrixToBone(matrixStack, bone);
-            RenderUtils.translateToPivotPoint(matrixStack, bone);
-            RenderUtils.rotateMatrixAroundBone(matrixStack, bone);
-            RenderUtils.scaleMatrixForBone(matrixStack, bone);
+            RenderUtil.translateMatrixToBone(matrixStack, bone);
+            RenderUtil.translateToPivotPoint(matrixStack, bone);
+            RenderUtil.rotateMatrixAroundBone(matrixStack, bone);
+            RenderUtil.scaleMatrixForBone(matrixStack, bone);
         }
         // Record xform matrices for relevant bones
         if (bone instanceof MowzieGeoBone) {
@@ -219,14 +214,14 @@ public class GeckoFirstPersonRenderer extends ItemInHandRenderer implements GeoR
             MowzieRenderUtils.translateAwayFromPivotPointMirror(matrixStack, bone);
         }
         else {
-            RenderUtils.translateAwayFromPivotPoint(matrixStack, bone);
+            RenderUtil.translateAwayFromPivotPoint(matrixStack, bone);
         }
-        renderCubesOfBone(matrixStack, bone, buffer, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+        renderCubesOfBone(matrixStack, bone, buffer, packedLightIn, packedOverlayIn, color);
 
         if (!isReRender)
             applyRenderLayersForBone(matrixStack, animatable, bone, renderType, bufferIn, buffer, partialTick, packedLightIn, packedOverlayIn);
 
-        renderChildBones(matrixStack, animatable, bone, renderType, bufferIn, buffer, isReRender, partialTick, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+        renderChildBones(matrixStack, animatable, bone, renderType, bufferIn, buffer, isReRender, partialTick, packedLightIn, packedOverlayIn, color);
         matrixStack.popPose();
     }
 }

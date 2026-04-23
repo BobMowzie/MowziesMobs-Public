@@ -27,7 +27,7 @@
   "item.mowziesmobs.wrought_axe": "Hacha pesada",
   "item.mowziesmobs.wrought_helmet": "Yelmo forjado",
   "item.mowziesmobs.umvuthana_mask_fury": "Máscara de furia",
-  "item.mowziesmobs.umvuthana_mask_fury": "Máscara de miedo",
+  "item.mowziesmobs.umvuthana_mask_fear": "Máscara de miedo",
   "item.mowziesmobs.umvuthana_mask_rage": "Máscara de rabia",
   "item.mowziesmobs.umvuthana_mask_bliss": "Máscara de felicidad",
   "item.mowziesmobs.umvuthana_mask_misery": "Máscara de miseria",
@@ -134,7 +134,7 @@
   "item.mowziesmobs.bluff_rod.text.0": "Úsalo para reparar objetos de geomancia o dáselo al escultor para comenzar su desafío",
   
   "item.mowziesmobs.music_disc_petiole": "Disco de música",
-  "item.mowziesmobs.music_disc_petiole.desc": "LudoCrypt - Petiole",
+  "jukebox_song.mowziesmobs.14": "LudoCrypt - Petiole",
 
   "item.mowziesmobs.foliaath_spawn_egg": "Generar planta carnívora",
   "item.mowziesmobs.wroughtnaut_spawn_egg": "Generar caballero de hierro forjado",
@@ -379,7 +379,7 @@
   "subtitles.mowziesmobs.umvuthi.bless": "Umvuthi bellows",
   "subtitles.mowziesmobs.sunstrike": "Golpe de ataque solar",
   "subtitles.mowziesmobs.laser": "Fuegos de rayos solares",
-  "subtitles.mowziesmobs.umvuthi.scream": "Gritos de barako",
+  "subtitles.mowziesmobs.umvuthi.roar": "Gritos de Umvuthi",
   "subtitles.mowziesmobs.umvuthi.supernova_start": "Energía absorbedora de supernova",
   "subtitles.mowziesmobs.umvuthi.black_hole": "Tarareo de agujero negro",
   "subtitles.mowziesmobs.umvuthi.supernova_end": "Explosión de supernova",

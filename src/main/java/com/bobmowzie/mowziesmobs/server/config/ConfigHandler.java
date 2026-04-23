@@ -1,37 +1,44 @@
 package com.bobmowzie.mowziesmobs.server.config;
 
-import com.bobmowzie.mowziesmobs.MowziesMobs;
+import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.datagen.MMBiomeTags;
+import com.bobmowzie.mowziesmobs.datagen.StructureSetHandler;
+import com.bobmowzie.mowziesmobs.server.item.ItemHandler;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import net.minecraftforge.common.ForgeConfigSpec.DoubleValue;
-import net.minecraftforge.common.ForgeConfigSpec.IntValue;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.tags.BiomeTags;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructureSets;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.Tags;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
-@Mod.EventBusSubscriber(modid = MowziesMobs.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class ConfigHandler {
-    private ConfigHandler() {}
-
-    private static final String LANG_PREFIX = "config." + MowziesMobs.MODID + ".";
+    private static final String LANG_PREFIX = "config." + MMCommon.MODID + ".";
 
     public static final Common COMMON;
     public static final Client CLIENT;
 
-    private static final ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
-    private static final ForgeConfigSpec.Builder CLIENT_BUILDER = new ForgeConfigSpec.Builder();
+    private static final ModConfigSpec.Builder COMMON_BUILDER = new ModConfigSpec.Builder();
+    private static final ModConfigSpec.Builder CLIENT_BUILDER = new ModConfigSpec.Builder();
 
-    public static ForgeConfigSpec COMMON_CONFIG;
-    public static ForgeConfigSpec CLIENT_CONFIG;
+    public static ModConfigSpec COMMON_CONFIG;
+    public static ModConfigSpec CLIENT_CONFIG;
 
     private static final Predicate<Object> STRING_PREDICATE = s -> s instanceof String;
-    private static final Predicate<Object> RESOURCE_LOCATION_PREDICATE = STRING_PREDICATE.and(s -> ResourceLocation.isValidResourceLocation((String) s));
+    private static final Predicate<Object> RESOURCE_LOCATION_PREDICATE = STRING_PREDICATE.and(s -> ResourceLocation.tryParse((String) s) != null);
     private static final Predicate<Object> BIOME_COMBO_PREDICATE = STRING_PREDICATE.and(s -> {
         String bigString = (String) s;
         String[] typeStrings = bigString.replace(" ", "").split("[,!]");
@@ -42,7 +49,8 @@ public final class ConfigHandler {
         }
         return true;
     });
-    private static final Predicate<Object> ITEM_NAME_PREDICATE = RESOURCE_LOCATION_PREDICATE.and(s -> ForgeRegistries.ITEMS.containsKey(new ResourceLocation((String) s)));
+
+    private static final Predicate<Object> ITEM_NAME_PREDICATE = RESOURCE_LOCATION_PREDICATE.and(s -> BuiltInRegistries.ITEM.containsKey(ResourceLocation.tryParse((String) s)));
 
     static {
         COMMON = new Common(COMMON_BUILDER);
@@ -54,10 +62,10 @@ public final class ConfigHandler {
 
     // Config templates
     public static class BiomeConfig {
-        BiomeConfig(final ForgeConfigSpec.Builder builder, List<? extends String> biomeTags, List<? extends String> biomeWhitelist, List<? extends String> biomeBlacklist) {
+        BiomeConfig(final ModConfigSpec.Builder builder, List<? extends String> biomeTags, List<? extends String> biomeWhitelist, List<? extends String> biomeBlacklist) {
             builder.push("biome_config");
             builder.comment("Mowzie's Mobs bosses cannot generate in modded or non-overworld biomes unless the biome is added to the 'has_structure/has_mowzie_structure' tag via a datapack!");
-            this.biomeTags = builder.comment("Each entry is a combination of allowed biome tags or biome names.", "Separate types with commas to require biomes to have all tags in an entry", "Put a '!' before a biome tag to mean NOT that tag", "A blank entry means all biomes. No entries means no biomes.", "For example, 'minecraft:is_forest,forge:is_spooky,!forge:is_snowy' would mean all biomes that are spooky forests but not snowy forests", "'!minecraft:is_mountain' would mean all non-mountain biomes")
+            this.biomeTags = builder.comment("Each entry is a combination of allowed biome tags or biome names.", "Separate types with commas to require biomes to have all tags in an entry", "Put a '!' before a biome tag to mean NOT that tag", "A blank entry means all biomes. No entries means no biomes.", "For example, 'minecraft:is_forest,c:is_spooky,!c:is_snowy' would mean all biomes that are spooky forests but not snowy forests", "'!minecraft:is_mountain' would mean all non-mountain biomes")
                     .translation(LANG_PREFIX + "biome_tags")
                     .defineList("biome_tags", biomeTags, BIOME_COMBO_PREDICATE);
             this.biomeWhitelist = builder.comment("Allow spawns in these biomes regardless of the biome tag settings")
@@ -69,15 +77,15 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final ConfigValue<List<? extends String>> biomeTags;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> biomeTags;
 
-        public final ConfigValue<List<? extends String>> biomeWhitelist;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> biomeWhitelist;
 
-        public final ConfigValue<List<? extends String>> biomeBlacklist;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> biomeBlacklist;
     }
 
     public static class SpawnConfig {
-        SpawnConfig(final ForgeConfigSpec.Builder builder, int spawnRate, int minGroupSize, int maxGroupSize, double extraRarity, BiomeConfig biomeConfig, List<? extends String> allowedBlocks, List<? extends String> allowedBlockTags, int heightMax, int heightMin, boolean needsDarkness, boolean needsSeeSky, boolean needsCantSeeSky, List<String> avoidStructures) {
+        SpawnConfig(final ModConfigSpec.Builder builder, int spawnRate, int minGroupSize, int maxGroupSize, double extraRarity, BiomeConfig biomeConfig, List<? extends String> allowedBlocks, List<? extends String> allowedBlockTags, int heightMax, int heightMin, boolean needsDarkness, boolean needsSeeSky, boolean needsCantSeeSky, List<String> avoidStructures) {
             builder.comment("Controls for vanilla-style mob spawning");
             builder.push("spawn_config");
             this.spawnRate = builder.comment("Smaller number causes less spawning, 0 to disable spawning")
@@ -95,7 +103,7 @@ public final class ConfigHandler {
             this.biomeConfig = biomeConfig;
             this.dimensions = builder.comment("Names of dimensions this mob can spawn in")
                     .translation(LANG_PREFIX + "dimensions")
-                    .defineList("dimensions", Collections.singletonList("minecraft:overworld"), STRING_PREDICATE);
+                    .defineList("dimensions", Collections.singletonList(string(BuiltinDimensionTypes.OVERWORLD)), STRING_PREDICATE);
             this.allowedBlocks = builder.comment("Names of blocks this mob is allowed to spawn on. Leave blank to ignore block names.")
                     .translation(LANG_PREFIX + "allowed_blocks")
                     .defineList("allowed_blocks", allowedBlocks, STRING_PREDICATE);
@@ -123,37 +131,37 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final IntValue spawnRate;
+        public final ModConfigSpec.IntValue spawnRate;
 
-        public final IntValue minGroupSize;
+        public final ModConfigSpec.IntValue minGroupSize;
 
-        public final IntValue maxGroupSize;
+        public final ModConfigSpec.IntValue maxGroupSize;
 
-        public final DoubleValue extraRarity;
+        public final ModConfigSpec.DoubleValue extraRarity;
 
         public final BiomeConfig biomeConfig;
 
-        public final ConfigValue<List<? extends String>> dimensions;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> dimensions;
 
-        public final IntValue heightMin;
+        public final ModConfigSpec.IntValue heightMin;
 
-        public final IntValue heightMax;
+        public final ModConfigSpec.IntValue heightMax;
 
-        public final BooleanValue needsDarkness;
+        public final ModConfigSpec.BooleanValue needsDarkness;
 
-        public final BooleanValue needsSeeSky;
+        public final ModConfigSpec.BooleanValue needsSeeSky;
 
-        public final BooleanValue needsCantSeeSky;
+        public final ModConfigSpec.BooleanValue needsCantSeeSky;
 
-        public final ConfigValue<List<? extends String>> allowedBlocks;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> allowedBlocks;
 
-        public final ConfigValue<List<? extends String>> allowedBlockTags;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> allowedBlockTags;
 
-        public final ConfigValue<List<? extends String>> avoidStructures;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> avoidStructures;
     }
 
     public static class GenerationConfig {
-        GenerationConfig(final ForgeConfigSpec.Builder builder, int generationDistance, int generationSeparation, BiomeConfig biomeConfig, float heightMin, float heightMax, List<String> avoidStructures) {
+        GenerationConfig(final ModConfigSpec.Builder builder, int generationDistance, int generationSeparation, BiomeConfig biomeConfig, float heightMin, float heightMax, List<String> avoidStructures) {
             builder.comment("Controls for spawning structure/mob with world generation");
             builder.push("generation_config");
             this.generationDistance = builder.comment("Smaller number causes more generation, -1 to disable generation", "Maximum number of chunks between placements of this mob/structure.", "NO LONGER USED! USE DATAPACK INSTEAD")
@@ -175,21 +183,21 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final IntValue generationDistance;
+        public final ModConfigSpec.IntValue generationDistance;
 
-        public final IntValue generationSeparation;
+        public final ModConfigSpec.IntValue generationSeparation;
 
         public final BiomeConfig biomeConfig;
 
-        public final DoubleValue heightMin;
+        public final ModConfigSpec.DoubleValue heightMin;
 
-        public final DoubleValue heightMax;
+        public final ModConfigSpec.DoubleValue heightMax;
 
-        public final ConfigValue<List<? extends String>> avoidStructures;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> avoidStructures;
     }
 
     public static class CombatConfig {
-        CombatConfig(final ForgeConfigSpec.Builder builder, float healthMultiplier, float attackMultiplier) {
+        CombatConfig(final ModConfigSpec.Builder builder, float healthMultiplier, float attackMultiplier) {
             builder.push("combat_config");
             this.healthMultiplier = builder.comment("Scale mob health by this value")
                     .translation(LANG_PREFIX + "health_multiplier")
@@ -200,13 +208,13 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final DoubleValue healthMultiplier;
+        public final ModConfigSpec.DoubleValue healthMultiplier;
 
-        public final DoubleValue attackMultiplier;
+        public final ModConfigSpec.DoubleValue attackMultiplier;
     }
 
     public static class ToolConfig {
-        ToolConfig(final ForgeConfigSpec.Builder builder, float attackDamage, float attackSpeed) {
+        ToolConfig(final ModConfigSpec.Builder builder, float attackDamage, float attackSpeed) {
             builder.push("tool_config");
             this.attackDamage = builder.comment("Tool attack damage")
                     .translation(LANG_PREFIX + "attack_damage")
@@ -217,16 +225,16 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final DoubleValue attackDamage;
+        public final ModConfigSpec.DoubleValue attackDamage;
         
         public float attackDamageValue = 9;
         public float attackSpeedValue = 0.9F;
 
-        public final DoubleValue attackSpeed;
+        public final ModConfigSpec.DoubleValue attackSpeed;
     }
 
     public static class ArmorConfig {
-        ArmorConfig(final ForgeConfigSpec.Builder builder) {
+        ArmorConfig(final ModConfigSpec.Builder builder) {
             builder.push("armor_config");
             this.damageReductionMultiplier = builder.comment("Multiply armor damage reduction by this amount. See official Minecraft Wiki for an explanation of how armor damage reduction works.")
                     .translation(LANG_PREFIX + "damage_reduction_multiplier")
@@ -237,8 +245,8 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final DoubleValue damageReductionMultiplier;
-        public final DoubleValue toughnessMultiplier;
+        public final ModConfigSpec.DoubleValue damageReductionMultiplier;
+        public final ModConfigSpec.DoubleValue toughnessMultiplier;
 
         public float damageReductionMultiplierValue = 1.0f;
         public float toughnessMultiplierValue = 1.0f;
@@ -246,16 +254,15 @@ public final class ConfigHandler {
 
     // Mob configuration
     public static class Foliaath {
-        Foliaath(final ForgeConfigSpec.Builder builder) {
+        Foliaath(final ModConfigSpec.Builder builder) {
             builder.push("foliaath");
             spawnConfig = new SpawnConfig(builder,
                     70, 1, 4, 1,
-                    new BiomeConfig(builder, Collections.singletonList("minecraft:is_jungle"), Collections.emptyList(), Collections.emptyList()),
+                    new BiomeConfig(builder, Collections.singletonList(string(Tags.Biomes.IS_JUNGLE)), Collections.emptyList(), Collections.emptyList()),
                     Collections.emptyList(),
-                    Arrays.asList("minecraft:animals_spawnable_on", "minecraft:leaves", "minecraft:logs"),
+                    Arrays.asList(string(BlockTags.ANIMALS_SPAWNABLE_ON), string(BlockTags.LEAVES), string(BlockTags.LOGS)),
                     -65, 60, true, false, false,
-                    Arrays.asList("minecraft:villages", "minecraft:pillager_outposts")
-
+                    Arrays.asList(string(BuiltinStructureSets.VILLAGES), string(BuiltinStructureSets.PILLAGER_OUTPOSTS))
             );
             combatConfig = new CombatConfig(builder, 1, 1);
             builder.pop();
@@ -267,16 +274,16 @@ public final class ConfigHandler {
     }
 
     public static class Umvuthana {
-        Umvuthana(final ForgeConfigSpec.Builder builder) {
+        Umvuthana(final ModConfigSpec.Builder builder) {
             builder.push("umvuthana");
             builder.comment("Controls spawning for Umvuthana hunting groups", "Group size controls how many raptors spawn, not followers", "See Umvuthi config for grove structure controls");
             spawnConfig = new SpawnConfig(builder,
                     5, 1, 1, 1,
-                    new BiomeConfig(builder, Collections.singletonList("minecraft:is_savanna"), Collections.emptyList(), Collections.emptyList()),
+                    new BiomeConfig(builder, Collections.singletonList(string(Tags.Biomes.IS_SAVANNA)), Collections.emptyList(), Collections.emptyList()),
                     Collections.emptyList(),
-                    Arrays.asList("minecraft:animals_spawnable_on", "minecraft:sand"),
+                    Arrays.asList(string(BlockTags.ANIMALS_SPAWNABLE_ON), string(BlockTags.SAND)),
                     -65, 60, false, false, false,
-                    Arrays.asList("minecraft:villages", "minecraft:pillager_outposts", "mowziesmobs:umvuthana_groves")
+                    Arrays.asList(string(BuiltinStructureSets.VILLAGES), string(BuiltinStructureSets.PILLAGER_OUTPOSTS), string(StructureSetHandler.UMVUTHANA_GROVES))
             );
             combatConfig = new CombatConfig(builder,1, 1);
             builder.pop();
@@ -288,15 +295,15 @@ public final class ConfigHandler {
     }
 
     public static class Naga {
-        Naga(final ForgeConfigSpec.Builder builder) {
+        Naga(final ModConfigSpec.Builder builder) {
             builder.push("naga");
             spawnConfig = new SpawnConfig(builder,
                     20, 1, 2, 1,
-                    new BiomeConfig(builder, Arrays.asList("minecraft:is_beach,minecraft:is_mountain", "minecraft:is_beach,minecraft:is_hill"), Collections.singletonList("minecraft:stony_shore"), Collections.emptyList()),
+                    new BiomeConfig(builder, Arrays.asList(string(Tags.Biomes.IS_BEACH) + "," + string(Tags.Biomes.IS_MOUNTAIN), string(Tags.Biomes.IS_BEACH) + "," + string(BiomeTags.IS_HILL)), Collections.singletonList(string(Biomes.STONY_SHORE)), Collections.emptyList()),
                     Collections.emptyList(),
-                    Arrays.asList("minecraft:animals_spawnable_on", "minecraft:base_stone_overworld"),
+                    List.of(string(BlockTags.ANIMALS_SPAWNABLE_ON), string(BlockTags.BASE_STONE_OVERWORLD)),
                     -65, 68, true, true, false,
-                    Arrays.asList("minecraft:villages", "minecraft:pillager_outposts")
+                    Arrays.asList(string(BuiltinStructureSets.VILLAGES), string(BuiltinStructureSets.PILLAGER_OUTPOSTS))
             );
             combatConfig = new CombatConfig(builder,1, 1);
             builder.pop();
@@ -308,13 +315,13 @@ public final class ConfigHandler {
     }
 
     public static class Lantern {
-        Lantern(final ForgeConfigSpec.Builder builder) {
+        Lantern(final ModConfigSpec.Builder builder) {
             builder.push("lantern");
             spawnConfig = new SpawnConfig(builder,
                     5, 2, 4, 1,
-                    new BiomeConfig(builder, Collections.singletonList("minecraft:is_forest,mowziesmobs:is_magical,!forge:is_snowy"), Collections.emptyList(), Collections.emptyList()),
+                    new BiomeConfig(builder, Collections.singletonList(string(Tags.Biomes.IS_FOREST) + "," + string(MMBiomeTags.IS_MAGICAL) + "," + inverted(Tags.Biomes.IS_SNOWY)), Collections.emptyList(), Collections.emptyList()),
                     Collections.emptyList(),
-                    Arrays.asList("minecraft:animals_spawnable_on", "minecraft:leaves", "minecraft:logs"),
+                    Arrays.asList(string(BlockTags.ANIMALS_SPAWNABLE_ON), string(BlockTags.LEAVES), string(BlockTags.LOGS)),
                     -65, 60, true, false, false,
                     Collections.emptyList()
             );
@@ -328,13 +335,13 @@ public final class ConfigHandler {
     }
 
     public static class Grottol {
-        Grottol(final ForgeConfigSpec.Builder builder) {
+        Grottol(final ModConfigSpec.Builder builder) {
             builder.push("grottol");
             this.spawnConfig = new SpawnConfig(builder,
                     2, 1, 1, 1,
-                    new BiomeConfig(builder, Collections.singletonList("!forge:is_mushroom"), Collections.emptyList(), Collections.emptyList()),
+                    new BiomeConfig(builder, Collections.singletonList(inverted(Tags.Biomes.IS_MUSHROOM)), Collections.emptyList(), Collections.emptyList()),
                     Collections.emptyList(),
-                    Collections.singletonList("minecraft:base_stone_overworld"),
+                    Collections.singletonList(string(BlockTags.BASE_STONE_OVERWORLD)),
                     16, -65, true, false, true,
                     Collections.emptyList()
             );
@@ -348,10 +355,10 @@ public final class ConfigHandler {
     }
 
     public static class FerrousWroughtnaut {
-        FerrousWroughtnaut(final ForgeConfigSpec.Builder builder) {
+        FerrousWroughtnaut(final ModConfigSpec.Builder builder) {
             builder.push("ferrous_wroughtnaut");
             generationConfig = new GenerationConfig(builder, 15, 5,
-                    new BiomeConfig(builder, Collections.singletonList("!minecraft:is_ocean"), Collections.emptyList(), Collections.emptyList()),
+                    new BiomeConfig(builder, Collections.singletonList(inverted(Tags.Biomes.IS_OCEAN)), Collections.emptyList(), Collections.emptyList()),
                     20, 50,
                     Collections.emptyList()
             );
@@ -371,21 +378,21 @@ public final class ConfigHandler {
         public final GenerationConfig generationConfig;
 
         public final CombatConfig combatConfig;
-        public final BooleanValue hasBossBar;
+        public final ModConfigSpec.BooleanValue hasBossBar;
 
-        public final BooleanValue healsOutOfBattle;
+        public final ModConfigSpec.BooleanValue healsOutOfBattle;
 
-        public final BooleanValue resetHealthWhenRespawn;
+        public final ModConfigSpec.BooleanValue resetHealthWhenRespawn;
     }
 
     public static class Umvuthi {
-        Umvuthi(final ForgeConfigSpec.Builder builder) {
+        Umvuthi(final ModConfigSpec.Builder builder) {
             builder.push("umvuthi");
             builder.comment("Generation controls for Umvuthana Groves");
             generationConfig = new GenerationConfig(builder, 25, 8,
-                    new BiomeConfig(builder, Collections.singletonList("minecraft:is_savanna"), Collections.emptyList(), Collections.emptyList()),
+                    new BiomeConfig(builder, Collections.singletonList(string(Tags.Biomes.IS_SAVANNA)), Collections.emptyList(), Collections.emptyList()),
                     50, 100,
-                    Arrays.asList("minecraft:villages", "minecraft:pillager_outposts")
+                    Arrays.asList(string(BuiltinStructureSets.VILLAGES), string(BuiltinStructureSets.PILLAGER_OUTPOSTS))
             );
             combatConfig = new CombatConfig(builder, 1, 1);
             this.hasBossBar = builder.comment("Disable/enable Umvuthi's boss health bar")
@@ -396,13 +403,16 @@ public final class ConfigHandler {
                     .define("heals_out_of_battle", true);
             this.whichItem = builder.comment("Which item Umvuthi desires in exchange for the Sun's Blessing")
                     .translation(LANG_PREFIX + "trade_which_item")
-                    .define("trade_which_item", "minecraft:gold_block", ITEM_NAME_PREDICATE);
+                    .define("trade_which_item", string(Items.GOLD_BLOCK), ITEM_NAME_PREDICATE);
             this.howMany = builder.comment("How many of the item Umvuthi desires in exchange for the Sun's Blessing")
                     .translation(LANG_PREFIX + "trade_how_many")
                     .defineInRange("trade_how_many", 7, 0, 64);
             this.resetHealthWhenRespawn = builder.comment("Disable/enable Umvuthi resetting health when a player respawns nearby. (Prevents respawn cheese!)")
                     .translation(LANG_PREFIX + "reset_health_when_respawn")
                     .define("reset_health_when_respawn", true);
+            this.spawnHealersThreshold = builder.comment("Umvuthi will summon healers whenever he loses this much total health.")
+                    .translation(LANG_PREFIX + "spawn_healers_threshold")
+                    .defineInRange("spawn_healers_threshold", 45, 0, Integer.MAX_VALUE);
             builder.pop();
         }
 
@@ -410,24 +420,26 @@ public final class ConfigHandler {
 
         public final CombatConfig combatConfig;
 
-        public final BooleanValue hasBossBar;
+        public final ModConfigSpec.BooleanValue hasBossBar;
 
-        public final BooleanValue healsOutOfBattle;
+        public final ModConfigSpec.BooleanValue healsOutOfBattle;
 
-        public final ConfigValue<? extends String> whichItem;
+        public final ModConfigSpec.ConfigValue<? extends String> whichItem;
 
-        public final IntValue howMany;
+        public final ModConfigSpec.IntValue howMany;
 
-        public final BooleanValue resetHealthWhenRespawn;
+        public final ModConfigSpec.BooleanValue resetHealthWhenRespawn;
+
+        public final ModConfigSpec.IntValue spawnHealersThreshold;
     }
 
     public static class Frostmaw {
-        Frostmaw(final ForgeConfigSpec.Builder builder) {
+        Frostmaw(final ModConfigSpec.Builder builder) {
             builder.push("frostmaw");
             generationConfig = new GenerationConfig(builder, 25, 8,
-                    new BiomeConfig(builder, Collections.singletonList("forge:is_snowy,!minecraft:is_ocean,!minecraft:is_river,!minecraft:is_beach,!minecraft:is_forest,!minecraft:is_taiga"), Collections.emptyList(), Collections.emptyList()),
+                    new BiomeConfig(builder, Collections.singletonList(string(Tags.Biomes.IS_SNOWY) + "," + inverted(Tags.Biomes.IS_OCEAN) + "," + inverted(Tags.Biomes.IS_RIVER) + "," + inverted(Tags.Biomes.IS_BEACH) + "," + inverted(Tags.Biomes.IS_FOREST) + "," + inverted(Tags.Biomes.IS_TAIGA)), Collections.emptyList(), Collections.emptyList()),
                     50, 100,
-                    Arrays.asList("minecraft:villages", "minecraft:pillager_outposts")
+                    Arrays.asList(string(BuiltinStructureSets.VILLAGES), string(BuiltinStructureSets.PILLAGER_OUTPOSTS))
             );
             combatConfig = new CombatConfig(builder, 1, 1);
             this.hasBossBar = builder.comment("Disable/enable Frostmaw's boss health bar")
@@ -449,20 +461,20 @@ public final class ConfigHandler {
 
         public final CombatConfig combatConfig;
 
-        public final BooleanValue stealableIceCrystal;
+        public final ModConfigSpec.BooleanValue stealableIceCrystal;
 
-        public final BooleanValue hasBossBar;
+        public final ModConfigSpec.BooleanValue hasBossBar;
 
-        public final BooleanValue healsOutOfBattle;
+        public final ModConfigSpec.BooleanValue healsOutOfBattle;
 
-        public final BooleanValue resetHealthWhenRespawn;
+        public final ModConfigSpec.BooleanValue resetHealthWhenRespawn;
     }
 
     public static class Sculptor {
-        Sculptor(final ForgeConfigSpec.Builder builder) {
+        Sculptor(final ModConfigSpec.Builder builder) {
             builder.push("sculptor");
             generationConfig = new GenerationConfig(builder, 25, 8,
-                    new BiomeConfig(builder, Collections.singletonList("forge:is_peak"), Collections.emptyList(), Collections.emptyList()),
+                    new BiomeConfig(builder, Collections.singletonList(string(Tags.Biomes.IS_MOUNTAIN_PEAK)), Collections.emptyList(), Collections.emptyList()),
                     120, 200,
                     Collections.emptyList()
             );
@@ -481,7 +493,7 @@ public final class ConfigHandler {
                     .define("has_boss_bar", true);
             this.whichItem = builder.comment("Which item the Sculptor desires in exchange for a chance to try his challenge")
                     .translation(LANG_PREFIX + "trade_which_item")
-                    .define("trade_which_item", "mowziesmobs:bluff_rod", ITEM_NAME_PREDICATE);
+                    .define("trade_which_item", string(ItemHandler.BLUFF_ROD), ITEM_NAME_PREDICATE);
             this.howMany = builder.comment("How many of the item the Sculptor desires in exchange for a chance to try his challenge")
                     .translation(LANG_PREFIX + "trade_how_many")
                     .defineInRange("trade_how_many", 1, 0, 64);
@@ -495,23 +507,23 @@ public final class ConfigHandler {
 
         public final CombatConfig combatConfig;
 
-        public final IntValue testHeight;
+        public final ModConfigSpec.IntValue testHeight;
 
-        public final IntValue testTimeLimit;
+        public final ModConfigSpec.IntValue testTimeLimit;
 
-        public final BooleanValue healsOutOfBattle;
+        public final ModConfigSpec.BooleanValue healsOutOfBattle;
 
-        public final BooleanValue hasBossBar;
+        public final ModConfigSpec.BooleanValue hasBossBar;
 
-        public final ConfigValue<? extends String> whichItem;
+        public final ModConfigSpec.ConfigValue<? extends String> whichItem;
 
-        public final IntValue howMany;
+        public final ModConfigSpec.IntValue howMany;
 
-        public final BooleanValue disappearAfterReward;
+        public final ModConfigSpec.BooleanValue disappearAfterReward;
     }
 
     public static class Bluff {
-        Bluff(final ForgeConfigSpec.Builder builder) {
+        Bluff(final ModConfigSpec.Builder builder) {
             builder.push("bluff");
             spawnConfig = new SpawnConfig(builder,
                     10, 2, 3, 1,
@@ -530,8 +542,28 @@ public final class ConfigHandler {
         public final CombatConfig combatConfig;
     }
 
+    public static class Elokosa {
+        Elokosa(final ModConfigSpec.Builder builder) {
+            builder.push("Elokosa");
+            spawnConfig = new SpawnConfig(builder,
+                    5, 1, 1, 1,
+                    new BiomeConfig(builder, Collections.singletonList(string(Tags.Biomes.IS_JUNGLE)), Collections.emptyList(), Collections.emptyList()),
+                    Collections.emptyList(),
+                    Arrays.asList(string(BlockTags.LEAVES), string(BlockTags.LOGS)),
+                    -65, 60, false, false, false,
+                    Arrays.asList(string(BuiltinStructureSets.VILLAGES), string(BuiltinStructureSets.PILLAGER_OUTPOSTS))
+            );
+            combatConfig = new CombatConfig(builder,1, 1);
+            builder.pop();
+        }
+
+        public final SpawnConfig spawnConfig;
+
+        public final CombatConfig combatConfig;
+    }
+
     public static class WroughtHelm {
-        WroughtHelm(final ForgeConfigSpec.Builder builder) {
+        WroughtHelm(final ModConfigSpec.Builder builder) {
             builder.push("wrought_helm");
             armorConfig = new ArmorConfig(builder);
             breakable = builder.comment("Set to true for the Wrought Helm to have limited durability.")
@@ -542,11 +574,11 @@ public final class ConfigHandler {
 
         public final ArmorConfig armorConfig;
 
-        public final BooleanValue breakable;
+        public final ModConfigSpec.BooleanValue breakable;
     }
 
     public static class AxeOfAThousandMetals {
-        AxeOfAThousandMetals(final ForgeConfigSpec.Builder builder) {
+        AxeOfAThousandMetals(final ModConfigSpec.Builder builder) {
             builder.push("axe_of_a_thousand_metals");
             toolConfig = new ToolConfig(builder, 9, 0.9f);
             breakable = builder.comment("Set to true for the Axe of a Thousand Metals to have limited durability.")
@@ -557,11 +589,11 @@ public final class ConfigHandler {
 
         public final ToolConfig toolConfig;
 
-        public final BooleanValue breakable;
+        public final ModConfigSpec.BooleanValue breakable;
     }
 
     public static class SolVisage {
-        SolVisage(final ForgeConfigSpec.Builder builder) {
+        SolVisage(final ModConfigSpec.Builder builder) {
             builder.push("sol_visage");
             armorConfig = new ArmorConfig(builder);
             breakable = builder.comment("Set to true for the Sol Visage to have limited durability.")
@@ -575,13 +607,13 @@ public final class ConfigHandler {
 
         public final ArmorConfig armorConfig;
 
-        public final BooleanValue breakable;
+        public final ModConfigSpec.BooleanValue breakable;
 
-        public final IntValue maxFollowers;
+        public final ModConfigSpec.IntValue maxFollowers;
     }
 
     public static class UmvuthanaMask {
-        UmvuthanaMask(final ForgeConfigSpec.Builder builder) {
+        UmvuthanaMask(final ModConfigSpec.Builder builder) {
             builder.push("umvuthana_mask");
             armorConfig = new ArmorConfig(builder);
             builder.pop();
@@ -591,7 +623,7 @@ public final class ConfigHandler {
     }
 
     public static class GeomancerArmor {
-        GeomancerArmor(final ForgeConfigSpec.Builder builder) {
+        GeomancerArmor(final ModConfigSpec.Builder builder) {
             builder.push("geomancerArmor");
             armorConfig = new ArmorConfig(builder);
             builder.pop();
@@ -601,7 +633,7 @@ public final class ConfigHandler {
     }
 
     public static class IceCrystal {
-        IceCrystal(final ForgeConfigSpec.Builder builder) {
+        IceCrystal(final ModConfigSpec.Builder builder) {
             builder.push("ice_crystal");
             attackMultiplier = builder.comment("Multiply all damage done with the ice crystal by this amount.")
                     .translation(LANG_PREFIX + "attack_multiplier")
@@ -618,18 +650,18 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final DoubleValue attackMultiplier;
+        public final ModConfigSpec.DoubleValue attackMultiplier;
 
-        public final BooleanValue breakable;
+        public final ModConfigSpec.BooleanValue breakable;
 
-        public final IntValue durability;
+        public final ModConfigSpec.IntValue durability;
         public int durabilityValue;
 
-        public final IntValue freezeDuration;
+        public final ModConfigSpec.IntValue freezeDuration;
     }
 
     public static class EarthrendGauntlet {
-        EarthrendGauntlet(final ForgeConfigSpec.Builder builder) {
+        EarthrendGauntlet(final ModConfigSpec.Builder builder) {
             builder.push("earthrend_gauntlet");
             attackMultiplier = builder.comment("Multiply all damage done with the Earthrend Gauntlet by this amount.")
                     .translation(LANG_PREFIX + "attack_multiplier")
@@ -647,20 +679,20 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final DoubleValue attackMultiplier;
+        public final ModConfigSpec.DoubleValue attackMultiplier;
 
-        public final BooleanValue breakable;
+        public final ModConfigSpec.BooleanValue breakable;
 
-        public final IntValue durability;
+        public final ModConfigSpec.IntValue durability;
         public int durabilityValue;
 
         public final ToolConfig toolConfig;
 
-        public final BooleanValue enableTunneling;
+        public final ModConfigSpec.BooleanValue enableTunneling;
     }
 
     public static class Spear {
-        Spear(final ForgeConfigSpec.Builder builder) {
+        Spear(final ModConfigSpec.Builder builder) {
             builder.push("spear");
             toolConfig = new ToolConfig(builder, 5, 1.6f);
             builder.pop();
@@ -670,7 +702,7 @@ public final class ConfigHandler {
     }
 
     public static class NagaFangDagger {
-        NagaFangDagger(final ForgeConfigSpec.Builder builder) {
+        NagaFangDagger(final ModConfigSpec.Builder builder) {
             builder.push("naga_fang_dagger");
             toolConfig = new ToolConfig(builder, 3, 2);
             poisonDuration = builder.comment("Duration in ticks of the poison effect (20 ticks = 1 second).")
@@ -684,13 +716,13 @@ public final class ConfigHandler {
 
         public final ToolConfig toolConfig;
 
-        public final IntValue poisonDuration;
+        public final ModConfigSpec.IntValue poisonDuration;
 
-        public final DoubleValue backstabDamageMultiplier;
+        public final ModConfigSpec.DoubleValue backstabDamageMultiplier;
     }
 
     public static class Blowgun {
-        Blowgun(final ForgeConfigSpec.Builder builder) {
+        Blowgun(final ModConfigSpec.Builder builder) {
             builder.push("blowgun");
             poisonDuration = builder.comment("Duration in ticks of the poison effect (20 ticks = 1 second).")
                     .translation(LANG_PREFIX + "poison_duration")
@@ -701,13 +733,13 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final DoubleValue attackDamage;
+        public final ModConfigSpec.DoubleValue attackDamage;
 
-        public final IntValue poisonDuration;
+        public final ModConfigSpec.IntValue poisonDuration;
     }
 
     public static class SunsBlessing {
-        SunsBlessing(final ForgeConfigSpec.Builder builder) {
+        SunsBlessing(final ModConfigSpec.Builder builder) {
             builder.push("suns_blessing");
             effectDuration = builder.comment("Duration in minutes of the Sun's Blessing effect.")
                     .translation(LANG_PREFIX + "suns_blessing_duration")
@@ -724,17 +756,17 @@ public final class ConfigHandler {
                     .defineInRange("supernova_cost", 60, 0, Integer.MAX_VALUE);
         }
 
-        public final DoubleValue sunsBlessingAttackMultiplier;
+        public final ModConfigSpec.DoubleValue sunsBlessingAttackMultiplier;
 
-        public final IntValue effectDuration;
+        public final ModConfigSpec.IntValue effectDuration;
 
-        public final IntValue solarBeamCost;
+        public final ModConfigSpec.IntValue solarBeamCost;
 
-        public final IntValue supernovaCost;
+        public final ModConfigSpec.IntValue supernovaCost;
     }
 
     public static class SculptorStaff {
-        SculptorStaff(final ForgeConfigSpec.Builder builder) {
+        SculptorStaff(final ModConfigSpec.Builder builder) {
             builder.push("sculptor_staff");
             toolConfig = new ToolConfig(builder, 3, 1f);
             attackMultiplier = builder.comment("Multiply all damage done with the Sculptor Staff by this amount.")
@@ -742,13 +774,35 @@ public final class ConfigHandler {
                     .defineInRange("attack_multiplier", 1f, 0d, Double.MAX_VALUE);
             builder.pop();
         }
-        public final DoubleValue attackMultiplier;
+        public final ModConfigSpec.DoubleValue attackMultiplier;
 
         public final ToolConfig toolConfig;
     }
 
+    public static class ElokosaPaw {
+        ElokosaPaw(final ModConfigSpec.Builder builder) {
+            builder.push("elokosa_paw");
+            effectDuration = builder.comment("How long effects inflicted by Elokosa Paws last in ticks")
+                    .translation(LANG_PREFIX + "effect_duration")
+                    .defineInRange("effect_duration", 20 * 30, 1, Integer.MAX_VALUE);
+            cooldown = builder.comment("How long players must wait between uses of Elokosa Paws in ticks")
+                    .translation(LANG_PREFIX + "cooldown")
+                    .defineInRange("cooldown", 20 * 90, 0, Integer.MAX_VALUE);
+            numberOfUses = builder.comment("How many times players can use an Elokosa Paw before it breaks")
+                    .translation(LANG_PREFIX + "number_of_uses")
+                    .defineInRange("number_of_uses", 3, 1, Integer.MAX_VALUE);
+            builder.pop();
+        }
+        
+        public final ModConfigSpec.IntValue effectDuration;
+        
+        public final ModConfigSpec.IntValue cooldown;
+        
+        public final ModConfigSpec.IntValue numberOfUses;
+    }
+
     public static class Mobs {
-        Mobs(final ForgeConfigSpec.Builder builder) {
+        Mobs(final ModConfigSpec.Builder builder) {
             builder.push("mobs");
             FROSTMAW = new Frostmaw(builder);
             UMVUTHI = new Umvuthi(builder);
@@ -760,6 +814,7 @@ public final class ConfigHandler {
             NAGA = new Naga(builder);
             FOLIAATH = new Foliaath(builder);
             BLUFF = new Bluff(builder);
+            ELOKOSA = new Elokosa(builder);
             builder.pop();
         }
 
@@ -782,10 +837,12 @@ public final class ConfigHandler {
         public final Foliaath FOLIAATH;
 
         public final Bluff BLUFF;
+
+        public final Elokosa ELOKOSA;
     }
 
     public static class ToolsAndAbilities {
-        ToolsAndAbilities(final ForgeConfigSpec.Builder builder) {
+        ToolsAndAbilities(final ModConfigSpec.Builder builder) {
             builder.push("tools_and_abilities");
             SUNS_BLESSING = new SunsBlessing(builder);
             WROUGHT_HELM = new WroughtHelm(builder);
@@ -799,6 +856,7 @@ public final class ConfigHandler {
             BLOW_GUN = new Blowgun(builder);
             EARTHREND_GAUNTLET = new EarthrendGauntlet(builder);
             SCULPTOR_STAFF = new SculptorStaff(builder);
+            ELOKOSA_PAW = new ElokosaPaw(builder);
             builder.pop();
         }
 
@@ -825,11 +883,13 @@ public final class ConfigHandler {
         public final EarthrendGauntlet EARTHREND_GAUNTLET;
 
         public final SculptorStaff SCULPTOR_STAFF;
+
+        public final ElokosaPaw ELOKOSA_PAW;
     }
 
     public static class Client {
 
-        private Client(final ForgeConfigSpec.Builder builder) {
+        private Client(final ModConfigSpec.Builder builder) {
             builder.push("client");
             this.glowEffect = builder.comment("Toggles the lantern glow effect, which may look bad with certain shaders.")
                     .translation(LANG_PREFIX + "glow_effect")
@@ -858,25 +918,25 @@ public final class ConfigHandler {
             builder.pop();
         }
 
-        public final BooleanValue glowEffect;
+        public final ModConfigSpec.BooleanValue glowEffect;
 
-        public final BooleanValue umvuthanaFootprints;
+        public final ModConfigSpec.BooleanValue umvuthanaFootprints;
 
-        public final BooleanValue doCameraShakes;
+        public final ModConfigSpec.BooleanValue doCameraShakes;
 
-        public final BooleanValue playBossMusic;
+        public final ModConfigSpec.BooleanValue playBossMusic;
 
-        public final BooleanValue customBossBars;
+        public final ModConfigSpec.BooleanValue customBossBars;
 
-        public final BooleanValue customPlayerAnims;
+        public final ModConfigSpec.BooleanValue customPlayerAnims;
 
-        public final BooleanValue hidePlayerAnimsInFirstPerson;
+        public final ModConfigSpec.BooleanValue hidePlayerAnimsInFirstPerson;
 
-        public final BooleanValue doUmvuthanaCraneHealSound;
+        public final ModConfigSpec.BooleanValue doUmvuthanaCraneHealSound;
     }
 
     public static class Common {
-        private Common(final ForgeConfigSpec.Builder builder) {
+        private Common(final ModConfigSpec.Builder builder) {
             TOOLS_AND_ABILITIES = new ToolsAndAbilities(builder);
             MOBS = new Mobs(builder);
         }
@@ -884,5 +944,33 @@ public final class ConfigHandler {
         public final ToolsAndAbilities TOOLS_AND_ABILITIES;
 
         public final Mobs MOBS;
+    }
+
+    private static String inverted(Object object) {
+        return "!" + string(object);
+    }
+
+    private static String string(Object object) {
+        if (object instanceof TagKey<?> tag) {
+            return tag.location().toString();
+        }
+
+        if (object instanceof Holder<?> holder) {
+            return holder.getRegisteredName();
+        }
+
+        if (object instanceof ResourceKey<?> key) {
+            return key.location().toString();
+        }
+
+        if (object instanceof Item item) {
+            return string(item.builtInRegistryHolder());
+        }
+
+        if (object instanceof Block block) {
+            return string(block.builtInRegistryHolder());
+        }
+
+        throw new IllegalArgumentException("Cannot handle object type [" + object.getClass() + "]");
     }
 }

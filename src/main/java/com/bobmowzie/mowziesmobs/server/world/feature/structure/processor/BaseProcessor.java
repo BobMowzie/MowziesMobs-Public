@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure.processor;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.WorldGenRegion;
@@ -16,10 +16,11 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 public class BaseProcessor extends StructureProcessor {
     public static final BaseProcessor INSTANCE = new BaseProcessor();
-    public static final Codec<BaseProcessor> CODEC = Codec.unit(() -> INSTANCE);
+    public static final MapCodec<BaseProcessor> CODEC = MapCodec.unit(() -> INSTANCE);
 
+    @Override
     protected StructureProcessorType<?> getType() {
-        return ProcessorHandler.BASE_PROCESSOR;
+        return ProcessorHandler.BASE_PROCESSOR.value();
     }
 
     @Override

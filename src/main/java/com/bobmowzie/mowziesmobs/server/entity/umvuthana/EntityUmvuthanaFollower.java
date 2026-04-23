@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,9 +45,9 @@ public abstract class EntityUmvuthanaFollower<L extends LivingEntity> extends En
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        getEntityData().define(LEADER, ABSENT_LEADER);
+    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(LEADER, ABSENT_LEADER);
     }
 
     public Optional<UUID> getLeaderUUID() {
@@ -133,6 +134,18 @@ public abstract class EntityUmvuthanaFollower<L extends LivingEntity> extends En
     protected abstract void addAsPackMember();
 
     protected abstract void removeAsPackMember();
+
+    @Override
+    public int getAttackChance() {
+        if (getPackSize() < 0) return super.getAttackChance();
+        return 8 * getPackSize() + 40;
+    }
+
+    @Override
+    public int getAttackCooldown() {
+        if (getPackSize() < 0) return super.getAttackCooldown();
+        return 8 * getPackSize() + 40;
+    }
 
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {

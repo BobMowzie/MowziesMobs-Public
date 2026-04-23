@@ -41,7 +41,7 @@ public class AnimationFWNStompAttackAI extends SimpleAnimationAI<EntityWroughtna
             if (tick == 10) {
                 entity.playSound(MMSounds.ENTITY_WROUGHT_STEP.get(), 1.2F, 0.5F + entity.getRandom().nextFloat() * 0.1F);
             } else if (tick == 12) {
-                entity.playSound(SoundEvents.GENERIC_EXPLODE, 2, 1F + entity.getRandom().nextFloat() * 0.1F);
+                entity.playSound(SoundEvents.GENERIC_EXPLODE.value(), 2, 1F + entity.getRandom().nextFloat() * 0.1F);
                 EntityCameraShake.cameraShake(entity.level(), entity.position(), 25, 0.1f, 0, 20);
             }
             if (tick % 2 == 0) {

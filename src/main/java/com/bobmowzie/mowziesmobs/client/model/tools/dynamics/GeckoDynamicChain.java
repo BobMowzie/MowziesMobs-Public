@@ -1,13 +1,14 @@
 package com.bobmowzie.mowziesmobs.client.model.tools.dynamics;
 
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
+import com.bobmowzie.mowziesmobs.client.render.entity.MowzieGeoEntityRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3d;
+import org.joml.*;
+
+import java.lang.Math;
 
 /**
  * Created by BobMowzie on 8/30/2018.
@@ -20,6 +21,7 @@ public class GeckoDynamicChain {
     private float[] m;
     private float[] d;
     private Vec3[] startingDirections;
+    private Quaternionf[] startingOrientations;
     private final Entity entity;
 
     public Vec3[] renderPos;
@@ -35,6 +37,18 @@ public class GeckoDynamicChain {
     public MowzieGeoBone[] chainOrig;
     public MowzieGeoBone[] chainDynamic;
 
+    private float gravity = 0.1f;
+    private float damping = 0.02f;
+    private float stiffness = 1f;
+    private float attractStrength = 0.1f;
+    private boolean doAttract = false;
+    private float attractFalloff = 0.5f;
+    private int numUpdates = 10;
+    private boolean floorCollision = true;
+    private Vector3d chainDirection;
+    private boolean isChainHidden = false;
+    private float alpha = 1f;
+
     public GeckoDynamicChain(Entity entity) {
         this.entity = entity;
         p = new Vec3[0];
@@ -49,34 +63,96 @@ public class GeckoDynamicChain {
         prevRenderPos = new Vec3[0];
         prevUpdateTick = -1;
         prevUpdateTime = 0;
+        chainDirection = new Vector3d(0, -1, 0);
 
         isSimulating = true;
     }
 
-    public void updateSpringConstraint(float gravityAmount, float dampAmount, float stiffness, boolean doAttract, float attractFalloff, int numUpdates, float deltaTime) {
+    public void setGravity(float gravity) {
+        this.gravity = gravity;
+    }
+
+    public void setDamping(float damping) {
+        this.damping = damping;
+    }
+
+    public void setAttractStrength(float attractStrength) {
+        this.attractStrength = attractStrength;
+    }
+
+    public void setDoAttract(boolean doAttract) {
+        this.doAttract = doAttract;
+    }
+
+    public void setAttractFalloff(float attractFalloff) {
+        this.attractFalloff = attractFalloff;
+    }
+
+    public void setNumUpdates(int numUpdates) {
+        this.numUpdates = numUpdates;
+    }
+
+    public void setFloorCollision(boolean floorCollision) {
+        this.floorCollision = floorCollision;
+    }
+
+    public void setChainDirection(Vector3d chainDirection) {
+        this.chainDirection = chainDirection;
+    }
+
+    public void setStiffness(float stiffness) {
+        this.stiffness = stiffness;
+    }
+
+    public void setAlpha(float alpha) {
+        this.alpha = alpha;
+    }
+
+    public void setHidden(boolean hidden) {
+        if (chainDynamic == null) {
+            return;
+        }
+        for (MowzieGeoBone bone : chainDynamic) {
+            bone.setHidden(hidden);
+        }
+
+        isChainHidden = hidden;
+    }
+
+    public void updateSpringConstraint(float gravityAmount, float dampAmount, float attractStrength, boolean doAttract, float attractFalloff, int numUpdates, float deltaTime) {
         if (isSimulating) {
             float deltaTimePerUpdate = deltaTime / (float) numUpdates;
             for (int j = 0; j < numUpdates; j++) {
                 p[0] = p0[0].add(pOrig[0].subtract(p0[0]).scale((double) (j + 1) / (double) (numUpdates)));
                 for (int i = 1; i < p.length; i++) {
-                    Vec3 prevPosition = new Vec3(p[i].x, p[i].y, p[i].z);
-
-                    Vec3 force = new Vec3(0, 0, 0);
-                    Vec3 gravity = new Vec3(0, -gravityAmount, 0);
-                    force = force.add(gravity);
-                    if (doAttract) {
-                        Vec3 attract = pOrig[i].subtract(p[i]);
-                        force = force.add(attract.scale(1 / (1 + i * i * attractFalloff)));
+                    // If it has been more than a full tick since the simulation updated (prevents popping when switching from culled to rendered
+                    if (deltaTime > 1) {
+                        p[i] = new Vec3(pOrig[i].x, pOrig[i].y, pOrig[i].z);
+                        p0[i] = new Vec3(p[i].x, p[i].y, p[i].z);
+                        a[i] = new Vec3(0, 0, 0);
                     }
-                    a[i] = force.scale(1 / m[i]);
-                    p[i] = p[i].add((p[i].subtract(p0[i])).scale(1.0 - dampAmount)).add(a[i].scale(deltaTimePerUpdate * deltaTimePerUpdate).scale(1.0 - dampAmount));
+                    // Otherwise, if simulation has been continuous
+                    else {
+                        Vec3 prevPosition = new Vec3(p[i].x, p[i].y, p[i].z);
 
-                    Vec3 vectorToPrevious;
-                    vectorToPrevious = p[i].subtract(p[i - 1]);
-                    vectorToPrevious = vectorToPrevious.normalize().scale(d[i]);
-                    p[i] = p[i - 1].add(vectorToPrevious);
+                        Vec3 force = new Vec3(0, 0, 0);
+                        Vec3 gravity = new Vec3(0, -gravityAmount, 0);
+                        force = force.add(gravity);
+                        if (doAttract) {
+                            Vec3 attract = pOrig[i].subtract(p[i]);
+                            force = force.add(attract.scale(attractStrength / (1 + i * i * attractFalloff)));
+                        }
+//                    force = force.add((p[i-1].subtract(p[i]).normalize().scale(stiffness)));
+                        a[i] = force.scale(1 / m[i]);
+                        p[i] = p[i].add((p[i].subtract(p0[i])).scale(1.0 - dampAmount)).add(a[i].scale(deltaTimePerUpdate * deltaTimePerUpdate).scale(1.0 - dampAmount));
 
-                    p0[i] = new Vec3(prevPosition.x, prevPosition.y, prevPosition.z);
+                        Vec3 vectorToPrevious;
+                        vectorToPrevious = p[i].subtract(p[i - 1]);
+                        vectorToPrevious = vectorToPrevious.normalize().scale(d[i]);
+                        p[i] = p[i - 1].add(vectorToPrevious);
+
+                        p0[i] = new Vec3(prevPosition.x, prevPosition.y, prevPosition.z);
+                    }
                 }
             }
 
@@ -118,6 +194,7 @@ public class GeckoDynamicChain {
             m = new float[chainOrig.length];
             d = new float[chainOrig.length];
             startingDirections = new Vec3[chainOrig.length];
+            startingOrientations = new Quaternionf[chainOrig.length];
             pOrig = new Vec3[chainOrig.length];
             renderPos = new Vec3[chainOrig.length];
             prevRenderPos = new Vec3[chainOrig.length];
@@ -140,6 +217,9 @@ public class GeckoDynamicChain {
                 } else {
                     d[i] = 0f;
                 }
+//                startingOrientations[i] = new Quaternionf();
+//                chainOrig[i].getWorldSpaceMatrix().getUnnormalizedRotation(startingOrientations[i]);
+                chainOrig[i].setDynamicJoint(true);
             }
 
             for (int i = 0; i < chainOrig.length; i++) {
@@ -150,12 +230,12 @@ public class GeckoDynamicChain {
         }
     }
 
-    public void updateChain(float delta, float gravityAmount, float stiffness, float stiffnessFalloff, float damping, int numUpdates, boolean useFloor) {
+    public void updateChain(float delta, MowzieGeoEntityRenderer renderer) {
         if (chainOrig == null || chainDynamic == null || p.length != chainOrig.length || Double.isNaN(p[0].x)) {
             return;
         }
 
-        float currentTime = entity.tickCount + delta;
+        float currentTime = entity.tickCount + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
 
         for (int i = 0; i < chainOrig.length; i++) {
             prevRenderPos[i] = new Vec3(renderPos[i].x, renderPos[i].y, renderPos[i].z);
@@ -166,18 +246,16 @@ public class GeckoDynamicChain {
             pOrig[i] = new Vec3(p.x, p.y, p.z);
             if (i > 0) {
                 d[i] = (float) pOrig[i].distanceTo(pOrig[i - 1]);
-//                Vec3 p1 = new Vec3(pOrig[i - 1].x, pOrig[i - 1].y, pOrig[i - 1].z);
-//                Vec3 p2 = new Vec3(pOrig[i].x, pOrig[i].y, pOrig[i].z);
-//                Vec3 startingDir = p2.subtract(p1).normalize();
-//                startingDirections[i - 1] = startingDir;
             } else {
                 d[i] = 0f;
             }
+//            startingOrientations[i] = new Quaternionf();
+//            chainOrig[i].getWorldSpaceMatrix().getUnnormalizedRotation(startingOrientations[i]);
         }
 
         // Run physics update
-        if (!Minecraft.getInstance().isPaused()) {
-            updateSpringConstraint(gravityAmount, damping, 1, false, 0, numUpdates, currentTime - prevUpdateTime);
+        if (!Minecraft.getInstance().isPaused() && prevUpdateTime != currentTime) {
+            updateSpringConstraint(gravity, damping, attractStrength, doAttract, attractFalloff, numUpdates, currentTime - prevUpdateTime);
         }
 
         for (int i = 0; i < chainOrig.length; i++) {
@@ -186,45 +264,57 @@ public class GeckoDynamicChain {
 
         prevUpdateTime = currentTime;
 
-        if (Minecraft.getInstance().isPaused()) delta = 0.5f;
-        setChainFromRenderPos(chainOrig, chainDynamic, delta);
+        setChainFromRenderPos(chainOrig, chainDynamic, alpha, renderer);
     }
 
     // Set the xform matrix of the dynamic chain bones according to the computed render pos
-    private void setChainFromRenderPos(MowzieGeoBone[] chainOrig, MowzieGeoBone[] chainDynamic, float delta) {
+    private void setChainFromRenderPos(MowzieGeoBone[] chainOrig, MowzieGeoBone[] chainDynamic, double alpha, MowzieGeoEntityRenderer renderer) {
         for (int i = chainDynamic.length - 1; i >= 0; i--) {
             if (chainDynamic[i] == null) return;
 
             chainDynamic[i].setForceMatrixTransform(true);
-            chainDynamic[i].setHidden(false);
+            chainDynamic[i].setHidden(isChainHidden);
             chainOrig[i].setHidden(true);
             chainOrig[i].setDynamicJoint(true);
 
             Matrix4f xformOverride = new Matrix4f();
 
             // Translation
-            xformOverride = xformOverride.translate((float) p[i].x, (float) p[i].y, (float) p[i].z);
-//            xformOverride = xformOverride.translate((float) pOrig[i].x, (float) pOrig[i].y, (float) pOrig[i].z);
+            float x = (float) Mth.lerp(alpha, pOrig[i].x, p[i].x);
+            float y = (float) Mth.lerp(alpha, pOrig[i].y, p[i].y);
+            float z = (float) Mth.lerp(alpha, pOrig[i].z, p[i].z);
+            xformOverride = xformOverride.translate(x, y, z);
 
             // Rotation - based on translations
             if (i < chainOrig.length - 1) {
-                Quaternionf q;
-                Vector3d p1 = new Vector3d(p[i].x, p[i].y, p[i].z);
-                Vector3d p2 = new Vector3d(p[i + 1].x, p[i + 1].y, p[i + 1].z);
+                Quaterniond q = new Quaterniond();
+                Vector3d p1 = new Vector3d(pOrig[i].x, pOrig[i].y, pOrig[i].z).lerp(new Vector3d(p[i].x, p[i].y, p[i].z), alpha);
+                Vector3d p2 = new Vector3d(pOrig[i + 1].x, pOrig[i + 1].y, pOrig[i + 1].z).lerp(new Vector3d(p[i + 1].x, p[i + 1].y, p[i + 1].z), alpha);
                 Vector3d desiredDir = p2.sub(p1, new Vector3d()).normalize();
 //                Vector3d startingDir = new Vector3d(startingDirections[i].x, startingDirections[i].y, startingDirections[i].z);
-                Vector3d startingDir = new Vector3d(0, -1, 0);
+//                Vector3d startingDir = new Vector3d(0, 0, -1);
+                Quaternionf entityRotations = renderer.getModelRenderMatrix().getNormalizedRotation(new Quaternionf());
+                Vector3d startingDir = new Vector3d();
+                chainDirection.rotate(new Quaterniond(entityRotations), startingDir);
+//                startingDir.rotationTo(desiredDir, q);
                 double dot = desiredDir.dot(startingDir);
                 if (dot > 0.9999999) {
-                    q = new Quaternionf();
+                    q = new Quaterniond();
                 }
                 else {
-                    Vector3d cross = startingDir.cross(desiredDir);
+                    Vector3d cross = startingDir.cross(desiredDir, new Vector3d());
                     double w = Math.sqrt(desiredDir.lengthSquared() * startingDir.lengthSquared()) + dot;
-                    q = new Quaternionf(cross.x, cross.y, cross.z, w).normalize();
+                    q = new Quaterniond(cross.x, cross.y, cross.z, w).normalize();
                 }
-                xformOverride.rotate(q);
+                xformOverride.rotate(q.get(new Quaternionf()));
             }
+
+            // Scale
+            Vector3f scale = new Vector3f();
+            chainOrig[i].getModelSpaceMatrix().getScale(scale);
+            xformOverride.scale(scale);
+
+//            xformOverride.rotate(startingOrientations[i]);
 
             chainDynamic[i].setWorldSpaceMatrix(xformOverride);
         }

@@ -37,7 +37,7 @@ public class EntitySuperNova extends EntityMagicEffect {
     @Override
     public void tick() {
         super.tick();
-        if (getCaster() == null || getCaster().isRemoved() || !getCaster().isAlive()) this.discard();
+        if (!level().isClientSide() && (getCaster() == null || getCaster().isRemoved() || !getCaster().isAlive())) this.discard();
 
         if (tickCount == 1) {
             EntityCameraShake.cameraShake(level(), position(), 30, 0.05f, 10, 30);
@@ -46,12 +46,12 @@ public class EntitySuperNova extends EntityMagicEffect {
                 float scale = 8.2f;
                 for (int i = 0; i < 15; i++) {
                     float phaseOffset = random.nextFloat();
-                    AdvancedParticleBase.spawnParticle(level(), ParticleHandler.ARROW_HEAD.get(), getX(), getY(), getZ(), 0, 0, 0, false, 0, 0, 0, 0, 8F, 0.95, 0.9, 0.35, 1, 1, 30, true, true, new ParticleComponent[]{
+                    AdvancedParticleBase.spawnParticle(level(), ParticleHandler.ARROW_HEAD, getX(), getY(), getZ(), 0, 0, 0, false, 0, 0, 0, 0, 8F, 0.95, 0.9, 0.35, 1, 1, 30, true, true, new ParticleComponent[]{
                             new ParticleComponent.Orbit(new Vec3[]{position().add(0, getBbHeight() / 2, 0)}, KeyTrack.startAndEnd(0 + phaseOffset, 1.6f + phaseOffset), new ParticleComponent.KeyTrack(
                                     new float[]{0.2f * scale, 0.63f * scale, 0.87f * scale, 0.974f * scale, 0.998f * scale, 1f * scale},
                                     new float[]{0, 0.15f, 0.3f, 0.45f, 0.6f, 0.75f}
                             ), KeyTrack.startAndEnd(random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1), KeyTrack.startAndEnd(random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1), KeyTrack.startAndEnd(random.nextFloat() * 2 - 1, random.nextFloat() * 2 - 1), false),
-                            new RibbonComponent(ParticleHandler.RIBBON_FLAT.get(), 10, 0, 0, 0, 0.2F, 0.95, 0.9, 0.35, 1, true, true, new ParticleComponent[]{
+                            new RibbonComponent(ParticleHandler.RIBBON_FLAT, 10, 0, 0, 0, 0.2F, 0.95, 0.9, 0.35, 1, true, true, new ParticleComponent[]{
                                     new PropertyOverLength(PropertyOverLength.EnumRibbonProperty.SCALE, KeyTrack.startAndEnd(1, 0)),
                                     new ParticleComponent.PropertyControl(EnumParticleProperty.ALPHA, KeyTrack.startAndEnd(1, 0), false)
                             }),
@@ -69,6 +69,7 @@ public class EntitySuperNova extends EntityMagicEffect {
             setPos(xo, yo, zo);
             List<Entity> hitList = getEntitiesNearbyCube(Entity.class, scale);
             for (Entity entity : hitList) {
+                if (entity instanceof ItemEntity) continue;
             	if (getCaster() == entity) continue;
                 if (entity instanceof ItemEntity) continue;
                 if (getCaster() instanceof EntityUmvuthi && entity instanceof LeaderSunstrikeImmune) continue;
@@ -89,7 +90,7 @@ public class EntitySuperNova extends EntityMagicEffect {
                             Vec3 diff = livingEntity.position().subtract(position());
                             diff = diff.normalize();
                             livingEntity.knockback(0.4f, -diff.x, -diff.z);
-                            livingEntity.setSecondsOnFire(5);
+                            livingEntity.igniteForSeconds(5);
                         }
                     }
                 }
