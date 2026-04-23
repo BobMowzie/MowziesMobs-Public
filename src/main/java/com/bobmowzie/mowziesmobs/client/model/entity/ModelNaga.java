@@ -1,7 +1,8 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
 import com.bobmowzie.mowziesmobs.client.model.tools.dynamics.DynamicChain;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
+import com.bobmowzie.mowziesmobs.server.capability.FrozenCapability;
 import com.bobmowzie.mowziesmobs.server.entity.naga.EntityNaga;
 import com.ilexiconn.llibrary.client.model.tools.AdvancedModelRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -660,9 +661,9 @@ public class ModelNaga<T extends EntityNaga> extends MowzieEntityModel<T> {
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
-        this.root.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
-        if (tail != null) tail.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color, tailDynamic);
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+        this.root.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+        if (tail != null) tail.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha, tailDynamic);
         for (AdvancedModelRenderer AdvancedModelRenderer : tailOriginal) {
             AdvancedModelRenderer.showModel = false;
         }
@@ -682,7 +683,9 @@ public class ModelNaga<T extends EntityNaga> extends MowzieEntityModel<T> {
         float nonHoverAnim = 1f - hoverAnim;
 
         float flapAnim = entity.prevFlapAnimFrac + (entity.flapAnimFrac - entity.prevFlapAnimFrac) * partial;
-        if (!DataHandler.getData(entity, DataHandler.FROZEN_DATA).getFrozen()) {
+        FrozenCapability.IFrozenCapability frozenCapability = CapabilityHandler.getCapability(entity, CapabilityHandler.FROZEN_CAPABILITY);
+        boolean frozen = frozenCapability != null && frozenCapability.getFrozen();
+        if (!frozen) {
             //Hover anim
             float globalSpeed = 0.28f;
             float globalDegree = 1f * hoverAnim;
@@ -774,7 +777,10 @@ public class ModelNaga<T extends EntityNaga> extends MowzieEntityModel<T> {
         this.setDefaultAngle(entity, limbSwing, limbSwingAmount, headYaw, headPitch, delta);
         float frame = entity.frame + delta;
 
-        if (!DataHandler.getData(entity, DataHandler.FROZEN_DATA).getFrozen()) {
+        FrozenCapability.IFrozenCapability frozenCapability = CapabilityHandler.getCapability(entity, CapabilityHandler.FROZEN_CAPABILITY);
+        boolean frozen = frozenCapability != null && frozenCapability.getFrozen();
+        if (!frozen) {
+
             if (entity.getAnimation() == EntityNaga.FLAP_ANIMATION) {
                 animator.setAnimation(EntityNaga.FLAP_ANIMATION);
                 animator.startKeyframe(25);
@@ -1231,7 +1237,7 @@ public class ModelNaga<T extends EntityNaga> extends MowzieEntityModel<T> {
             jawControls();
             wingFoldControls();
 
-            entity.dc.updateChain(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false), tailOriginal, tailDynamic, 0.5f, 0.5f, 0.5f, 0.97f, 30, true);
+            entity.dc.updateChain(Minecraft.getInstance().getFrameTime(), tailOriginal, tailDynamic, 0.5f, 0.5f, 0.5f, 0.97f, 30, true);
 
             computeWingWebbing();
 

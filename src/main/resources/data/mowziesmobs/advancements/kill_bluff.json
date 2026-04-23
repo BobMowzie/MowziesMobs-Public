@@ -1,0 +1,24 @@
+{
+  "display": {
+    "icon": {
+      "item": "mowziesmobs:bluff_rod"
+    },
+    "title": {
+      "translate": "advancements.mowziesmobs.kill_bluff.title"
+    },
+    "description": {
+      "translate": "advancements.mowziesmobs.kill_bluff.description"
+    }
+  },
+  "parent": "mowziesmobs:root",
+  "criteria": {
+    "bluff": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "mowziesmobs:bluff"
+        }
+      }
+    }
+  }
+}

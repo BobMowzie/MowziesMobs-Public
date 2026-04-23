@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelNaga;
 import com.bobmowzie.mowziesmobs.client.render.MowzieRenderUtils;
 import com.bobmowzie.mowziesmobs.server.entity.naga.EntityNaga;
@@ -9,9 +9,12 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class RenderNaga extends MobRenderer<EntityNaga, ModelNaga<EntityNaga>> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/naga.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/naga.png");
 
     public RenderNaga(EntityRendererProvider.Context mgr) {
         super(mgr, new ModelNaga<>(), 0);

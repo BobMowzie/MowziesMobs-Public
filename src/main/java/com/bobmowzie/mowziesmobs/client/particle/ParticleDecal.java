@@ -1,8 +1,7 @@
 package com.bobmowzie.mowziesmobs.client.particle;
 
-import com.bobmowzie.mowziesmobs.client.particle.types.AdvancedParticleType;
-import com.bobmowzie.mowziesmobs.client.particle.types.DecalParticleType;
 import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleBase;
+import com.bobmowzie.mowziesmobs.client.particle.util.DecalParticleData;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleRotation;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -12,7 +11,6 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -22,6 +20,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Arrays;
 import java.util.OptionalDouble;
@@ -31,12 +31,12 @@ public class ParticleDecal extends AdvancedParticleBase {
     protected int bufferSize = 32;
     private final SpriteSet sprites;
 
-    protected ParticleDecal(ClientLevel worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double motionX, double motionY, double motionZ, ParticleRotation rotation, double scale, double r, double g, double b, double a, double drag, double duration, boolean emissive, SpriteSet sprites, ParticleComponent[] components) {
-        this(worldIn, xCoordIn, yCoordIn, zCoordIn, motionX, motionY, motionZ, rotation, scale, r, g, b, a, drag, duration, emissive, sprites, 8, 32, components);
+    protected ParticleDecal(ClientLevel worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double motionX, double motionY, double motionZ, ParticleRotation rotation, double scale, double r, double g, double b, double a, double drag, double duration, boolean emissive, boolean canCollide, SpriteSet sprites, ParticleComponent[] components) {
+        this(worldIn, xCoordIn, yCoordIn, zCoordIn, motionX, motionY, motionZ, rotation, scale, r, g, b, a, drag, duration, emissive, canCollide, sprites, 8, 32, components);
     }
 
-    protected ParticleDecal(ClientLevel worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double motionX, double motionY, double motionZ, ParticleRotation rotation, double scale, double r, double g, double b, double a, double drag, double duration, boolean emissive, SpriteSet sprites, int spriteSize, int bufferSize, ParticleComponent[] components) {
-        super(worldIn, xCoordIn, yCoordIn, zCoordIn, motionX, motionY, motionZ, rotation, scale, r, g, b, a, drag, duration, emissive, false, components);
+    protected ParticleDecal(ClientLevel worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double motionX, double motionY, double motionZ, ParticleRotation rotation, double scale, double r, double g, double b, double a, double drag, double duration, boolean emissive, boolean canCollide, SpriteSet sprites, int spriteSize, int bufferSize, ParticleComponent[] components) {
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, motionX, motionY, motionZ, rotation, scale, r, g, b, a, drag, duration, emissive, canCollide, components);
         this.spriteSize = spriteSize;
         this.bufferSize = bufferSize;
         this.setSpriteFromAge(sprites);
@@ -68,10 +68,6 @@ public class ParticleDecal extends AdvancedParticleBase {
         if (rotation instanceof ParticleRotation.EulerAngles) {
             ParticleRotation.EulerAngles eulerRot = (ParticleRotation.EulerAngles) rotation;
             float rotY = eulerRot.prevYaw + (eulerRot.yaw - eulerRot.prevYaw) * partialTicks;
-            decalRot = rotY;
-        }
-        else if (rotation instanceof ParticleRotation.FaceCamera faceCamera) {
-            float rotY = faceCamera.prevAngle + (faceCamera.angle - faceCamera.prevAngle) * partialTicks;
             decalRot = rotY;
         }
 
@@ -152,26 +148,26 @@ public class ParticleDecal extends AdvancedParticleBase {
     private static void decalVertex(VertexConsumer buffer, Camera renderInfo, float alpha, float x, float y, float z, float u, float v, float r, float g, float b, int lightColor) {
         Vec3 vector3d = renderInfo.getPosition();
 //        Vector3d = new Vec3(0, 1, 0);
-        buffer.addVertex((float) (x - vector3d.x()), (float) (y - vector3d.y()), (float) (z - vector3d.z())).setUv(u, v).setColor(r, g, b, alpha).setLight(lightColor);
+        buffer.vertex(x - vector3d.x(), y - vector3d.y(), z - vector3d.z()).uv(u, v).color(r, g, b, alpha).uv2(lightColor).endVertex();
     }
 
-    public static class Provider implements ParticleProvider<DecalParticleType> {
+    @OnlyIn(Dist.CLIENT)
+    public static class Factory implements ParticleProvider<DecalParticleData> {
         private final SpriteSet spriteSet;
 
-        public Provider(SpriteSet sprite) {
+        public Factory(SpriteSet sprite) {
             this.spriteSet = sprite;
         }
 
         @Override
-        public Particle createParticle(DecalParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            ParticleDecal particle = new ParticleDecal(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.rotation(), typeIn.scale(), typeIn.red(), typeIn.green(), typeIn.blue(), typeIn.alpha(), typeIn.airDrag(), typeIn.duration(), typeIn.emissive(), spriteSet, typeIn.spriteSize(), typeIn.bufferSize(), typeIn.components());
-            particle.setColor(typeIn.red(), typeIn.green(), typeIn.blue());
+        public Particle createParticle(DecalParticleData typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+            ParticleDecal particle = new ParticleDecal(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.getRotation(), typeIn.getScale(), typeIn.getRed(), typeIn.getGreen(), typeIn.getBlue(), typeIn.getAlpha(), typeIn.getAirDrag(), typeIn.getDuration(), typeIn.isEmissive(), typeIn.getCanCollide(), spriteSet, typeIn.getSpriteSize(), typeIn.getBufferSize(), typeIn.getComponents());
+            particle.setColor((float) typeIn.getRed(), (float) typeIn.getGreen(), (float) typeIn.getBlue());
             return particle;
         }
     }
 
-    public static void spawnDecal(Level world, Holder<ParticleType<?>> particle, double x, double y, double z, double motionX, double motionY, double motionZ, double angle, double scale, double red, double green, double blue, double alpha, double airDrag, double duration, boolean emissive, int spriteSize, int bufferSize, ParticleComponent[] components) {
-        AdvancedParticleType base = new AdvancedParticleType(particle, new ParticleRotation.FaceCamera((float) angle), components, (float) red, (float) green, (float) blue, (float) alpha, (float) scale, (float) duration, (float) airDrag, emissive, false);
-        world.addParticle(new DecalParticleType(base, spriteSize, bufferSize), x, y, z, motionX, motionY, motionZ);
+    public static void spawnDecal(Level world, ParticleType<DecalParticleData> particle, double x, double y, double z, double motionX, double motionY, double motionZ, double rotation, double scale, double r, double g, double b, double a, double drag, double duration, boolean emissive, int spriteSize, int bufferSize, ParticleComponent[] components) {
+        world.addParticle(new DecalParticleData(particle, rotation, scale, r, g, b, a, drag, duration, emissive, spriteSize, bufferSize, components), x, y, z, motionX, motionY, motionZ);
     }
 }

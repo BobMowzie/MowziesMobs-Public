@@ -29,10 +29,8 @@ public class ElokosaHurtByTargetGoal extends HurtByTargetGoal
         double d0 = this.getFollowDistance();
         AABB aabb = AABB.unitCubeFromLowerCorner(this.mob.position()).inflate(d0, 10.0D, d0);
         List<? extends PathfinderMob> listUmvuthana = this.mob.level().getEntitiesOfClass(EntityElokosa.class, aabb, EntitySelector.NO_SPECTATORS);
-//        List<? extends PathfinderMob> listUmvuthi = this.mob.level().getEntitiesOfClass(EntityUmvuthi.class, aabb, EntitySelector.NO_SPECTATORS);
         List<PathfinderMob> list = new ArrayList<>();
         list.addAll(listUmvuthana);
-//        list.addAll(listUmvuthi);
         Iterator iterator = list.iterator();
 
         while(true) {

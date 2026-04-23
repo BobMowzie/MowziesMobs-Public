@@ -1,7 +1,7 @@
 package com.bobmowzie.mowziesmobs.server.item;
 
 import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -25,24 +26,32 @@ public class ItemIceCrystal extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level worldIn, Player player, InteractionHand handIn) {
-        ItemStack stack = player.getItemInHand(handIn);
-        player.startUsingItem(handIn);
-        if (stack.getDamageValue() + 5 < stack.getMaxDamage() || ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ICE_CRYSTAL.breakable.get()) {
-            if (!worldIn.isClientSide()) AbilityHandler.INSTANCE.sendAbilityMessage(player, AbilityHandler.ICE_BREATH_ABILITY);
-            stack.hurtAndBreak(5, player, LivingEntity.getSlotForHand(handIn));
-            player.startUsingItem(handIn);
-            return new InteractionResultHolder<>(InteractionResult.SUCCESS, player.getItemInHand(handIn));
-        } else {
-            DataHandler.getData(player, DataHandler.ABILITY_DATA).getAbilityMap().get(AbilityHandler.ICE_BREATH_ABILITY).end();
+    public boolean canBeDepleted() {
+        return true;
+    }
+
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level worldIn, Player playerIn, InteractionHand handIn) {
+        ItemStack stack = playerIn.getItemInHand(handIn);
+        AbilityCapability.IAbilityCapability abilityCapability = AbilityHandler.INSTANCE.getAbilityCapability(playerIn);
+        if (abilityCapability != null) {
+            playerIn.startUsingItem(handIn);
+            if (stack.getDamageValue() + 5 < stack.getMaxDamage() || ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ICE_CRYSTAL.breakable.get()) {
+                if (!worldIn.isClientSide()) AbilityHandler.INSTANCE.sendAbilityMessage(playerIn, AbilityHandler.ICE_BREATH_ABILITY);
+                stack.hurtAndBreak(5, playerIn, p -> p.broadcastBreakEvent(handIn));
+                playerIn.startUsingItem(handIn);
+                return new InteractionResultHolder<ItemStack>(InteractionResult.SUCCESS, playerIn.getItemInHand(handIn));
+            } else {
+                abilityCapability.getAbilityMap().get(AbilityHandler.ICE_BREATH_ABILITY).end();
+            }
         }
-        return super.use(worldIn, player, handIn);
+        return super.use(worldIn, playerIn, handIn);
     }
 
     @Override
     public void releaseUsing(ItemStack stack, Level worldIn, LivingEntity entityLiving, int timeLeft) {
 //        if (entityLiving instanceof Player) {
-//            Ability<?>iceBreathAbility = AbilityHandler.INSTANCE.getAbility(entityLiving, AbilityHandler.ICE_BREATH_ABILITY);
+//            Ability iceBreathAbility = AbilityHandler.INSTANCE.getAbility(entityLiving, AbilityHandler.ICE_BREATH_ABILITY);
 //            if (iceBreathAbility != null && iceBreathAbility.isUsing()) {
 //                iceBreathAbility.end();
 //            }
@@ -50,8 +59,7 @@ public class ItemIceCrystal extends Item {
         super.releaseUsing(stack, worldIn, entityLiving, timeLeft);
     }
 
-    @Override
-    public int getUseDuration(ItemStack stack, LivingEntity entity) {
+    public int getUseDuration(ItemStack stack) {
         return 72000;
     }
 
@@ -66,8 +74,8 @@ public class ItemIceCrystal extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        super.appendHoverText(stack, context, tooltip, flagIn);
+    public void appendHoverText(ItemStack stack, @Nullable Level worldIn, List<Component> tooltip, TooltipFlag flagIn) {
+        super.appendHoverText(stack, worldIn, tooltip, flagIn);
         tooltip.add(Component.translatable(getDescriptionId() + ".text.0").setStyle(ItemHandler.TOOLTIP_STYLE));
         if (!ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ICE_CRYSTAL.breakable.get()) {
             tooltip.add(Component.translatable(getDescriptionId() + ".text.1").setStyle(ItemHandler.TOOLTIP_STYLE));

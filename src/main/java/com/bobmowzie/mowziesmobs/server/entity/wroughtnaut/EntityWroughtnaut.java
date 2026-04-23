@@ -19,11 +19,11 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
@@ -48,9 +48,9 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
@@ -114,6 +114,7 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
         super(type, world);
         xpReward = 30;
         active = false;
+        setMaxUpStep(1);
 //        rightEyePos = new Vector3d(0, 0, 0);
 //        leftEyePos = new Vector3d(0, 0, 0);
 //        rightEyeRot = new Vector3d(0, 0, 0);
@@ -134,6 +135,11 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
         goalSelector.addGoal(1, new AnimationDeactivateAI<>(this, DEACTIVATE_ANIMATION));
         goalSelector.addGoal(2, new WroughtnautAttackAI(this));
         targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, null));
+    }
+
+    @Override
+    protected float getStandingEyeHeight(Pose poseIn, EntityDimensions sizeIn) {
+        return sizeIn.height * 0.98F;
     }
 
     @Override
@@ -165,9 +171,12 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
     public static AttributeSupplier.Builder createAttributes() {
         return MowzieEntity.createAttributes().add(Attributes.ATTACK_DAMAGE, 30)
                 .add(Attributes.MAX_HEALTH, 40)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 1)
-                .add(Attributes.STEP_HEIGHT, 1)
-                .add(Attributes.WATER_MOVEMENT_EFFICIENCY, 0.9);
+                .add(Attributes.KNOCKBACK_RESISTANCE, 1);
+    }
+
+    @Override
+    protected float getWaterSlowDown() {
+        return 0.98F;
     }
 
     @Override
@@ -339,7 +348,7 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
 
     @Override
     public PushReaction getPistonPushReaction() {
-        return PushReaction.IGNORE;
+        return PushReaction.BLOCK;
     }
 
     private boolean isAtRestPos() {
@@ -523,9 +532,9 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
 
     @Nullable
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData, @Nullable CompoundTag compound) {
         setRestPos(blockPosition());
-        return super.finalizeSpawn(world, difficulty, reason, livingData);
+        return super.finalizeSpawn(world, difficulty, reason, livingData, compound);
     }
 
     @Override
@@ -534,11 +543,11 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(REST_POSITION, Optional.empty());
-        builder.define(ACTIVE, false);
-        builder.define(ALWAYS_ACTIVE, false);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        getEntityData().define(REST_POSITION, Optional.empty());
+        getEntityData().define(ACTIVE, false);
+        getEntityData().define(ALWAYS_ACTIVE, false);
     }
 
     public Optional<BlockPos> getRestPos() {
@@ -571,23 +580,27 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
     }
 
     @Override
-    public void writeSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
-        super.writeSpawnData(buffer);
+    public void writeSpawnData(FriendlyByteBuf buf) {
+        super.writeSpawnData(buf);
     }
 
     @Override
-    public void addAdditionalSaveData(@NotNull CompoundTag compound) {
+    public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         Optional<BlockPos> restPos = getRestPos();
-        restPos.ifPresent(pos -> compound.put("restPos", NbtUtils.writeBlockPos(pos)));
+        if (restPos.isPresent()) {
+            compound.put("restPos", NbtUtils.writeBlockPos(getRestPos().get()));
+        }
         compound.putBoolean("active", isActive());
         compound.putBoolean("alwaysActive", isAlwaysActive());
     }
 
     @Override
-    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+    public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        NbtUtils.readBlockPos(compound, "restPos").ifPresent(this::setRestPos);
+        if (compound.contains("restPos")) {
+            setRestPos(NbtUtils.readBlockPos(compound.getCompound("restPos")));
+        }
         setActive(compound.getBoolean("active"));
         active = isActive();
         setAlwaysActive(compound.getBoolean("alwaysActive"));
@@ -606,8 +619,9 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
         return ANIMATIONS;
     }
 
+    @Nullable
     @Override
-    protected ResourceKey<LootTable> getDefaultLootTable() {
+    protected ResourceLocation getDefaultLootTable() {
         return LootTableHandler.FERROUS_WROUGHTNAUT;
     }
 
@@ -621,14 +635,15 @@ public class EntityWroughtnaut extends MowzieLLibraryEntity implements Enemy {
         return BossEvent.BossBarColor.RED;
     }
 
+    @OnlyIn(Dist.CLIENT)
     @Override
-    public boolean hasBossMusic() {
-        return true;
+    public BossMusic getBossMusic() {
+        return BossMusicPlayer.FERROUS_WROUGHTNAUT_MUSIC;
     }
 
     @Override
-    public BossMusic<?> getBossMusic() {
-        return BossMusicPlayer.FERROUS_WROUGHTNAUT_MUSIC;
+    public boolean hasBossMusic() {
+        return true;
     }
 
     @Override

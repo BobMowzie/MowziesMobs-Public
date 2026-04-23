@@ -23,11 +23,11 @@ public class BiomeChecker {
         }
         whitelist = new HashSet<>();
         for (String biomeString : biomeConfig.biomeWhitelist.get()) {
-            whitelist.add(ResourceLocation.tryParse(biomeString));
+            whitelist.add(new ResourceLocation(biomeString));
         }
         blacklist = new HashSet<>();
         for (String biomeString : biomeConfig.biomeBlacklist.get()) {
-            blacklist.add(ResourceLocation.tryParse(biomeString));
+            blacklist.add(new ResourceLocation(biomeString));
         }
     }
     
@@ -62,7 +62,7 @@ public class BiomeChecker {
                 }
                 inverted[i] = typeStrings[i].charAt(0) == '!';
                 String name = typeStrings[i].replace("!", "");
-                neededTags[i] = ResourceLocation.tryParse(name);
+                neededTags[i] = new ResourceLocation(name);
             }
         }
 

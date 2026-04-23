@@ -11,20 +11,20 @@ issueTrackerURL="https://github.com/BobMowzie/MowziesMobs/issues"
     description="Mowzie's Mobs adds a variety of high-quality fantasy creatures to your Minecraft world."
     logoFile="banner.png"
 [[dependencies.mowziesmobs]]
-    modId="neoforge"
+    modId="forge"
     mandatory=true
-    versionRange="[21.1.162,)"
+    versionRange="[47.1.3,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.mowziesmobs]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.21.1,)"
+    versionRange="[1.20.1,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.mowziesmobs]]
     modId="geckolib"
     mandatory=true
-    versionRange="[4.8.3,)"
+    versionRange="[4.4.2,)"
     ordering="BEFORE"
     side="BOTH"

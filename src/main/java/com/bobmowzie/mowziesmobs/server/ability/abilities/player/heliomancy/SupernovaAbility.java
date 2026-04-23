@@ -1,6 +1,5 @@
 package com.bobmowzie.mowziesmobs.server.ability.abilities.player.heliomancy;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoFirstPersonRenderer;
 import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoPlayer;
 import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoRenderPlayer;
@@ -22,7 +21,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.List;
 
@@ -86,7 +85,7 @@ public class SupernovaAbility extends HeliomancyAbilityBase {
         // Particle effects
         if (getLevel().isClientSide) {
             // First person
-            if (getUser() == MMCommon.PROXY.getLocalPlayer() && Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON) {
+            if (getUser() == Minecraft.getInstance().player && Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON) {
                 GeckoPlayer geckoPlayer = GeckoPlayer.getGeckoPlayer(getUser(), GeckoPlayer.Perspective.FIRST_PERSON);
                 if (geckoPlayer != null) {
                     GeckoFirstPersonRenderer renderPlayer = (GeckoFirstPersonRenderer) geckoPlayer.getPlayerRenderer();
@@ -118,13 +117,13 @@ public class SupernovaAbility extends HeliomancyAbilityBase {
                 EntitySuperNova superNova = new EntitySuperNova(EntityHandler.SUPER_NOVA.get(), getUser().level(), getUser(), getUser().getX(), getUser().getY() + getUser().getBbHeight()/2f, getUser().getZ());
                 getUser().level().addFreshEntity(superNova);
                 
-                MobEffectInstance sunsBlessingInstance = getUser().getEffect(EffectHandler.SUNS_BLESSING);
+                MobEffectInstance sunsBlessingInstance = getUser().getEffect(EffectHandler.SUNS_BLESSING.get());
                 if (sunsBlessingInstance != null) {
                     int duration = sunsBlessingInstance.getDuration();
-                    getUser().removeEffect(EffectHandler.SUNS_BLESSING);
+                    getUser().removeEffect(EffectHandler.SUNS_BLESSING.get());
                     int supernovaCost = ConfigHandler.COMMON.TOOLS_AND_ABILITIES.SUNS_BLESSING.supernovaCost.get() * 60 * 20;
                     if (duration - supernovaCost > 0) {
-                        getUser().addEffect(new MobEffectInstance(EffectHandler.SUNS_BLESSING, duration - supernovaCost, 0, false, false));
+                        getUser().addEffect(new MobEffectInstance(EffectHandler.SUNS_BLESSING.get(), duration - supernovaCost, 0, false, false));
                     }
                 }
             }
@@ -181,7 +180,7 @@ public class SupernovaAbility extends HeliomancyAbilityBase {
 
     @Override
     public boolean canCancelActiveAbility() {
-        Ability<?>ability = getActiveAbility();
+        Ability ability = getActiveAbility();
         return ability != null && (ability.getAbilityType() == AbilityHandler.SOLAR_FLARE_ABILITY || ability.getAbilityType() == AbilityHandler.SOLAR_BEAM_ABILITY) && ability.getTicksInUse() < 5;
     }
 }

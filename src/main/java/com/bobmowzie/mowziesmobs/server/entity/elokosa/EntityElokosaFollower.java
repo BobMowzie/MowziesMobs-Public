@@ -52,9 +52,9 @@ public abstract class EntityElokosaFollower<L extends LivingEntity> extends Enti
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(LEADER, ABSENT_LEADER);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        entityData.define(LEADER, ABSENT_LEADER);
     }
 
     public Optional<UUID> getLeaderUUID() {

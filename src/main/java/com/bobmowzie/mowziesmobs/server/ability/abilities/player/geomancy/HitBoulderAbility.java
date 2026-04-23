@@ -6,7 +6,7 @@ import com.bobmowzie.mowziesmobs.server.ability.PlayerAbility;
 import com.bobmowzie.mowziesmobs.server.item.ItemHandler;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
-import software.bernie.geckolib.animation.Animation;
+import software.bernie.geckolib.core.animation.Animation;
 
 public class HitBoulderAbility extends PlayerAbility {
 

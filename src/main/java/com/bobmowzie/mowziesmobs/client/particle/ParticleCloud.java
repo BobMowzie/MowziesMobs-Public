@@ -2,20 +2,21 @@ package com.bobmowzie.mowziesmobs.client.particle;
 
 import com.bobmowzie.mowziesmobs.client.render.MMRenderType;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.util.StringRepresentable;
-import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
+import java.util.Locale;
 
 /**
  * Created by BobMowzie on 6/2/2017.
@@ -28,21 +29,10 @@ public class ParticleCloud extends TextureSheetParticle {
     private final EnumCloudBehavior behavior;
     private final float airDrag;
 
-    public enum EnumCloudBehavior implements StringRepresentable {
-        SHRINK("shrink"),
-        GROW("grow"),
-        CONSTANT("constant");
-
-        private final String key;
-
-        EnumCloudBehavior(final String key) {
-            this.key = key;
-        }
-
-        @Override
-        public @NotNull String getSerializedName() {
-            return key;
-        }
+    public enum EnumCloudBehavior {
+        SHRINK,
+        GROW,
+        CONSTANT
     }
 
     public ParticleCloud(ClientLevel world, double x, double y, double z, double vx, double vy, double vz, double r, double g, double b, double scale, int duration, EnumCloudBehavior behavior, double airDrag) {
@@ -85,50 +75,136 @@ public class ParticleCloud extends TextureSheetParticle {
         super.render(buffer, renderInfo, partialTicks);
     }
 
-    public static final class Provider implements ParticleProvider<Data> {
+    @OnlyIn(Dist.CLIENT)
+    public static final class CloudFactory implements ParticleProvider<CloudData> {
         private final SpriteSet spriteSet;
 
-        public Provider(SpriteSet sprite) {
+        public CloudFactory(SpriteSet sprite) {
             this.spriteSet = sprite;
         }
 
         @Override
-        public Particle createParticle(Data typeIn, @NotNull ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            ParticleCloud particleCloud = new ParticleCloud(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.red(), typeIn.green(), typeIn.blue(), typeIn.scale(), typeIn.duration(), typeIn.behavior(), typeIn.airDrag());
+        public Particle createParticle(CloudData typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+            ParticleCloud particleCloud = new ParticleCloud(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.getR(), typeIn.getG(), typeIn.getB(), typeIn.getScale(), typeIn.getDuration(), typeIn.getBehavior(), typeIn.getAirDrag());
             particleCloud.setSpriteFromAge(spriteSet);
-            particleCloud.setColor(typeIn.red(), typeIn.green(), typeIn.blue());
+            particleCloud.setColor(typeIn.getR(), typeIn.getG(), typeIn.getB());
             return particleCloud;
         }
     }
 
-    public record Data(float red, float green, float blue, float scale, int duration, EnumCloudBehavior behavior, float airDrag) implements ParticleOptions {
-        public static final Codec<EnumCloudBehavior> BEHAVIOUR_CODEC = StringRepresentable.fromEnum(EnumCloudBehavior::values);
+    public static class CloudData implements ParticleOptions {
+        public static final ParticleOptions.Deserializer<ParticleCloud.CloudData> DESERIALIZER = new ParticleOptions.Deserializer<ParticleCloud.CloudData>() {
+            public ParticleCloud.CloudData fromCommand(ParticleType<ParticleCloud.CloudData> particleTypeIn, StringReader reader) throws CommandSyntaxException {
+                reader.expect(' ');
+                float r = (float) reader.readDouble();
+                reader.expect(' ');
+                float g = (float) reader.readDouble();
+                reader.expect(' ');
+                float b = (float) reader.readDouble();
+                reader.expect(' ');
+                float scale = (float) reader.readDouble();
+                reader.expect(' ');
+                int duration = reader.readInt();
+                reader.expect(' ');
+                float airDrag = (float) reader.readDouble();
+                return new ParticleCloud.CloudData(particleTypeIn, r, g, b, scale, duration, EnumCloudBehavior.CONSTANT, airDrag);
+            }
 
-        public static final MapCodec<Data> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                        Codec.FLOAT.fieldOf("red").forGetter(data -> data.red),
-                        Codec.FLOAT.fieldOf("green").forGetter(data -> data.green),
-                        Codec.FLOAT.fieldOf("blue").forGetter(data -> data.blue),
-                        Codec.FLOAT.fieldOf("scale").forGetter(data -> data.scale),
-                        Codec.INT.fieldOf("duration").forGetter(data -> data.duration),
-                        BEHAVIOUR_CODEC.fieldOf("behaviour").forGetter(data -> data.behavior),
-                        Codec.FLOAT.fieldOf("air_drag").forGetter(data -> data.airDrag)
-                ).apply(instance, Data::new)
-        );
+            public ParticleCloud.CloudData fromNetwork(ParticleType<ParticleCloud.CloudData> particleTypeIn, FriendlyByteBuf buffer) {
+                return new ParticleCloud.CloudData(particleTypeIn, buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readInt(), EnumCloudBehavior.CONSTANT, buffer.readFloat());
+            }
+        };
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, Data> STREAM_CODEC = NeoForgeStreamCodecs.composite(
-                ByteBufCodecs.FLOAT, Data::red,
-                ByteBufCodecs.FLOAT, Data::green,
-                ByteBufCodecs.FLOAT, Data::blue,
-                ByteBufCodecs.FLOAT, Data::scale,
-                ByteBufCodecs.INT, Data::duration,
-                NeoForgeStreamCodecs.enumCodec(EnumCloudBehavior.class), Data::behavior,
-                ByteBufCodecs.FLOAT, Data::airDrag,
-                Data::new
-        );
+        private final ParticleType<ParticleCloud.CloudData> type;
+
+        private final float r;
+        private final float g;
+        private final float b;
+        private final float scale;
+        private final int duration;
+        private final EnumCloudBehavior behavior;
+        private final float airDrag;
+
+        public CloudData(ParticleType<ParticleCloud.CloudData> type, float r, float g, float b, float scale, int duration, EnumCloudBehavior behavior, float airDrag) {
+            this.type = type;
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.scale = scale;
+            this.behavior = behavior;
+            this.airDrag = airDrag;
+            this.duration = duration;
+        }
 
         @Override
-        public @NotNull ParticleType<?> getType() {
-            return ParticleHandler.CLOUD.value();
+        public void writeToNetwork(FriendlyByteBuf buffer) {
+            buffer.writeFloat(this.r);
+            buffer.writeFloat(this.g);
+            buffer.writeFloat(this.b);
+            buffer.writeFloat(this.scale);
+            buffer.writeInt(this.duration);
+            buffer.writeFloat(this.airDrag);
+        }
+
+        @SuppressWarnings("deprecation")
+        @Override
+        public String writeToString() {
+            return String.format(Locale.ROOT, "%s %.2f %.2f %.2f %.2f %d %.2f", BuiltInRegistries.PARTICLE_TYPE.getKey(this.getType()),
+                    this.r, this.g, this.b, this.scale, this.duration, this.airDrag);
+        }
+
+        @Override
+        public ParticleType<ParticleCloud.CloudData> getType() {
+            return type;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getR() {
+            return this.r;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getG() {
+            return this.g;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getB() {
+            return this.b;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getScale() {
+            return this.scale;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public EnumCloudBehavior getBehavior() {
+            return this.behavior;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public int getDuration() {
+            return this.duration;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getAirDrag() {
+            return this.airDrag;
+        }
+
+        public static Codec<CloudData> CODEC(ParticleType<CloudData> particleType) {
+            return RecordCodecBuilder.create((codecBuilder) -> codecBuilder.group(
+                    Codec.FLOAT.fieldOf("r").forGetter(CloudData::getR),
+                    Codec.FLOAT.fieldOf("g").forGetter(CloudData::getG),
+                    Codec.FLOAT.fieldOf("b").forGetter(CloudData::getB),
+                    Codec.FLOAT.fieldOf("scale").forGetter(CloudData::getScale),
+                    Codec.STRING.fieldOf("behavior").forGetter((cloudData) -> cloudData.getBehavior().toString()),
+                    Codec.INT.fieldOf("duration").forGetter(CloudData::getDuration),
+                    Codec.FLOAT.fieldOf("airdrag").forGetter(CloudData::getAirDrag)
+            ).apply(codecBuilder, (r, g, b, scale, behavior, duration, airdrag) ->
+                        new CloudData(particleType, r, g, b, scale, duration, EnumCloudBehavior.valueOf(behavior), airdrag))
+            );
         }
     }
 }

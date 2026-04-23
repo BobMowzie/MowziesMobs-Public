@@ -21,15 +21,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.registries.RegistryObject;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ItemElokosaPaw extends Item {
     private final PawType pawType;
 
     public ItemElokosaPaw(PawType pawType, Properties properties) {
-        super(properties.stacksTo(1).durability(3));
+        super(properties.stacksTo(1).defaultDurability(3));
         this.pawType = pawType;
     }
 
@@ -37,26 +38,26 @@ public class ItemElokosaPaw extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack itemstack = player.getItemInHand(usedHand);
         player.playSound(MMSounds.ENTITY_ELOKOSA_PAW.get(), 1, 1.15f - 0.06f * pawType.ordinal());
-        int cooldown = ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ELOKOSA_PAW.cooldown.getAsInt();
-        if (!player.hasInfiniteMaterials()) {
-            for (DeferredHolder<Item, ItemElokosaPaw> item : ItemHandler.ELOKOSA_PAWS) {
+        int cooldown = ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ELOKOSA_PAW.cooldown.get();
+        if (!player.getAbilities().instabuild) {
+            for (RegistryObject<ItemElokosaPaw> item : ItemHandler.ELOKOSA_PAWS) {
                 player.getCooldowns().addCooldown(item.get(), cooldown);
             }
         }
-        itemstack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(usedHand));
+        itemstack.hurtAndBreak(1, player, (p) -> p.broadcastBreakEvent(usedHand));
 
         if (level.isClientSide()) {
             float ringScale = 100f;
-            AdvancedParticleBase.spawnParticle(level, ParticleHandler.BURST_MESSY, player.getX(), player.getY() + player.getBbHeight()/2f, player.getZ(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 5F, 0.70,0.55,0.99, 1, 1, 20, true, false, new ParticleComponent[]{
+            AdvancedParticleBase.spawnParticle(level, ParticleHandler.BURST_MESSY.get(), player.getX(), player.getY() + player.getBbHeight()/2f, player.getZ(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 5F, 0.70,0.55,0.99, 1, 1, 20, true, false, new ParticleComponent[]{
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (float) Math.pow(t, 0.6) * ringScale * 1.3f), false),
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.Expression(t -> 1f - (float) Math.pow(t, 0.5)), false),
             });
-            AdvancedParticleBase.spawnParticle(level, ParticleHandler.RING_BIG, player.getX(), player.getY() + player.getBbHeight()/2f, player.getZ(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 5F, 0.85,0.65,0.99, 1, 1, 15, true, false, new ParticleComponent[]{
+            AdvancedParticleBase.spawnParticle(level, ParticleHandler.RING_BIG.get(), player.getX(), player.getY() + player.getBbHeight()/2f, player.getZ(), 0, 0, 0, false, 0, Math.PI/2f, 0, 0, 5F, 0.85,0.65,0.99, 1, 1, 15, true, false, new ParticleComponent[]{
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (float) Math.pow(t, 0.6) * ringScale), false),
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.Expression(t -> 1f - (float) Math.pow(t, 0.5)), false),
             });
             float glowScale = 130f;
-            AdvancedParticleBase.spawnParticle(level, ParticleHandler.GLOW, player.getX(), player.getY() + player.getBbHeight()/2f, player.getZ(), 0, 0, 0, true, 0, 0, 0, 0, 5F, 0.65,0.45,0.95, 1, 1, 20, true, false, new ParticleComponent[]{
+            AdvancedParticleBase.spawnParticle(level, ParticleHandler.GLOW.get(), player.getX(), player.getY() + player.getBbHeight()/2f, player.getZ(), 0, 0, 0, true, 0, 0, 0, 0, 5F, 0.65,0.45,0.95, 1, 1, 20, true, false, new ParticleComponent[]{
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (float) Math.pow(t, 0.6) * glowScale), false),
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.Expression(t -> 1f - (float) Math.pow(t, 0.5)), false),
             });
@@ -78,7 +79,7 @@ public class ItemElokosaPaw extends Item {
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> ((1f - (float) Math.pow(t, 0.6))*((float) Math.pow(t, 0.5))*7f + 1f) * moonSize), false),
                         new ParticleComponent.ScreenSpace(usedRightHand ? sidewaysOffset : -sidewaysOffset, 1.2f, -0.5f)
                 });
-                AdvancedParticleBase.spawnParticle(level, ParticleHandler.GLOW, moonPos.x, moonPos.y, moonPos.z, 0, 0, 0, true, 0, 0, 0, 0, 5F, 0.4f, 0.576, 1, 1, 1, 25, true, false, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(level, ParticleHandler.GLOW.get(), moonPos.x, moonPos.y, moonPos.z, 0, 0, 0, true, 0, 0, 0, 0, 5F, 0.4f, 0.576, 1, 1, 1, 25, true, false, new ParticleComponent[]{
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.KeyTrack(
                                 new float[] {0, 0, 0.3f, 0.3f, 0},
                                 new float[] {0, 0.05f, 0.15f, 0.5f, 1}
@@ -97,7 +98,7 @@ public class ItemElokosaPaw extends Item {
                         ), false),
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> ((1f - (float) Math.pow(t, 0.6))*((float) Math.pow(t, 0.5))*7f + 1f) * moonSize), false),
                 });
-                AdvancedParticleBase.spawnParticle(level, ParticleHandler.GLOW, moonPos.x, moonPos.y, moonPos.z, 0, 0, 0, true, 0, 0, 0, 0, 5F, 0.4f, 0.576, 1, 1, 1, 25, true, false, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(level, ParticleHandler.GLOW.get(), moonPos.x, moonPos.y, moonPos.z, 0, 0, 0, true, 0, 0, 0, 0, 5F, 0.4f, 0.576, 1, 1, 1, 25, true, false, new ParticleComponent[]{
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.KeyTrack(
                                 new float[] {0, 0, 0.3f, 0.3f, 0},
                                 new float[] {0, 0.05f, 0.15f, 0.5f, 1}
@@ -107,7 +108,7 @@ public class ItemElokosaPaw extends Item {
             }
             for (int i = 0; i < 60; i++) {
                 Vec3 vel = new Vec3(0.15 + player.getRandom().nextFloat() * 0.4f, 0, 0).yRot(player.getRandom().nextFloat() * Mth.TWO_PI).xRot(player.getRandom().nextFloat() * Mth.TWO_PI);
-                AdvancedParticleBase.spawnParticle(level, ParticleHandler.PIXEL, moonPos.x + vel.x, moonPos.y + vel.y, moonPos.z + vel.z, vel.x, vel.y, vel.z, true, 0, 0, 0, 0, 5F, 0.85,0.65,0.99, 1, 0.9, 10 + player.getRandom().nextInt(10), true, true, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(level, ParticleHandler.PIXEL.get(), moonPos.x + vel.x, moonPos.y + vel.y, moonPos.z + vel.z, vel.x, vel.y, vel.z, true, 0, 0, 0, 0, 5F, 0.85,0.65,0.99, 1, 0.9, 10 + player.getRandom().nextInt(10), true, true, new ParticleComponent[]{
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (1f - (float) Math.pow(t, 2)) * 2.5f), false),
                         new ParticleComponent.ForceOverTime(new Vec3(0, 0.003, 0)),
                         new ParticleComponent.Vortex(new Vec3(0, 1, 0), new Vec3(player.getX(), player.getY() + player.getBbHeight()/2f, player.getZ()), ParticleComponent.KeyTrack.startAndEnd(player.getRandom().nextFloat() * 0.15f, 0f)),
@@ -118,19 +119,19 @@ public class ItemElokosaPaw extends Item {
 
         float radius = 10;
         List<LivingEntity> entitiesNearby = level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(radius, radius, radius), e -> e.distanceToSqr(player) <= radius * radius && e != player);
-        int effectDuration = ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ELOKOSA_PAW.effectDuration.getAsInt();
+        int effectDuration = ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ELOKOSA_PAW.effectDuration.get();
         for (LivingEntity entity : entitiesNearby) {
             entity.addEffect(new MobEffectInstance(pawType.getPotion(), effectDuration));
             for (int i = 0; i < 30; i++) {
                 Vec3 vel = new Vec3(0.05 + entity.getRandom().nextFloat() * 0.1f, 0, 0).yRot(entity.getRandom().nextFloat() * Mth.TWO_PI).xRot(entity.getRandom().nextFloat() * Mth.TWO_PI);
-                AdvancedParticleBase.spawnParticle(level, ParticleHandler.PIXEL, entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ(), vel.x, vel.y, vel.z, true, 0, 0, 0, 0, 5F, 0.85,0.65,0.99, 1, 0.9, 10 + player.getRandom().nextInt(10), true, true, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(level, ParticleHandler.PIXEL.get(), entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ(), vel.x, vel.y, vel.z, true, 0, 0, 0, 0, 5F, 0.85,0.65,0.99, 1, 0.9, 10 + player.getRandom().nextInt(10), true, true, new ParticleComponent[]{
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (1f - (float) Math.pow(t, 2)) * 2.5f), false),
                         new ParticleComponent.ForceOverTime(new Vec3(0, 0.003, 0)),
                         new ParticleComponent.Vortex(new Vec3(0, 1, 0), new Vec3(entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ()), ParticleComponent.KeyTrack.startAndEnd(entity.getRandom().nextFloat() * 0.1f, 0f)),
                         new ParticleComponent.CurlNoise(0.025f, 4f),
                 });
             }
-            AdvancedParticleBase.spawnParticle(level, ParticleHandler.BURST_OUT, entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ(), 0, 0, 0, true, 0, 0, 0, 0, 4F, 0.65,0.45,0.95, 1, 1, 18, true, false, new ParticleComponent[]{
+            AdvancedParticleBase.spawnParticle(level, ParticleHandler.BURST_OUT.get(), entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ(), 0, 0, 0, true, 0, 0, 0, 0, 4F, 0.65,0.45,0.95, 1, 1, 18, true, false, new ParticleComponent[]{
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (float) Math.pow(t, 0.6) * 14f), false),
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.Expression(t -> 1f - (float) Math.pow(t, 0.5)), false),
             });
@@ -139,8 +140,8 @@ public class ItemElokosaPaw extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        super.appendHoverText(stack, context, tooltip, flagIn);
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flagIn) {
+        super.appendHoverText(stack, level, tooltip, flagIn);
         tooltip.add(Component.translatable(getDescriptionId() + ".text.0").setStyle(ItemHandler.TOOLTIP_STYLE));
         if (pawType == PawType.CRESCENT || pawType == PawType.NEW) {
             tooltip.add(Component.translatable(getDescriptionId() + ".text.1").setStyle(ItemHandler.TOOLTIP_STYLE));

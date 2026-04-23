@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class FrostmawPieces {
 
-    private static final ResourceLocation FROSTMAW = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "frostmaw_spawn");
+    private static final ResourceLocation FROSTMAW = new ResourceLocation(MowziesMobs.MODID, "frostmaw_spawn");
 
     private static final Map<ResourceLocation, BlockPos> OFFSET = ImmutableMap.of(
             FROSTMAW, new BlockPos(0, 1, 0)

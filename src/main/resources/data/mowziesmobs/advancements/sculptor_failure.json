@@ -1,0 +1,19 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:beef"
+    },
+    "title": {
+      "translate": "advancements.mowziesmobs.sculptor_failure.title"
+    },
+    "description": {
+      "translate": "advancements.mowziesmobs.sculptor_failure.description"
+    }
+  },
+  "parent": "mowziesmobs:sculptor_challenge",
+  "criteria": {
+    "sculptor_failure": {
+      "trigger": "mowziesmobs:sculptor_failure"
+    }
+  }
+}

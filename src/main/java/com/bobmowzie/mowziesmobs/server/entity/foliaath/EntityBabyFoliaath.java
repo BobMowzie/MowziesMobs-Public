@@ -28,13 +28,12 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.Tags;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -162,11 +161,10 @@ public class EntityBabyFoliaath extends MowzieLLibraryEntity {
     }
 
     private boolean arePlayersCarryingMeat(List<Player> players) {
-        if (!players.isEmpty()) {
+        if (players.size() > 0) {
             for (Player player : players) {
-                ItemStack stack = player.getMainHandItem();
-                // TODO :: add own tag?
-                if ((stack.is(Tags.Items.FOODS_RAW_MEAT) || stack.is(Tags.Items.FOODS_COOKED_MEAT)) && stack.getFoodProperties(null) != null) {
+                FoodProperties food = player.getMainHandItem().getItem().getFoodProperties();
+                if (food != null && food.isMeat()) {
                     return true;
                 }
             }
@@ -222,11 +220,10 @@ public class EntityBabyFoliaath extends MowzieLLibraryEntity {
         List<Entity> list = level().getEntities(this, getBoundingBox().inflate(distanceX, distanceY, distanceZ));
         ArrayList<ItemEntity> listEntityItem = new ArrayList<>();
         for (Entity entityNeighbor : list) {
-            if (entityNeighbor instanceof ItemEntity itemEntity && distanceTo(entityNeighbor) <= radius) {
-                ItemStack stack = itemEntity.getItem();
-                // TODO :: add own tag?
-                if ((stack.is(Tags.Items.FOODS_RAW_MEAT) || stack.is(Tags.Items.FOODS_COOKED_MEAT)) && stack.getFoodProperties(null) != null) {
-                    listEntityItem.add(itemEntity);
+            if (entityNeighbor instanceof ItemEntity && distanceTo(entityNeighbor) <= radius) {
+                FoodProperties food = ((ItemEntity) entityNeighbor).getItem().getItem().getFoodProperties();
+                if (food != null && food.isMeat()) {
+                    listEntityItem.add((ItemEntity) entityNeighbor);
                 }
             }
         }
@@ -251,12 +248,12 @@ public class EntityBabyFoliaath extends MowzieLLibraryEntity {
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(GROWTH, 0);
-        builder.define(INFANT, true);
-        builder.define(HUNGRY, false);
-        builder.define(EATING, ItemStack.EMPTY);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        getEntityData().define(GROWTH, 0);
+        getEntityData().define(INFANT, true);
+        getEntityData().define(HUNGRY, false);
+        getEntityData().define(EATING, ItemStack.EMPTY);
     }
 
     public int getGrowth() {

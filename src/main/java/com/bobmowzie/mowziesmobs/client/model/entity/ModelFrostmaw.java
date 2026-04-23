@@ -1,7 +1,8 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
 import com.bobmowzie.mowziesmobs.client.model.tools.LegArticulator;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
+import com.bobmowzie.mowziesmobs.server.capability.FrozenCapability;
 import com.bobmowzie.mowziesmobs.server.entity.frostmaw.EntityFrostmaw;
 import com.ilexiconn.llibrary.client.model.tools.AdvancedModelRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -526,9 +527,9 @@ public class ModelFrostmaw<T extends EntityFrostmaw> extends MowzieEntityModel<T
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
-        this.root.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
-        this.iceCrystalHand.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+        this.root.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+        this.iceCrystalHand.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
     }
 
     @Override
@@ -1665,7 +1666,9 @@ public class ModelFrostmaw<T extends EntityFrostmaw> extends MowzieEntityModel<T
                 walk(rightFoot, 0.5f * globalSpeed, 0.4f * globalDegreeBi, true, -1.5f, -0.4f * globalDegreeBi, limbSwing, limbSwingAmount);
 
                 //Idle
-                if (!DataHandler.getData(entity, DataHandler.FROZEN_DATA).getFrozen() && (entity.getAnimation() != EntityFrostmaw.SLAM_ANIMATION || entity.getAnimationTick() < 118) && entity.getAnimation() != EntityFrostmaw.DIE_ANIMATION) {
+                FrozenCapability.IFrozenCapability frozenCapability = CapabilityHandler.getCapability(entity, CapabilityHandler.FROZEN_CAPABILITY);
+                boolean frozen = frozenCapability != null && frozenCapability.getFrozen();
+                if (!frozen && (entity.getAnimation() != EntityFrostmaw.SLAM_ANIMATION || entity.getAnimationTick() < 118) && entity.getAnimation() != EntityFrostmaw.DIE_ANIMATION) {
                     walk(waist, 0.08f, 0.05f, false, 0, 0, frame, 1);
                     walk(headJoint, 0.08f, 0.05f, true, 0.8f, 0, frame, 1);
                     walk(legRightJoint, 0.08f, 0.05f, true, 0, 0, frame, 1);

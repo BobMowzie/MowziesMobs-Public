@@ -3,21 +3,24 @@ package com.bobmowzie.mowziesmobs.client.particle;
 import com.bobmowzie.mowziesmobs.client.model.tools.MathUtils;
 import com.bobmowzie.mowziesmobs.client.render.MMRenderType;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import java.util.Locale;
 
 /**
  * Created by BobMowzie on 6/2/2017.
@@ -89,37 +92,79 @@ public class ParticleSnowFlake extends TextureSheetParticle {
         super.render(buffer, renderInfo, partialTicks);
     }
 
-    public static final class Provider implements ParticleProvider<Data> {
+    @OnlyIn(Dist.CLIENT)
+    public static final class SnowFlakeFactory implements ParticleProvider<ParticleSnowFlake.SnowflakeData> {
         private final SpriteSet spriteSet;
 
-        public Provider(SpriteSet sprite) {
+        public SnowFlakeFactory(SpriteSet sprite) {
             this.spriteSet = sprite;
         }
 
         @Override
-        public Particle createParticle(Data typeIn, @NotNull ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            ParticleSnowFlake particle = new ParticleSnowFlake(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.duration(), typeIn.swirls());
+        public Particle createParticle(ParticleSnowFlake.SnowflakeData typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+            ParticleSnowFlake particle = new ParticleSnowFlake(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.getDuration(), typeIn.getSwirls());
             particle.pickSprite(spriteSet);
             return particle;
         }
     }
 
-    public record Data(float duration, boolean swirls) implements ParticleOptions {
-        public static final MapCodec<ParticleSnowFlake.Data> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                        Codec.FLOAT.fieldOf("duration").forGetter(ParticleSnowFlake.Data::duration),
-                        Codec.BOOL.fieldOf("swirls").forGetter(ParticleSnowFlake.Data::swirls)
-                ).apply(instance, ParticleSnowFlake.Data::new)
-        );
+    public static class SnowflakeData implements ParticleOptions {
+        public static final ParticleOptions.Deserializer<ParticleSnowFlake.SnowflakeData> DESERIALIZER = new ParticleOptions.Deserializer<ParticleSnowFlake.SnowflakeData>() {
+            public ParticleSnowFlake.SnowflakeData fromCommand(ParticleType<ParticleSnowFlake.SnowflakeData> particleTypeIn, StringReader reader) throws CommandSyntaxException {
+                reader.expect(' ');
+                float duration = (float) reader.readDouble();
+                reader.expect(' ');
+                boolean swirls = reader.readBoolean();
+                return new ParticleSnowFlake.SnowflakeData(duration, swirls);
+            }
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, ParticleSnowFlake.Data> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.FLOAT, ParticleSnowFlake.Data::duration,
-                ByteBufCodecs.BOOL, ParticleSnowFlake.Data::swirls,
-                ParticleSnowFlake.Data::new
-        );
+            public ParticleSnowFlake.SnowflakeData fromNetwork(ParticleType<ParticleSnowFlake.SnowflakeData> particleTypeIn, FriendlyByteBuf buffer) {
+                return new ParticleSnowFlake.SnowflakeData(buffer.readFloat(), buffer.readBoolean());
+            }
+        };
+
+        private final float duration;
+        private final boolean swirls;
+
+        public SnowflakeData(float duration, boolean spins) {
+            this.duration = duration;
+            this.swirls = spins;
+        }
 
         @Override
-        public @NotNull ParticleType<ParticleSnowFlake.Data> getType() {
+        public void writeToNetwork(FriendlyByteBuf buffer) {
+            buffer.writeFloat(this.duration);
+            buffer.writeBoolean(this.swirls);
+        }
+
+        @SuppressWarnings("deprecation")
+        @Override
+        public String writeToString() {
+            return String.format(Locale.ROOT, "%s %.2f %b", BuiltInRegistries.PARTICLE_TYPE.getKey(this.getType()),
+                    this.duration, this.swirls);
+        }
+
+        @Override
+        public ParticleType<ParticleSnowFlake.SnowflakeData> getType() {
             return ParticleHandler.SNOWFLAKE.get();
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getDuration() {
+            return this.duration;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public boolean getSwirls() {
+            return this.swirls;
+        }
+
+        public static Codec<SnowflakeData> CODEC(ParticleType<SnowflakeData> particleType) {
+            return RecordCodecBuilder.create((codecBuilder) -> codecBuilder.group(
+                    Codec.FLOAT.fieldOf("duration").forGetter(SnowflakeData::getDuration),
+                    Codec.BOOL.fieldOf("swirls").forGetter(SnowflakeData::getSwirls)
+                    ).apply(codecBuilder, SnowflakeData::new)
+            );
         }
     }
 }

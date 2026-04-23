@@ -1,5 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.entity.effects;
 
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.entity.ILinkedEntity;
 import com.bobmowzie.mowziesmobs.server.message.MessageLinkEntities;
 import net.minecraft.nbt.CompoundTag;
@@ -9,7 +10,6 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -20,9 +20,8 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.fluids.FluidType;
-import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.fluids.FluidType;
+import net.minecraftforge.network.PacketDistributor;
 
 import java.util.List;
 import java.util.Optional;
@@ -53,8 +52,8 @@ public abstract class EntityMagicEffect extends Entity implements ILinkedEntity 
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        builder.define(CASTER, Optional.empty());
+    protected void defineSynchedData() {
+        getEntityData().define(CASTER, Optional.empty());
     }
 
     public Optional<UUID> getCasterID() {
@@ -72,7 +71,7 @@ public abstract class EntityMagicEffect extends Entity implements ILinkedEntity 
             Entity entity = ((ServerLevel)this.level()).getEntity(this.getCasterID().get());
             if (entity instanceof LivingEntity) {
                 cachedCaster = (LivingEntity) entity;
-                PacketDistributor.sendToPlayersTrackingEntityAndSelf(this, MessageLinkEntities.fromEntity(this, cachedCaster));
+                MowziesMobs.NETWORK.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> this), new MessageLinkEntities(this, cachedCaster));
             }
             return this.cachedCaster;
         } else {
@@ -100,8 +99,8 @@ public abstract class EntityMagicEffect extends Entity implements ILinkedEntity 
     }
 
     @Override
-    public void onAddedToLevel() {
-        super.onAddedToLevel();
+    public void onAddedToWorld() {
+        super.onAddedToWorld();
 //        if (!level().isClientSide() && getCasterID().isPresent() && cachedCaster == null) {
 //            Entity casterEntity = ((ServerLevel)this.level()).getEntity(getCasterID().get());
 //            if (casterEntity instanceof LivingEntity) {
@@ -158,8 +157,9 @@ public abstract class EntityMagicEffect extends Entity implements ILinkedEntity 
     }
 
     @Override
-    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket(@NotNull ServerEntity entity) {
-        return new ClientboundAddEntityPacket(this, entity, cachedCaster == null ? 0 : cachedCaster.getId());
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        LivingEntity entity = this.cachedCaster;
+        return new ClientboundAddEntityPacket(this, entity == null ? 0 : entity.getId());
     }
 
     @Override

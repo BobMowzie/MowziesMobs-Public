@@ -1,11 +1,11 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
 import com.bobmowzie.mowziesmobs.client.render.entity.player.GeckoPlayer;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -14,8 +14,11 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.cache.object.GeoBone;
 
+@OnlyIn(Dist.CLIENT)
 public class ModelGeckoBiped extends MowzieGeoModel<GeckoPlayer> {
 	private ResourceLocation textureLocation;
 
@@ -32,12 +35,12 @@ public class ModelGeckoBiped extends MowzieGeoModel<GeckoPlayer> {
 	
 	@Override
 	public ResourceLocation getAnimationResource(GeckoPlayer animatable) {
-		return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "animations/animated_player.animation.json");
+		return new ResourceLocation(MowziesMobs.MODID, "animations/animated_player.animation.json");
 	}
 
 	@Override
 	public ResourceLocation getModelResource(GeckoPlayer animatable) {
-		return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "geo/animated_player.geo.json");
+		return new ResourceLocation(MowziesMobs.MODID, "geo/animated_player.geo.json");
 	}
 
 	@Override
@@ -46,7 +49,7 @@ public class ModelGeckoBiped extends MowzieGeoModel<GeckoPlayer> {
 	}
 
 	public void setTextureFromPlayer(AbstractClientPlayer player) {
-		this.textureLocation = player.getSkin().texture();
+		this.textureLocation = player.getSkinTextureLocation();
 	}
 
 	public void setUseSmallArms(boolean useSmallArms) {
@@ -258,9 +261,9 @@ public class ModelGeckoBiped extends MowzieGeoModel<GeckoPlayer> {
 //			this.bipedRightLeg().setRotX(MathHelper.lerp(this.swimAnimation, this.bipedRightLeg().getRotX(), 0.3F * MathHelper.cos(limbSwing * 0.33333334F)));
 //		}
 
-		AbilityData data = DataHandler.getData(entityIn, DataHandler.ABILITY_DATA);
-		if (data.getActiveAbility() != null) {
-			data.codeAnimations(this, partialTick);
+		AbilityCapability.IAbilityCapability abilityCapability = AbilityHandler.INSTANCE.getAbilityCapability(entityIn);
+		if (abilityCapability != null && abilityCapability.getActiveAbility() != null) {
+			abilityCapability.codeAnimations(this, partialTick);
 		}
 	}
 

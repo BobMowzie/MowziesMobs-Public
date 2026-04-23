@@ -1,44 +1,62 @@
 package com.bobmowzie.mowziesmobs.server.message;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.ability.Ability;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityType;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
+import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.network.NetworkEvent;
 
-public record MessageJumpToAbilitySectionServerToClient(int entityId, int index, int sectionIndex) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MessageJumpToAbilitySectionServerToClient> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "message_jump_to_ability_section"));
-    public static final StreamCodec<ByteBuf, MessageJumpToAbilitySectionServerToClient> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, MessageJumpToAbilitySectionServerToClient::entityId,
-            ByteBufCodecs.INT, MessageJumpToAbilitySectionServerToClient::index,
-            ByteBufCodecs.INT, MessageJumpToAbilitySectionServerToClient::sectionIndex,
-            MessageJumpToAbilitySectionServerToClient::new
-    );
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
-    public static void handleClient(final MessageJumpToAbilitySectionServerToClient packet, final IPayloadContext context) {
-        context.enqueueWork(() -> {
-            if (context.player().level().getEntity(packet.entityId()) instanceof LivingEntity living) {
-                AbilityData data = DataHandler.getData(living, DataHandler.ABILITY_DATA);
-                AbilityType<?, ?> abilityType = data.getAbilityTypesOnEntity(living)[packet.index()];
-                Ability<?> instance = data.getAbilityMap().get(abilityType);
+public class MessageJumpToAbilitySectionServerToClient {
+    private int entityID;
+    private int index;
+    private int sectionIndex;
 
-                if (instance.isUsing()) {
-                    instance.jumpToSection(packet.sectionIndex());
-                }
-            }
-        });
+    public MessageJumpToAbilitySectionServerToClient() {
+
     }
 
-    @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public MessageJumpToAbilitySectionServerToClient(int entityID, int index, int sectionIndex) {
+        this.entityID = entityID;
+        this.index = index;
+        this.sectionIndex = sectionIndex;
+    }
+
+    public static void serialize(final MessageJumpToAbilitySectionServerToClient message, final FriendlyByteBuf buf) {
+        buf.writeVarInt(message.entityID);
+        buf.writeVarInt(message.index);
+        buf.writeVarInt(message.sectionIndex);
+    }
+
+    public static MessageJumpToAbilitySectionServerToClient deserialize(final FriendlyByteBuf buf) {
+        final MessageJumpToAbilitySectionServerToClient message = new MessageJumpToAbilitySectionServerToClient();
+        message.entityID = buf.readVarInt();
+        message.index = buf.readVarInt();
+        message.sectionIndex = buf.readVarInt();
+        return message;
+    }
+
+    public static class Handler implements BiConsumer<MessageJumpToAbilitySectionServerToClient, Supplier<NetworkEvent.Context>> {
+        @Override
+        public void accept(final MessageJumpToAbilitySectionServerToClient message, final Supplier<NetworkEvent.Context> contextSupplier) {
+            final NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                LivingEntity entity = (LivingEntity) Minecraft.getInstance().level.getEntity(message.entityID);
+                if (entity != null) {
+                    AbilityCapability.IAbilityCapability abilityCapability = CapabilityHandler.getCapability(entity, CapabilityHandler.ABILITY_CAPABILITY);
+                    if (abilityCapability != null) {
+                        AbilityType<?, ?> abilityType = abilityCapability.getAbilityTypesOnEntity(entity)[message.index];
+                        Ability instance = abilityCapability.getAbilityMap().get(abilityType);
+                        if (instance.isUsing()) instance.jumpToSection(message.sectionIndex);
+                    }
+                }
+            });
+            context.setPacketHandled(true);
+        }
     }
 }

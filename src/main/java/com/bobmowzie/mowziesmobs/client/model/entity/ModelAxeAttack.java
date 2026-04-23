@@ -6,7 +6,6 @@ import com.ilexiconn.llibrary.client.model.tools.AdvancedModelRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.world.entity.HumanoidArm;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by BobMowzie on 4/14/2017.
@@ -115,8 +114,8 @@ public class ModelAxeAttack<T extends EntityAxeAttack> extends AdvancedModelBase
     }
 
     @Override
-    public void renderToBuffer(@NotNull PoseStack poseStack, @NotNull VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
-        axeBase.render(poseStack, buffer, packedLight, packedOverlay, color);
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+        axeBase.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
     }
 
     public void setRotationAngles(EntityAxeAttack entity, float f5, float delta) {

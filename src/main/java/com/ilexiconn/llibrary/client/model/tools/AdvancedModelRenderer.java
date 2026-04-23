@@ -9,10 +9,11 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.model.Model;
 import net.minecraft.core.Direction;
-import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -24,13 +25,14 @@ import org.joml.Vector4f;
  * @author gegy1000
  * @since 1.0.0
  */
+@OnlyIn(Dist.CLIENT)
 public class AdvancedModelRenderer extends BasicModelRenderer {
     private static final float MINIMUM_SCALE = 0.000001f;
 
     public float defaultRotationX, defaultRotationY, defaultRotationZ;
     public float defaultPositionX, defaultPositionY, defaultPositionZ;
     public float scaleX = 1.0F, scaleY = 1.0F, scaleZ = 1.0F;
-    public float opacity = 1;
+    public float opacity = 1.0F;
     public boolean scaleChildren;
     private final Model model;
     private AdvancedModelRenderer parent;
@@ -271,28 +273,17 @@ public class AdvancedModelRenderer extends BasicModelRenderer {
 
     // Copied from parent class
     @Override
-    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
         if (this.showModel) {
             if (!this.cubeList.isEmpty() || !this.childModels.isEmpty()) {
-
                 matrixStackIn.pushPose();
-                this.translateRotate(matrixStackIn);
-                if (!isHidden) {
-                    if (opacity < 1) {
-                        // Turn the 0 - 255 int values into 0 - 1 float values to calculate the opacity impact (only opacity value of 0 - 1 matters)
-                        float alpha = (FastColor.ARGB32.alpha(color) / 255f) * opacity;
-                        float red = FastColor.ARGB32.red(color) / 255f;
-                        float green = FastColor.ARGB32.green(color) / 255f;
-                        float blue = FastColor.ARGB32.blue(color) / 255f;
-                        color = FastColor.ARGB32.colorFromFloat(alpha, red, green, blue);
-                    }
 
-                    this.doRender(matrixStackIn.last(), bufferIn, packedLightIn, packedOverlayIn, color);
-                }
+                this.translateRotate(matrixStackIn);
+                if (!isHidden) this.doRender(matrixStackIn.last(), bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha * opacity);
 
                 // Render children
                 for(BasicModelRenderer modelrenderer : this.childModels) {
-                    modelrenderer.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+                    modelrenderer.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
                 }
 
                 matrixStackIn.popPose();
@@ -301,14 +292,14 @@ public class AdvancedModelRenderer extends BasicModelRenderer {
     }
 
     // Copied from parent class
-    protected void doRender(PoseStack.Pose matrixEntryIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+    protected void doRender(PoseStack.Pose matrixEntryIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
         Matrix4f matrix4f = matrixEntryIn.pose();
         Matrix3f matrix3f = matrixEntryIn.normal();
         if (mat3Override != null) matrix3f = mat3Override;
         if (mat4Override != null) matrix4f = mat4Override;
 
         for(AdvancedModelRenderer.ModelPart modelrenderer$modelbox : this.cubeList) {
-            modelrenderer$modelbox.render(matrix4f, matrix3f, bufferIn, packedLightIn, packedOverlayIn, color);
+            modelrenderer$modelbox.render(matrix4f, matrix3f, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
         }
     }
 
@@ -453,13 +444,15 @@ public class AdvancedModelRenderer extends BasicModelRenderer {
         rotationPointZ = vec.z() * 16;
     }
 
+    @OnlyIn(Dist.CLIENT)
     public abstract static class ModelPart {
-        public void render(Matrix4f mat4, Matrix3f mat3, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+        public void render(Matrix4f mat4, Matrix3f mat3, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
 
         }
     }
 
     // From parent class. Copied to avoid using reflection to access private data
+    @OnlyIn(Dist.CLIENT)
     public static class ModelBox extends ModelPart {
         protected final AdvancedModelRenderer.TexturedQuad[] quads;
         public final float posX1;
@@ -518,7 +511,7 @@ public class AdvancedModelRenderer extends BasicModelRenderer {
         }
 
         @Override
-        public void render(Matrix4f matrix4f, Matrix3f matrix3f, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+        public void render(Matrix4f matrix4f, Matrix3f matrix3f, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
             for(AdvancedModelRenderer.TexturedQuad modelrenderer$texturedquad : quads) {
                 Vector3f vector3f = new Vector3f(modelrenderer$texturedquad.normal);
                 vector3f.mul(matrix3f);
@@ -533,12 +526,13 @@ public class AdvancedModelRenderer extends BasicModelRenderer {
                     float f5 = modelrenderer$positiontexturevertex.position.z() / 16.0F;
                     Vector4f vector4f = new Vector4f(f3, f4, f5, 1.0F);
                     vector4f.mul(matrix4f);
-                    bufferIn.addVertex(vector4f.x(), vector4f.y(), vector4f.z(), color, modelrenderer$positiontexturevertex.textureU, modelrenderer$positiontexturevertex.textureV, packedOverlayIn, packedLightIn, f, f1, f2);
+                    bufferIn.vertex(vector4f.x(), vector4f.y(), vector4f.z(), red, green, blue, alpha, modelrenderer$positiontexturevertex.textureU, modelrenderer$positiontexturevertex.textureV, packedOverlayIn, packedLightIn, f, f1, f2);
                 }
             }
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     static class PositionTextureVertex {
         public final Vector3f position;
         public final float textureU;
@@ -559,6 +553,7 @@ public class AdvancedModelRenderer extends BasicModelRenderer {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     static class TexturedQuad {
         public final AdvancedModelRenderer.PositionTextureVertex[] vertexPositions;
         public final Vector3f normal;

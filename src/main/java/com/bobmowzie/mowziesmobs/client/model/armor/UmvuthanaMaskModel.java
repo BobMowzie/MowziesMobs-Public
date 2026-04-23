@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.model.armor;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.item.ItemUmvuthanaMask;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
@@ -10,17 +10,17 @@ public class UmvuthanaMaskModel extends GeoModel<ItemUmvuthanaMask> {
 
     @Override
     public ResourceLocation getModelResource(ItemUmvuthanaMask object) {
-        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "geo/mask_" + object.getMaskType().name + ".geo.json");
+        return new ResourceLocation(MowziesMobs.MODID, "geo/mask_" + object.getMaskType().name + ".geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(ItemUmvuthanaMask object) {
-        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/item/umvuthana_mask_" + object.getMaskType().name + ".png");
+        return new ResourceLocation(MowziesMobs.MODID, "textures/item/umvuthana_mask_" + object.getMaskType().name + ".png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(ItemUmvuthanaMask animatable) {
-        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "animations/umvuthana_mask.animation.json");
+        return new ResourceLocation(MowziesMobs.MODID, "animations/umvuthana_mask.animation.json");
     }
 
     @Override

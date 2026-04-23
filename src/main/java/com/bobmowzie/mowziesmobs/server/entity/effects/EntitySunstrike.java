@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.entity.effects;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.tools.MathUtils;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleOrb;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
@@ -9,7 +9,9 @@ import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthi;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -31,12 +33,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.entity.IEntityAdditionalSpawnData;
+import net.minecraftforge.network.NetworkHooks;
 
 import java.util.List;
 
-public class EntitySunstrike extends Entity implements IEntityWithComplexSpawn {
+public class EntitySunstrike extends Entity implements IEntityAdditionalSpawnData {
     public static final int STRIKE_EXPLOSION = 35;
 
     private static final int STRIKE_LENGTH = 43;
@@ -65,9 +67,9 @@ public class EntitySunstrike extends Entity implements IEntityWithComplexSpawn {
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        builder.define(VARIANT_LEAST, 0);
-        builder.define(VARIANT_MOST, 0);
+    protected void defineSynchedData() {
+        getEntityData().define(VARIANT_LEAST, 0);
+        getEntityData().define(VARIANT_MOST, 0);
     }
 
     public float getStrikeTime(float delta) {
@@ -137,7 +139,7 @@ public class EntitySunstrike extends Entity implements IEntityWithComplexSpawn {
 
         if (level().isClientSide) {
             if (strikeTime == 0) {
-                MMCommon.PROXY.playSunstrikeSound(this);
+                MowziesMobs.PROXY.playSunstrikeSound(this);
             } else if (strikeTime < STRIKE_EXPLOSION - 10) {
                 float time = getStrikeTime(1);
                 int timeBonus = (int) (time * 5);
@@ -150,7 +152,7 @@ public class EntitySunstrike extends Entity implements IEntityWithComplexSpawn {
                     float oz = r * Mth.sin(theta);
                     final float minY = 0.1F;
                     float oy = random.nextFloat() * (time * 6 - minY) + minY;
-                    level().addParticle(ParticleOrb.Data.create((float) getX(), (float) getZ()), getX() + ox, getY() + oy, getZ() + oz, 0, 0, 0);
+                    level().addParticle(new ParticleOrb.OrbData((float) getX(), (float) getZ()), getX() + ox, getY() + oy, getZ() + oz, 0, 0, 0);
                 }
             } else if (strikeTime > STRIKE_EXPLOSION) {
                 this.smolder();
@@ -214,7 +216,7 @@ public class EntitySunstrike extends Entity implements IEntityWithComplexSpawn {
                 }
                 if (entity.hurt(damageSources().mobProjectile(this, caster), damageMob)) entity.invulnerableTime = 0;
                 if (entity.hurt(damageSources().onFire(), damageFire)) {
-                    entity.igniteForSeconds(3);
+                    entity.setSecondsOnFire(3);
                 }
             }
         }
@@ -277,12 +279,17 @@ public class EntitySunstrike extends Entity implements IEntityWithComplexSpawn {
     }
 
     @Override
-    public void writeSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        return NetworkHooks.getEntitySpawningPacket(this);
+    }
+
+    @Override
+    public void writeSpawnData(FriendlyByteBuf buffer) {
         buffer.writeInt(strikeTime);
     }
 
     @Override
-    public void readSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
+    public void readSpawnData(FriendlyByteBuf buffer) {
         setStrikeTime(buffer.readInt());
     }
 }

@@ -5,6 +5,8 @@ import com.ilexiconn.llibrary.client.model.tools.BasicModelRenderer;
 import com.ilexiconn.llibrary.server.animation.Animation;
 import com.ilexiconn.llibrary.server.animation.IAnimatedEntity;
 import net.minecraft.util.Mth;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.HashMap;
 
@@ -12,6 +14,7 @@ import java.util.HashMap;
  * @author iLexiconn
  * @since 1.0.0
  */
+@OnlyIn(Dist.CLIENT)
 public class MMModelAnimator {
     private int tempTick;
     private int prevTempTick;

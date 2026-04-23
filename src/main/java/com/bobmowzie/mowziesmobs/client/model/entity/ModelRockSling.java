@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.entity.effects.geomancy.EntityRockSling;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
@@ -12,14 +12,14 @@ import java.util.TreeMap;
 
 public class ModelRockSling extends GeoModel<EntityRockSling> {
     static Map<String, ResourceLocation> texMap;
-    private static final ResourceLocation TEXTURE_DIRT = ResourceLocation.withDefaultNamespace("textures/block/dirt.png");
-    private static final ResourceLocation TEXTURE_STONE = ResourceLocation.withDefaultNamespace("textures/block/stone.png");
-    private static final ResourceLocation TEXTURE_SANDSTONE = ResourceLocation.withDefaultNamespace("textures/block/sandstone.png");
-    private static final ResourceLocation TEXTURE_CLAY = ResourceLocation.withDefaultNamespace("textures/block/clay.png");
+    private static final ResourceLocation TEXTURE_DIRT = new ResourceLocation("textures/block/dirt.png");
+    private static final ResourceLocation TEXTURE_STONE = new ResourceLocation("textures/block/stone.png");
+    private static final ResourceLocation TEXTURE_SANDSTONE = new ResourceLocation("textures/block/sandstone.png");
+    private static final ResourceLocation TEXTURE_CLAY = new ResourceLocation("textures/block/clay.png");
 
     public ModelRockSling(){
         super();
-        texMap = new TreeMap<>();
+        texMap = new TreeMap<String, ResourceLocation>();
         texMap.put(Blocks.STONE.getDescriptionId(), TEXTURE_STONE);
         texMap.put(Blocks.DIRT.getDescriptionId(), TEXTURE_DIRT);
         texMap.put(Blocks.CLAY.getDescriptionId(), TEXTURE_CLAY);
@@ -28,12 +28,12 @@ public class ModelRockSling extends GeoModel<EntityRockSling> {
 
     @Override
     public ResourceLocation getAnimationResource(EntityRockSling entity) {
-        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "animations/rock_sling.animation.json");
+        return new ResourceLocation(MowziesMobs.MODID, "animations/rock_sling.animation.json");
     }
 
     @Override
     public ResourceLocation getModelResource(EntityRockSling entity) {
-        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "geo/rock_sling.geo.json");
+        return new ResourceLocation(MowziesMobs.MODID, "geo/rock_sling.geo.json");
 
     }
 

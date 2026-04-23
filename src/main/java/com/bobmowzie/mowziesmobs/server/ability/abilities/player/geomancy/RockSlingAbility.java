@@ -15,15 +15,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animation.Animation;
+import software.bernie.geckolib.core.animation.Animation;
+
 
 public class RockSlingAbility extends PlayerAbility {
     public static final double SPAWN_BOULDER_REACH = 5;
     public BlockPos spawnBoulderPos = new BlockPos(0, 0, 0);
     public Vec3 lookPos = new Vec3(0, 0, 0);
     private BlockState spawnBoulderBlock = Blocks.DIRT.defaultBlockState();
+    private int damage = 3;
 
-    public RockSlingAbility(AbilityType<Player, ? extends Ability<?>> abilityType, Player user) {
+    public RockSlingAbility(AbilityType<Player, ? extends Ability> abilityType, Player user) {
         super(abilityType, user, new AbilitySection[] {
                 new AbilitySection.AbilitySectionDuration(AbilitySection.AbilitySectionType.STARTUP, 5),
                 new AbilitySection.AbilitySectionDuration(AbilitySection.AbilitySectionType.ACTIVE, 10),

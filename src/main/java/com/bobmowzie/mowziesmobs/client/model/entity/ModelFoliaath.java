@@ -1,12 +1,16 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
+import com.bobmowzie.mowziesmobs.server.capability.FrozenCapability;
 import com.bobmowzie.mowziesmobs.server.entity.foliaath.EntityFoliaath;
 import com.ilexiconn.llibrary.client.model.tools.AdvancedModelRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.util.Mth;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class ModelFoliaath<T extends EntityFoliaath> extends MowzieEntityModel<T> {
     public AdvancedModelRenderer bigLeaf2Base;
     public AdvancedModelRenderer bigLeaf1Base;
@@ -227,7 +231,7 @@ public class ModelFoliaath<T extends EntityFoliaath> extends MowzieEntityModel<T
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
         float leafScale = 1.25F;
         bigLeaf2Base.rotationPointY -= 3.5;
         bigLeaf1Base.rotationPointY -= 3.5;
@@ -235,15 +239,15 @@ public class ModelFoliaath<T extends EntityFoliaath> extends MowzieEntityModel<T
         bigLeaf4Base.rotationPointY -= 3.5;
         matrixStackIn.pushPose();
         matrixStackIn.scale(leafScale, leafScale, leafScale);
-        bigLeaf2Base.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
-        bigLeaf1Base.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
-        bigLeaf3Base.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
-        bigLeaf4Base.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        bigLeaf2Base.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+        bigLeaf1Base.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+        bigLeaf3Base.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+        bigLeaf4Base.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
         matrixStackIn.popPose();
         matrixStackIn.pushPose();
         matrixStackIn.translate(0, 1.4F - 1.4F * activeProgress, 0);
         matrixStackIn.scale(activeProgress, activeProgress, activeProgress);
-        stem1Joint.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        stem1Joint.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
         matrixStackIn.popPose();
     }
 
@@ -259,7 +263,9 @@ public class ModelFoliaath<T extends EntityFoliaath> extends MowzieEntityModel<T
         float frame = entity.frame + delta;
 
         float globalSpeed = 0.9f;
-        if (!DataHandler.getData(entity, DataHandler.FROZEN_DATA).getFrozen()) {
+        FrozenCapability.IFrozenCapability frozenCapability = CapabilityHandler.getCapability(entity, CapabilityHandler.FROZEN_CAPABILITY);
+        boolean frozen = frozenCapability != null && frozenCapability.getFrozen();
+        if (!frozen) {
             flap(stem1Base, 0.25F * globalSpeed, 0.15F * (activeComplete - stopDance), false, 0F, 0F, frame, 1F);
             walk(stem1Base, 0.5F * globalSpeed, 0.05F * (activeComplete - stopDance), false, 0F, 0F, frame, 1F);
             walk(stem2, 0.5F * globalSpeed, 0.05F * (activeComplete - stopDance), false, 0.5F, 0F, frame, 1F);

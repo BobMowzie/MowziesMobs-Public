@@ -2,7 +2,6 @@ package com.bobmowzie.mowziesmobs.server.ai;
 
 import com.bobmowzie.mowziesmobs.server.ability.Ability;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
-import com.bobmowzie.mowziesmobs.server.entity.effects.EntityBlockSwapper;
 import com.bobmowzie.mowziesmobs.server.entity.elokosa.EntityElokosa;
 import com.google.common.collect.Lists;
 import net.minecraft.core.BlockPos;
@@ -16,7 +15,6 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
@@ -75,7 +73,6 @@ public abstract class ElokosaLeapGoal extends Goal {
         BlockPos blockpos = elokosa.blockPosition();
         this.jumpCandidates = generateStream()
                 .filter(p -> !p.equals(blockpos)
-//                                && elokosa.getRandom().nextFloat() < 0.2
                                 && (elokosa.level().getBlockState(p).isSolid() || elokosa.level().getBlockState(p).isLadder(elokosa.level(), p, elokosa)))
                 .<PossibleJump>mapMulti((p, downstream) -> {
                     if (elokosa.level().getBlockState(p).isLadder(elokosa.level(), p, elokosa)) {
@@ -116,7 +113,6 @@ public abstract class ElokosaLeapGoal extends Goal {
         if (elokosa.isOnGroundOrClinging()) {
             timer -= 1;
             if (timer <= 0 || ignoreTimerCondition()) {
-//                if (ignoreTimerCondition()) System.out.println("Ignoring timer");
                 if (jumpCandidates.isEmpty()) {
                     generateCandidates();
                 }
@@ -135,7 +131,7 @@ public abstract class ElokosaLeapGoal extends Goal {
 
     protected Optional<PossibleJump> getJumpCandidate() {
         if (jumpCandidates.isEmpty()) return Optional.empty();
-        Optional<PossibleJump> optional = this.jumpCandidates.stream().findFirst();//WeightedRandom.getRandomItem(elokosa.getRandom(), this.jumpCandidates);
+        Optional<PossibleJump> optional = this.jumpCandidates.stream().findFirst();
         optional.ifPresent(this.jumpCandidates::remove);
         return optional;
     }
@@ -150,7 +146,6 @@ public abstract class ElokosaLeapGoal extends Goal {
             if (optional.isPresent()) {
                 PossibleJump possiblejump = optional.get();
                 BlockPos blockpos = possiblejump.getJumpTarget();
-//                EntityBlockSwapper.swapBlock(elokosa.level(), possiblejump.getJumpTarget().offset(possiblejump.getSurfaceDirection().getNormal()), Blocks.TALL_GRASS.defaultBlockState(), 10, false, false);
                 if (this.isAcceptableLandingPosition(possiblejump)) {
                     Vec3 vec3 = getLandingPositionFromJump(possiblejump);
                     if (elokosa.getNightForm() && possiblejump.getSurfaceDirection() == Direction.DOWN) {
@@ -163,7 +158,6 @@ public abstract class ElokosaLeapGoal extends Goal {
                         if (path == null || !path.canReach()) {
                             elokosa.jumpVel = vec31;
                             elokosa.jumpGoalPos = vec3;
-//                            EntityBlockSwapper.swapBlock(elokosa.level(), possiblejump.getJumpTarget(), Blocks.REDSTONE_BLOCK.defaultBlockState(), 200, false, false);
                             return true;
                         }
                     }
@@ -178,21 +172,21 @@ public abstract class ElokosaLeapGoal extends Goal {
         EntityDimensions entityDimensions = elokosa.getDimensions(Pose.STANDING);
         Vec3 leapLocation;
         if (jump.getSurfaceDirection().getAxis().isHorizontal()) {
-            leapLocation = jump.getJumpTarget().offset(jump.getSurfaceDirection().getNormal()).getBottomCenter();
+            leapLocation = jump.getJumpTarget().offset(jump.getSurfaceDirection().getNormal()).getCenter().subtract(0, 0.5, 0);
         }
         else if (jump.getSurfaceDirection() == Direction.DOWN) {
-            leapLocation = jump.getJumpTarget().getBottomCenter().subtract(0, entityDimensions.height(), 0);
+            leapLocation = jump.getJumpTarget().getCenter().subtract(0, 0.5, 0).subtract(0, entityDimensions.height, 0);
         }
         else {
-            leapLocation = jump.getJumpTarget().above().getBottomCenter();
+            leapLocation = jump.getJumpTarget().above().getCenter().subtract(0, 0.5, 0);
         }
-        return leapLocation;//.add(0, 0.5, 0);
+        return leapLocation;
     }
 
     protected boolean isAcceptableLandingPosition(PossibleJump jump) {
         Level level = elokosa.level();
         if (!level.getBlockState(jump.getJumpTarget()).isSolid() && !level.getBlockState(jump.getJumpTarget()).isLadder(level, jump.getJumpTarget(), elokosa)) return false;
-        if (elokosa.distanceToSqr(jump.getJumpTarget().getBottomCenter()) < 6) return false;
+        if (elokosa.distanceToSqr(jump.getJumpTarget().getCenter().subtract(0, 0.5, 0)) < 6) return false;
 
         EntityDimensions entityDimensions = elokosa.getDimensions(Pose.STANDING);
         Vec3 leapLocation = getLandingPositionFromJump(jump);
@@ -205,7 +199,6 @@ public abstract class ElokosaLeapGoal extends Goal {
     public void start() {
         super.start();
         jumpCandidates.clear();
-//        EntityBlockSwapper.swapBlock(elokosa.level(), BlockPos.containing(elokosa.jumpGoalPos), Blocks.TALL_GRASS.defaultBlockState(), 100, false, false);
         AbilityHandler.INSTANCE.sendAbilityMessage(elokosa, EntityElokosa.LEAP_ABILITY);
         timer = this.timeBetweenLongJumps.sample(elokosa.getRandom());
     }

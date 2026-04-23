@@ -6,20 +6,20 @@ import com.bobmowzie.mowziesmobs.server.ability.Ability;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
 import com.bobmowzie.mowziesmobs.server.ability.AbilityType;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.SimpleAnimationAbility;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
+import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
+import com.bobmowzie.mowziesmobs.server.capability.FrozenCapability;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntity {
@@ -45,13 +45,13 @@ public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntit
 
     @Override
     protected int getDeathDuration() {
-        Ability<?>deathAbility = getActiveAbility();
+        Ability deathAbility = getActiveAbility();
         if (deathAbility instanceof SimpleAnimationAbility) return ((SimpleAnimationAbility) deathAbility).getDuration();
         return 20;
     }
 
     @Override
-    public void writeSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
+    public void writeSpawnData(FriendlyByteBuf buffer) {
 
     }
 
@@ -101,19 +101,18 @@ public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntit
     }
 
     protected <E extends GeoEntity> PlayState predicate(AnimationState<E> state) {
-        AbilityData abilityData = getAbilityData();
-
-        if (abilityData == null) {
+        AbilityCapability.IAbilityCapability abilityCapability = getAbilityCapability();
+        FrozenCapability.IFrozenCapability frozenCapability = CapabilityHandler.getCapability(this, CapabilityHandler.FROZEN_CAPABILITY);
+        if (abilityCapability == null) {
+            return PlayState.STOP;
+        }
+        if (frozenCapability != null && frozenCapability.getFrozen()) {
             return PlayState.STOP;
         }
 
-        if (DataHandler.getData(this, DataHandler.FROZEN_DATA).getFrozen()) {
-            return PlayState.STOP;
-        }
-
-        if (abilityData.getActiveAbility() != null) {
+        if (abilityCapability.getActiveAbility() != null) {
             getController().transitionLength(0);
-            return abilityData.animationPredicate(state, null);
+            return abilityCapability.animationPredicate(state, null);
         }
         else {
             loopingAnimations(state);
@@ -145,26 +144,26 @@ public abstract class MowzieGeckoEntity extends MowzieEntity implements GeoEntit
         return new AbilityType[]{};
     }
 
-    public AbilityData getAbilityData() {
-        return DataHandler.getData(this, DataHandler.ABILITY_DATA);
+    public AbilityCapability.IAbilityCapability getAbilityCapability() {
+        return AbilityHandler.INSTANCE.getAbilityCapability(this);
     }
 
-    public Ability<?>getActiveAbility() {
-        AbilityData data = getAbilityData();
-        if (data == null) return null;
-        return getAbilityData().getActiveAbility();
+    public Ability getActiveAbility() {
+        AbilityCapability.IAbilityCapability capability = getAbilityCapability();
+        if (capability == null) return null;
+        return getAbilityCapability().getActiveAbility();
     }
 
     public AbilityType getActiveAbilityType() {
-        Ability<?>ability = getActiveAbility();
+        Ability ability = getActiveAbility();
         if (ability == null) return null;
         return ability.getAbilityType();
     }
 
-    public Ability<?>getAbility(AbilityType abilityType) {
-        AbilityData data = getAbilityData();
-        if (data == null) return null;
-        return getAbilityData().getAbilityMap().get(abilityType);
+    public Ability getAbility(AbilityType abilityType) {
+        AbilityCapability.IAbilityCapability capability = getAbilityCapability();
+        if (capability == null) return null;
+        return getAbilityCapability().getAbilityMap().get(abilityType);
     }
 
     public void sendAbilityMessage(AbilityType abilityType) {

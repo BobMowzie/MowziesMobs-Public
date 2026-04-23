@@ -7,6 +7,7 @@ import com.bobmowzie.mowziesmobs.server.ai.UmvuthanaHurtByTargetAI;
 import com.bobmowzie.mowziesmobs.server.item.UmvuthanaMask;
 import com.bobmowzie.mowziesmobs.server.potion.EffectHandler;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
@@ -258,7 +259,7 @@ public class EntityUmvuthanaCrane extends EntityUmvuthanaMinion {
     protected void sunBlockTarget() {
         LivingEntity target = getTarget();
         if (target != null) {
-            EffectHandler.addOrCombineEffect(target, EffectHandler.SUNBLOCK, 20, 0, true, false);
+            EffectHandler.addOrCombineEffect(target, EffectHandler.SUNBLOCK.get(), 20, 0, true, false);
             if (target.tickCount % 20 == 0) target.heal(0.15f);
         }
     }
@@ -270,16 +271,16 @@ public class EntityUmvuthanaCrane extends EntityUmvuthanaMinion {
     }
 
     @Override
-    public void igniteForTicks(int ticks) {
+    public void setSecondsOnFire(int seconds) {
         boolean teleporting = getActiveAbilityType() == TELEPORT_ABILITY && getActiveAbility().getTicksInUse() <= 16;
         if (!active || teleporting || !hasTriedOrSucceededTeleport) return;
-        super.igniteForTicks(ticks);
+        super.setSecondsOnFire(seconds);
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, SpawnGroupData livingData) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, SpawnGroupData livingData, CompoundTag compound) {
         setMask(MaskType.FAITH);
         setWeapon(3);
-        return super.finalizeSpawn(world, difficulty, reason, livingData);
+        return super.finalizeSpawn(world, difficulty, reason, livingData, compound);
     }
 }

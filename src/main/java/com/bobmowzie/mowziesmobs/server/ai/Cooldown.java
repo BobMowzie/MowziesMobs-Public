@@ -1,23 +1,23 @@
 package com.bobmowzie.mowziesmobs.server.ai;
 
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 public class Cooldown {
     private int timer;
     private int durationMin;
     private int durationMax;
-    private Entity entity;
+    private LivingEntity entity;
     private boolean isPaused = false;
     private final String name;
 
-    public Cooldown(Entity entity, int duration, String name) {
+    public Cooldown(LivingEntity entity, int duration, String name) {
         this.durationMin = duration;
         this.durationMax = duration;
         this.entity = entity;
         this.name = name;
     }
 
-    public Cooldown(Entity entity, int durationMin, int durationMax, String name) {
+    public Cooldown(LivingEntity entity, int durationMin, int durationMax, String name) {
         this.durationMin = durationMin;
         this.durationMax = durationMax;
         this.entity = entity;

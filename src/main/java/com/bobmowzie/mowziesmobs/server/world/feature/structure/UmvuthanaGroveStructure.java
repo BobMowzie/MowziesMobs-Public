@@ -1,7 +1,7 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure;
 
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
-import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.LevelHeightAccessor;
@@ -19,7 +19,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 // Edited from Telepathic Grunt's base code
 
 public class UmvuthanaGroveStructure extends MowzieStructure {
-	public static final MapCodec<UmvuthanaGroveStructure> CODEC = simpleCodec(UmvuthanaGroveStructure::new);
+	public static final Codec<UmvuthanaGroveStructure> CODEC = simpleCodec(UmvuthanaGroveStructure::new);
 	
     public UmvuthanaGroveStructure(Structure.StructureSettings settings) {
         super(settings, ConfigHandler.COMMON.MOBS.UMVUTHI.generationConfig, StructureTypeHandler.UMVUTHI_BIOMES);

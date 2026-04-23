@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.gui;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthanaMinion;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.trade.Trade;
 import com.bobmowzie.mowziesmobs.server.inventory.ContainerUmvuthanaTrade;
@@ -14,9 +14,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public final class GuiUmvuthanaTrade extends AbstractContainerScreen<ContainerUmvuthanaTrade> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/gui/container/umvuthana.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/gui/container/umvuthana.png");
 
     private final EntityUmvuthanaMinion umvuthana;
 
@@ -43,9 +46,7 @@ public final class GuiUmvuthanaTrade extends AbstractContainerScreen<ContainerUm
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
         if (umvuthana != null) {
             umvuthana.renderingInGUI = true;
-            // x and y values are chosen as the first and last pixel of the black (entity) box of the gui texture
-            // The two x and y values determine the size for the 'GuiGraphics#enableScissor' call (their middle point is also where the entity will be rendered)
-            InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, leftPos + 8, topPos + 8, leftPos + 59, topPos + 69, 20, 0.25f, x, y, umvuthana);
+            InventoryScreen.renderEntityInInventoryFollowsMouse(guiGraphics, leftPos + 33, topPos + 64, 20, leftPos + 33 - x, topPos + 21 - y, umvuthana);
             umvuthana.renderingInGUI = false;
         }
     }

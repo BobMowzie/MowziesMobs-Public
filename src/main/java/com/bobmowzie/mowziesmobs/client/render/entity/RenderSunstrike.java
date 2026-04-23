@@ -1,10 +1,9 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.tools.MathUtils;
 import com.bobmowzie.mowziesmobs.client.render.MMRenderType;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntitySunstrike;
-import com.ilexiconn.llibrary.client.util.ClientUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -19,13 +18,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 import java.util.Random;
 
+@OnlyIn(Dist.CLIENT)
 public class RenderSunstrike extends EntityRenderer<EntitySunstrike> {
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/effects/sunstrike.png");
+    public static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/effects/sunstrike.png");
     private static final Random RANDOMIZER = new Random(0);
     private static final float TEXTURE_WIDTH = 256;
     private static final float TEXTURE_HEIGHT = 32;
@@ -184,7 +186,6 @@ public class RenderSunstrike extends EntityRenderer<EntitySunstrike> {
     }
 
     public void drawVertex(Matrix4f matrix, Matrix3f normals, VertexConsumer vertexBuilder, float offsetX, float offsetY, float offsetZ, float textureX, float textureY, float alpha, int packedLightIn) {
-        VertexConsumer vertex = vertexBuilder.addVertex(matrix, offsetX, offsetY, offsetZ).setColor(1, 1, 1, 1 * alpha).setUv(textureX, textureY).setOverlay(OverlayTexture.NO_OVERLAY).setLight(packedLightIn);
-        ClientUtils.transformNormals(vertex, normals, 1, 0, 1);
+        vertexBuilder.vertex(matrix, offsetX, offsetY, offsetZ).color(1, 1, 1, 1 * alpha).uv(textureX, textureY).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(packedLightIn).normal(normals, 0.0F, 1.0F, 0.0F).endVertex();
     }
 }

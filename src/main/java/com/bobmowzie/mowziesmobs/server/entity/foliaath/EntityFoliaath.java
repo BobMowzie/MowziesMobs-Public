@@ -17,7 +17,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.BlockTags;
@@ -42,8 +42,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.storage.loot.LootTable;
-import org.jetbrains.annotations.NotNull;
 
 public class EntityFoliaath extends MowzieLLibraryEntity implements Enemy {
     public static final Animation DIE_ANIMATION = Animation.create(50);
@@ -106,10 +104,10 @@ public class EntityFoliaath extends MowzieLLibraryEntity implements Enemy {
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(CAN_DESPAWN, true);
-        builder.define(ACTIVATE_TARGET, 0);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        getEntityData().define(CAN_DESPAWN, true);
+        getEntityData().define(ACTIVATE_TARGET, 0);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -360,7 +358,7 @@ public class EntityFoliaath extends MowzieLLibraryEntity implements Enemy {
     }
 
     @Override
-    protected ResourceKey<LootTable> getDefaultLootTable() {
+    protected ResourceLocation getDefaultLootTable() {
         return LootTableHandler.FOLIAATH;
     }
 }

@@ -39,7 +39,7 @@ public class MMAIAvoidEntity<U extends PathfinderMob, T extends Entity> extends 
 
     private Path entityPathEntity;
 
-    private boolean isActive;
+    private boolean isActive = false;
 
     public MMAIAvoidEntity(U entity, Class<T> avoidedEntityType, float evadeDistance, double farSpeed, double nearSpeed) {
         this(entity, avoidedEntityType, Predicates.alwaysTrue(), evadeDistance, farSpeed, nearSpeed, 10, 12, 7, 7.0);
@@ -104,26 +104,26 @@ public class MMAIAvoidEntity<U extends PathfinderMob, T extends Entity> extends 
 
     @Override
     public void start() {
-        isActive = true;
         entity.getNavigation().moveTo(entityPathEntity, farSpeed);
+        isActive = true;
     }
 
     @Override
     public void stop() {
-        isActive = false;
         entityEvading = null;
+        isActive = false;
     }
 
-    @Override
-    public void tick() {
-        entity.getNavigation().setSpeedModifier(entity.distanceToSqr(entityEvading) < nearDistance * nearDistance ? nearSpeed : farSpeed);
+    public boolean isActive() {
+        return isActive;
     }
 
     public T getEntityEvading() {
         return entityEvading;
     }
 
-    public boolean isActive() {
-        return isActive;
+    @Override
+    public void tick() {
+        entity.getNavigation().setSpeedModifier(entity.distanceToSqr(entityEvading) < nearDistance * nearDistance ? nearSpeed : farSpeed);
     }
 }

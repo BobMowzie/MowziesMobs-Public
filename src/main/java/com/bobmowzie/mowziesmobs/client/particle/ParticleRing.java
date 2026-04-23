@@ -2,27 +2,27 @@ package com.bobmowzie.mowziesmobs.client.particle;
 
 import com.bobmowzie.mowziesmobs.client.model.tools.MathUtils;
 import com.bobmowzie.mowziesmobs.client.render.MMRenderType;
-import com.bobmowzie.mowziesmobs.server.message.NetworkHandler;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.math.Axis;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.Mth;
-import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import java.util.Locale;
 
 /**
  * Created by BobMowzie on 6/2/2017.
@@ -36,22 +36,11 @@ public class ParticleRing extends TextureSheetParticle {
 
     private final EnumRingBehavior behavior;
 
-    public enum EnumRingBehavior implements StringRepresentable {
-        SHRINK("shrink"),
-        GROW("grow"),
-        CONSTANT("constant"),
-        GROW_THEN_SHRINK("grow_then_shrink");
-
-        private final String key;
-
-        EnumRingBehavior(final String key) {
-            this.key = key;
-        }
-
-        @Override
-        public String getSerializedName() {
-            return key;
-        }
+    public enum EnumRingBehavior {
+        SHRINK,
+        GROW,
+        CONSTANT,
+        GROW_THEN_SHRINK
     }
 
     public ParticleRing(ClientLevel world, double x, double y, double z, double motionX, double motionY, double motionZ, float yaw, float pitch, int duration, float r, float g, float b, float opacity, float size, boolean facesCamera, EnumRingBehavior behavior) {
@@ -145,10 +134,10 @@ public class ParticleRing extends TextureSheetParticle {
         float f5 = this.getV0();
         float f6 = this.getV1();
         int j = this.getLightColor(partialTicks);
-        buffer.addVertex(avector3f[0].x(), avector3f[0].y(), avector3f[0].z()).setUv(f8, f6).setColor(this.rCol, this.gCol, this.bCol, this.alpha).setLight(j);
-        buffer.addVertex(avector3f[1].x(), avector3f[1].y(), avector3f[1].z()).setUv(f8, f5).setColor(this.rCol, this.gCol, this.bCol, this.alpha).setLight(j);
-        buffer.addVertex(avector3f[2].x(), avector3f[2].y(), avector3f[2].z()).setUv(f7, f5).setColor(this.rCol, this.gCol, this.bCol, this.alpha).setLight(j);
-        buffer.addVertex(avector3f[3].x(), avector3f[3].y(), avector3f[3].z()).setUv(f7, f6).setColor(this.rCol, this.gCol, this.bCol, this.alpha).setLight(j);
+        buffer.vertex(avector3f[0].x(), avector3f[0].y(), avector3f[0].z()).uv(f8, f6).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(j).endVertex();
+        buffer.vertex(avector3f[1].x(), avector3f[1].y(), avector3f[1].z()).uv(f8, f5).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(j).endVertex();
+        buffer.vertex(avector3f[2].x(), avector3f[2].y(), avector3f[2].z()).uv(f7, f5).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(j).endVertex();
+        buffer.vertex(avector3f[3].x(), avector3f[3].y(), avector3f[3].z()).uv(f7, f6).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(j).endVertex();
     }
 
     @Override
@@ -156,55 +145,161 @@ public class ParticleRing extends TextureSheetParticle {
         return MMRenderType.PARTICLE_SHEET_TRANSLUCENT_NO_DEPTH;
     }
 
-    public static final class Provider implements ParticleProvider<Data> {
+    @OnlyIn(Dist.CLIENT)
+    public static final class RingFactory implements ParticleProvider<RingData> {
         private final SpriteSet spriteSet;
 
-        public Provider(SpriteSet sprite) {
+        public RingFactory(SpriteSet sprite) {
             this.spriteSet = sprite;
         }
 
         @Override
-        public Particle createParticle(Data typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            ParticleRing particle = new ParticleRing(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.yaw(), typeIn.pitch(), typeIn.duration(), typeIn.red(), typeIn.green(), typeIn.blue(), typeIn.alpha(), typeIn.scale(), typeIn.facesCamera(), typeIn.behavior());
+        public Particle createParticle(RingData typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+            ParticleRing particle = new ParticleRing(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, typeIn.getYaw(), typeIn.getPitch(), typeIn.getDuration(), typeIn.getR(), typeIn.getG(), typeIn.getB(), typeIn.getA(), typeIn.getScale(), typeIn.getFacesCamera(), typeIn.getBehavior());
             particle.setSpriteFromAge(spriteSet);
             return particle;
         }
     }
 
-    public record Data(float red, float green, float blue, float alpha, float yaw, float pitch, float scale, int duration, boolean facesCamera, EnumRingBehavior behavior) implements ParticleOptions {
-        public static final Codec<ParticleRing.EnumRingBehavior> BEHAVIOUR_CODEC = StringRepresentable.fromEnum(ParticleRing.EnumRingBehavior::values);
+    public static class RingData implements ParticleOptions {
+        public static final ParticleOptions.Deserializer<ParticleRing.RingData> DESERIALIZER = new ParticleOptions.Deserializer<ParticleRing.RingData>() {
+            public ParticleRing.RingData fromCommand(ParticleType<ParticleRing.RingData> particleTypeIn, StringReader reader) throws CommandSyntaxException {
+                reader.expect(' ');
+                float yaw = (float) reader.readDouble();
+                reader.expect(' ');
+                float pitch = (float) reader.readDouble();
+                reader.expect(' ');
+                float r = (float) reader.readDouble();
+                reader.expect(' ');
+                float g = (float) reader.readDouble();
+                reader.expect(' ');
+                float b = (float) reader.readDouble();
+                reader.expect(' ');
+                float a = (float) reader.readDouble();
+                reader.expect(' ');
+                float scale = (float) reader.readDouble();
+                reader.expect(' ');
+                int duration = reader.readInt();
+                reader.expect(' ');
+                boolean facesCamera = reader.readBoolean();
+                return new ParticleRing.RingData(yaw, pitch, duration, r, g, b, a, scale, facesCamera, EnumRingBehavior.GROW);
+            }
 
-        public static final MapCodec<ParticleRing.Data> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                        Codec.FLOAT.fieldOf("red").forGetter(ParticleRing.Data::red),
-                        Codec.FLOAT.fieldOf("green").forGetter(ParticleRing.Data::green),
-                        Codec.FLOAT.fieldOf("blue").forGetter(ParticleRing.Data::blue),
-                        Codec.FLOAT.fieldOf("alpha").forGetter(ParticleRing.Data::alpha),
-                        Codec.FLOAT.fieldOf("yaw").forGetter(ParticleRing.Data::yaw),
-                        Codec.FLOAT.fieldOf("pitch").forGetter(ParticleRing.Data::pitch),
-                        Codec.FLOAT.fieldOf("scale").forGetter(ParticleRing.Data::scale),
-                        Codec.INT.fieldOf("duration").forGetter(ParticleRing.Data::duration),
-                        Codec.BOOL.fieldOf("facesCamera").forGetter(ParticleRing.Data::facesCamera),
-                        BEHAVIOUR_CODEC.fieldOf("behaviour").forGetter(ParticleRing.Data::behavior)
-                ).apply(instance, ParticleRing.Data::new)
-        );
+            public ParticleRing.RingData fromNetwork(ParticleType<ParticleRing.RingData> particleTypeIn, FriendlyByteBuf buffer) {
+                return new ParticleRing.RingData(buffer.readFloat(), buffer.readFloat(), buffer.readInt(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readBoolean(), EnumRingBehavior.GROW);
+            }
+        };
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, ParticleRing.Data> STREAM_CODEC = NetworkHandler.composite(
-                ByteBufCodecs.FLOAT, ParticleRing.Data::red,
-                ByteBufCodecs.FLOAT, ParticleRing.Data::green,
-                ByteBufCodecs.FLOAT, ParticleRing.Data::blue,
-                ByteBufCodecs.FLOAT, ParticleRing.Data::alpha,
-                ByteBufCodecs.FLOAT, ParticleRing.Data::yaw,
-                ByteBufCodecs.FLOAT, ParticleRing.Data::pitch,
-                ByteBufCodecs.FLOAT, ParticleRing.Data::scale,
-                ByteBufCodecs.INT, ParticleRing.Data::duration,
-                ByteBufCodecs.BOOL, ParticleRing.Data::facesCamera,
-                NeoForgeStreamCodecs.enumCodec(EnumRingBehavior.class), ParticleRing.Data::behavior,
-                ParticleRing.Data::new
-        );
+        private final float yaw;
+        private final float pitch;
+        private final float r;
+        private final float g;
+        private final float b;
+        private final float a;
+        private final float scale;
+        private final int duration;
+        private final boolean facesCamera;
+        private final EnumRingBehavior behavior;
+
+        public RingData(float yaw, float pitch, int duration, float r, float g, float b, float a, float scale, boolean facesCamera, EnumRingBehavior behavior) {
+            this.yaw = yaw;
+            this.pitch = pitch;
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
+            this.scale = scale;
+            this.duration = duration;
+            this.facesCamera = facesCamera;
+            this.behavior = behavior;
+        }
 
         @Override
-        public @NotNull ParticleType<ParticleRing.Data> getType() {
+        public void writeToNetwork(FriendlyByteBuf buffer) {
+            buffer.writeFloat(this.r);
+            buffer.writeFloat(this.g);
+            buffer.writeFloat(this.b);
+            buffer.writeFloat(this.scale);
+            buffer.writeInt(this.duration);
+        }
+
+        @SuppressWarnings("deprecation")
+        @Override
+        public String writeToString() {
+            return String.format(Locale.ROOT, "%s %.2f %.2f %.2f %.2f %.2f %.2f %.2f %d %b", BuiltInRegistries.PARTICLE_TYPE.getKey(this.getType()),
+                    this.yaw, this.pitch, this.r, this.g, this.b, this.scale, this.a, this.duration, this.facesCamera);
+        }
+
+        @Override
+        public ParticleType<ParticleRing.RingData> getType() {
             return ParticleHandler.RING.get();
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getYaw() {
+            return this.yaw;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getPitch() {
+            return this.pitch;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getR() {
+            return this.r;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getG() {
+            return this.g;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getB() {
+            return this.b;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getA() {
+            return this.a;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public float getScale() {
+            return this.scale;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public int getDuration() {
+            return this.duration;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public boolean getFacesCamera() {
+            return this.facesCamera;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        public EnumRingBehavior getBehavior() {
+            return this.behavior;
+        }
+
+        public static Codec<RingData> CODEC(ParticleType<RingData> particleType) {
+            return RecordCodecBuilder.create((codecBuilder) -> codecBuilder.group(
+                    Codec.FLOAT.fieldOf("yaw").forGetter(RingData::getYaw),
+                    Codec.FLOAT.fieldOf("pitch").forGetter(RingData::getPitch),
+                    Codec.FLOAT.fieldOf("r").forGetter(RingData::getR),
+                    Codec.FLOAT.fieldOf("g").forGetter(RingData::getG),
+                    Codec.FLOAT.fieldOf("b").forGetter(RingData::getB),
+                    Codec.FLOAT.fieldOf("a").forGetter(RingData::getA),
+                    Codec.FLOAT.fieldOf("scale").forGetter(RingData::getScale),
+                    Codec.INT.fieldOf("duration").forGetter(RingData::getDuration),
+                    Codec.BOOL.fieldOf("facesCamera").forGetter(RingData::getFacesCamera),
+                    Codec.STRING.fieldOf("behavior").forGetter((ringData) -> ringData.getBehavior().toString())
+                    ).apply(codecBuilder, (yaw, pitch, r, g, b, a, scale, duration, facesCamera, behavior) ->
+                            new RingData(yaw, pitch, duration, r, g, b, a, scale, facesCamera, EnumRingBehavior.valueOf(behavior)))
+            );
         }
     }
 }

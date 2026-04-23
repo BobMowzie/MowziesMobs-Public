@@ -1,10 +1,8 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure.processor;
 
-import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelReader;
@@ -13,33 +11,28 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.minecraft.world.level.storage.loot.LootTable;
 
 public class ChestProcessor extends StructureProcessor {
-    public static final MapCodec<ChestProcessor> CODEC = RecordCodecBuilder.mapCodec(instance -> instance
+    public static final Codec<ChestProcessor> CODEC = RecordCodecBuilder.create(instance -> instance
             .group(
-                    ResourceLocation.CODEC.fieldOf("loot_table").xmap(location -> ResourceKey.create(Registries.LOOT_TABLE, location), ResourceKey::location).forGetter(config -> config.lootTable)
+                    Codec.STRING.fieldOf("loot_table").forGetter(config -> config.lootTable)
             ).apply(instance, instance.stable(ChestProcessor::new)));
 
-    private final ResourceKey<LootTable> lootTable;
+    private String lootTable;
 
-    public ChestProcessor(ResourceKey<LootTable> lootTable) {
+    public ChestProcessor(String lootTable) {
         this.lootTable = lootTable;
     }
 
-    @Override
     protected StructureProcessorType<?> getType() {
-        return ProcessorHandler.CHEST_PROCESSOR.value();
+        return ProcessorHandler.BASE_PROCESSOR;
     }
 
     @Override
     public StructureTemplate.StructureBlockInfo process(LevelReader levelReader, BlockPos jigsawPiecePos, BlockPos jigsawPieceBottomCenterPos, StructureTemplate.StructureBlockInfo blockInfoLocal, StructureTemplate.StructureBlockInfo blockInfoGlobal, StructurePlaceSettings structurePlacementData, StructureTemplate template) {
         RandomSource random = structurePlacementData.getRandom(blockInfoGlobal.pos());
-
-        if (levelReader.getBlockEntity(blockInfoGlobal.pos()) instanceof RandomizableContainerBlockEntity container) {
-            container.setLootTable(lootTable, random.nextLong());
-        }
-
+        ResourceLocation lootTableLocation = new ResourceLocation(lootTable);
+        RandomizableContainerBlockEntity.setLootTable(levelReader, random, blockInfoGlobal.pos(), lootTableLocation);
         return blockInfoGlobal;
     }
 

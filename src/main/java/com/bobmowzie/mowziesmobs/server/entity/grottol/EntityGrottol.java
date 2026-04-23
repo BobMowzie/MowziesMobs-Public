@@ -1,8 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.entity.grottol;
 
 import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
-import com.bobmowzie.mowziesmobs.datagen.MMBlockTags;
-import com.bobmowzie.mowziesmobs.datagen.MMItemTags;
 import com.bobmowzie.mowziesmobs.server.advancement.AdvancementHandler;
 import com.bobmowzie.mowziesmobs.server.ai.EntityAIGrottolFindMinecart;
 import com.bobmowzie.mowziesmobs.server.ai.MMAIAvoidEntity;
@@ -20,7 +18,7 @@ import com.bobmowzie.mowziesmobs.server.item.ItemHandler;
 import com.bobmowzie.mowziesmobs.server.loot.LootTableHandler;
 import com.bobmowzie.mowziesmobs.server.potion.EffectHandler;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
-import com.bobmowzie.mowziesmobs.server.util.EnchantmentUtils;
+import com.bobmowzie.mowziesmobs.server.tag.TagHandler;
 import com.ilexiconn.llibrary.server.animation.Animation;
 import com.ilexiconn.llibrary.server.animation.AnimationHandler;
 import net.minecraft.core.BlockPos;
@@ -30,7 +28,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -49,6 +47,7 @@ import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.entity.vehicle.Minecart;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -57,10 +56,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.PathType;
-import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by BobMowzie on 7/3/2018.
@@ -98,24 +95,26 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     public EntityGrottol(EntityType<? extends EntityGrottol> type, Level world) {
         super(type, world);
         xpReward = 15;
+        setMaxUpStep(1.15F);
+
         moveControl = new MMEntityMoveHelper(this, 45);
     }
 
     @Override
     protected void registerGoals() {
         super.registerGoals();
-        setPathfindingMalus(PathType.DANGER_OTHER, 1);
-        setPathfindingMalus(PathType.WATER, 3);
-        setPathfindingMalus(PathType.WATER_BORDER, 3);
-        setPathfindingMalus(PathType.LAVA, 1);
-        setPathfindingMalus(PathType.DANGER_FIRE, 1);
-        setPathfindingMalus(PathType.DAMAGE_FIRE, 1);
-        setPathfindingMalus(PathType.DANGER_OTHER, 1);
-        setPathfindingMalus(PathType.DAMAGE_OTHER, 1);
+        setPathfindingMalus(BlockPathTypes.DANGER_OTHER, 1);
+        setPathfindingMalus(BlockPathTypes.WATER, 3);
+        setPathfindingMalus(BlockPathTypes.WATER_BORDER, 3);
+        setPathfindingMalus(BlockPathTypes.LAVA, 1);
+        setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 1);
+        setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 1);
+        setPathfindingMalus(BlockPathTypes.DANGER_OTHER, 1);
+        setPathfindingMalus(BlockPathTypes.DAMAGE_OTHER, 1);
         goalSelector.addGoal(3, new FloatGoal(this));
         goalSelector.addGoal(4, new RandomStrollGoal(this, 0.3));
         goalSelector.addGoal(1, new EntityAIGrottolFindMinecart(this));
-        goalSelector.addGoal(2, new MMAIAvoidEntity<>(this, Player.class, 16f, 0.5, 0.7) {
+        goalSelector.addGoal(2, new MMAIAvoidEntity<EntityGrottol, Player>(this, Player.class, 16f, 0.5, 0.7) {
             private int fleeCheckCounter = 0;
 
             @Override
@@ -184,6 +183,11 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     }
 
     @Override
+    public boolean canBreatheUnderwater() {
+        return true;
+    }
+
+    @Override
     public boolean displayFireAnimation() {
         return false;
     }
@@ -196,9 +200,7 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     public static AttributeSupplier.Builder createAttributes() {
         return MowzieEntity.createAttributes()
                 .add(Attributes.MAX_HEALTH, 20)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 1)
-                .add(Attributes.STEP_HEIGHT, 1.15)
-                .add(Attributes.WATER_MOVEMENT_EFFICIENCY, 0.5);
+                .add(Attributes.KNOCKBACK_RESISTANCE, 1);
     }
 
     @Override
@@ -207,10 +209,10 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(DEEPSLATE, false);
-        builder.define(BLACKPINK, false);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        getEntityData().define(DEEPSLATE, false);
+        getEntityData().define(BLACKPINK, false);
     }
 
     @Override
@@ -220,8 +222,9 @@ public class EntityGrottol extends MowzieLLibraryEntity {
 
     @Override
     public boolean skipAttackInteraction(Entity entity) {
-        if (entity instanceof Player player) {
-            if (EnchantmentUtils.getLevel(Enchantments.SILK_TOUCH, player.level(), player.getMainHandItem()) > 0) {
+        if (entity instanceof Player) {
+            Player player = (Player) entity;
+            if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, player.getMainHandItem()) > 0) {
                 if (!level().isClientSide && isAlive()) {
                     spawnAtLocation(ItemHandler.CAPTURED_GROTTOL.get().create(this), 0.0F);
                     BlockState state = Blocks.STONE.defaultBlockState();
@@ -243,7 +246,7 @@ public class EntityGrottol extends MowzieLLibraryEntity {
                         );
                     }
                     discard() ;
-                    if (player instanceof ServerPlayer serverPlayer) AdvancementHandler.GROTTOL_KILL_SILK_TOUCH_TRIGGER.value().trigger(serverPlayer);
+                    if (player instanceof ServerPlayer) AdvancementHandler.GROTTOL_KILL_SILK_TOUCH_TRIGGER.trigger((ServerPlayer) player);
                 }
                 return true;
             }
@@ -254,11 +257,12 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         Entity entity = source.getEntity();
-        if (entity instanceof Player player && !source.is(DamageTypeTags.IS_PROJECTILE)) {
-            if (player.getMainHandItem().isCorrectToolForDrops(Blocks.DIAMOND_ORE.defaultBlockState()) || player.getMainHandItem().is(MMItemTags.CAN_HIT_GROTTOL)) {
-                if (EnchantmentUtils.getLevel(Enchantments.FORTUNE, player.level(), player.getMainHandItem()) > 0) {
+        if (entity instanceof Player && !source.is(DamageTypeTags.IS_PROJECTILE)) {
+            Player player = (Player) entity;
+            if (player.getMainHandItem().isCorrectToolForDrops(Blocks.DIAMOND_ORE.defaultBlockState()) || player.getMainHandItem().is(TagHandler.CAN_HIT_GROTTOL)) {
+                if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, player.getMainHandItem()) > 0) {
                     death = EnumDeathType.FORTUNE_PICKAXE;
-                    if (player instanceof ServerPlayer serverPlayer) AdvancementHandler.GROTTOL_KILL_FORTUNE_TRIGGER.value().trigger(serverPlayer);
+                    if (player instanceof ServerPlayer) AdvancementHandler.GROTTOL_KILL_FORTUNE_TRIGGER.trigger((ServerPlayer) player);
                 } else {
                     death = EnumDeathType.PICKAXE;
                 }
@@ -336,7 +340,7 @@ public class EntityGrottol extends MowzieLLibraryEntity {
         if (timeSinceDeflectSound < 5) timeSinceDeflectSound++;
 
         // AI Task
-        if (!level().isClientSide && fleeTime >= 55 && getAnimation() == NO_ANIMATION && !isNoAi() && !hasEffect(EffectHandler.FROZEN)) {
+        if (!level().isClientSide && fleeTime >= 55 && getAnimation() == NO_ANIMATION && !isNoAi() && !hasEffect(EffectHandler.FROZEN.get())) {
             BlockState blockBeneath = level().getBlockState(blockPosition().below());
             if (isBlockDiggable(blockBeneath)) {
                 AnimationHandler.INSTANCE.sendAnimationMessage(this, BURROW_ANIMATION);
@@ -374,10 +378,6 @@ public class EntityGrottol extends MowzieLLibraryEntity {
 
     private boolean isBlackPinkInYourArea() {
         Entity e = getVehicle();
-        /*if (isMinecart(e)) {
-            BlockState state = ((AbstractMinecartEntity) e).getDisplayTile();
-            return state.getBlock() == BlockHandler.GROTTOL.get() && state.get(BlockGrottol.VARIANT) == BlockGrottol.Variant.BLACK_PINK;
-        }*/
         if (e instanceof AbstractMinecart) {
             return getBlackpink();
         }
@@ -451,7 +451,7 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     }
 
     @Override
-    protected ResourceKey<LootTable> getDefaultLootTable() {
+    protected ResourceLocation getDefaultLootTable() {
         return LootTableHandler.GROTTOL;
     }
 
@@ -461,9 +461,15 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     }
 
     public boolean isBlockDiggable(BlockState blockState) {
-        if (blockState.is(MMBlockTags.CAN_GROTTOL_DIG)) return true;
-        Block block = ((ICopiedBlockProperties) blockState.getBlock().properties()).mowziesMobs$getBaseBlock();
-        return block != null && block.builtInRegistryHolder().is(MMBlockTags.CAN_GROTTOL_DIG);
+        if (blockState.is(TagHandler.CAN_GROTTOL_DIG)) return true;
+
+        ICopiedBlockProperties properties = (ICopiedBlockProperties) blockState.getBlock().properties;
+        Block baseBlock = properties.getBaseBlock();
+        if (baseBlock != null) {
+            return baseBlock.defaultBlockState().is(TagHandler.CAN_GROTTOL_DIG);
+        }
+
+        return false;
     }
 
     public boolean getDeepslate() {
@@ -497,8 +503,8 @@ public class EntityGrottol extends MowzieLLibraryEntity {
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, SpawnGroupData spawnDataIn) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, SpawnGroupData spawnDataIn, CompoundTag dataTag) {
         if (getY() < 8 && reason != MobSpawnType.MOB_SUMMONED) setDeepslate(true);
-        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn);
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
     }
 }

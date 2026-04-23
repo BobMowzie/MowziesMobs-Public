@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelGrottol;
 import com.bobmowzie.mowziesmobs.server.entity.grottol.EntityGrottol;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -11,10 +11,10 @@ import net.minecraft.resources.ResourceLocation;
  * Created by BobMowzie on 5/8/2017.
  */
 public class RenderGrottol extends MobRenderer<EntityGrottol, ModelGrottol<EntityGrottol>> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/grottol.png");
-    private static final ResourceLocation TEXTURE_DEEPSLATE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/grottol_deepslate.png");
-    private static final ResourceLocation TEXTURE_BLACKPINK = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/grottol_blackpink.png");
-    private static final ResourceLocation TEXTURE_DEEPSLATE_BLACKPINK = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/grottol_deepslate_blackpink.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/grottol.png");
+    private static final ResourceLocation TEXTURE_DEEPSLATE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/grottol_deepslate.png");
+    private static final ResourceLocation TEXTURE_BLACKPINK = new ResourceLocation(MowziesMobs.MODID, "textures/entity/grottol_blackpink.png");
+    private static final ResourceLocation TEXTURE_DEEPSLATE_BLACKPINK = new ResourceLocation(MowziesMobs.MODID, "textures/entity/grottol_deepslate_blackpink.png");
 
     public RenderGrottol(EntityRendererProvider.Context mgr) {
         super(mgr, new ModelGrottol<>(), 0.6f);

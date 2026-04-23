@@ -1,9 +1,9 @@
 package com.bobmowzie.mowziesmobs.client.model.tools.geckolib;
 
-import software.bernie.geckolib.animatable.GeoAnimatable;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.state.BoneSnapshot;
 import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.state.BoneSnapshot;
 import software.bernie.geckolib.model.GeoModel;
 
 import java.util.Optional;
@@ -21,7 +21,7 @@ public abstract class MowzieGeoModel<T extends GeoAnimatable> extends GeoModel<T
         return !this.getAnimationProcessor().getRegisteredBones().isEmpty();
     }
 
-    public void resetBoneToSnapshot(GeoBone bone) {
+    public void resetBoneToSnapshot(CoreGeoBone bone) {
         BoneSnapshot initialSnapshot = bone.getInitialSnapshot();
 
         bone.setRotX(initialSnapshot.getRotX());
@@ -38,9 +38,9 @@ public abstract class MowzieGeoModel<T extends GeoAnimatable> extends GeoModel<T
     }
 
     @Override
-    public void applyMolangQueries(AnimationState<T> state, double animTime) {
+    public void applyMolangQueries(T animatable, double animTime) {
         getAnimationProcessor().getRegisteredBones().forEach(this::resetBoneToSnapshot);
-        super.applyMolangQueries(state, animTime);
+        super.applyMolangQueries(animatable, animTime);
     }
 
     public float getControllerValueInverted(String controllerName) {

@@ -1,10 +1,11 @@
 package com.ilexiconn.llibrary.server.animation;
 
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.ilexiconn.llibrary.server.event.AnimationEvent;
 import com.ilexiconn.llibrary.server.network.AnimationMessage;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.network.PacketDistributor;
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
@@ -26,7 +27,7 @@ public enum AnimationHandler {
             return;
         }
         entity.setAnimation(animation);
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new AnimationMessage(entity.getId(), ArrayUtils.indexOf(entity.getAnimations(), animation)));
+        MowziesMobs.NETWORK.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), new AnimationMessage(entity.getId(), ArrayUtils.indexOf(entity.getAnimations(), animation)));
     }
 
     /**
@@ -41,14 +42,14 @@ public enum AnimationHandler {
         } else {
             if (entity.getAnimation() != IAnimatedEntity.NO_ANIMATION) {
                 if (entity.getAnimationTick() == 0) {
-                    AnimationEvent.Start<?> event = new AnimationEvent.Start<>(entity, entity.getAnimation());
-                    if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
+                    AnimationEvent event = new AnimationEvent.Start<>(entity, entity.getAnimation());
+                    if (!MinecraftForge.EVENT_BUS.post(event)) {
                         this.sendAnimationMessage(entity, event.getAnimation());
                     }
                 }
                 if (entity.getAnimationTick() < entity.getAnimation().getDuration()) {
                     entity.setAnimationTick(entity.getAnimationTick() + 1);
-                    NeoForge.EVENT_BUS.post(new AnimationEvent.Tick<>(entity, entity.getAnimation(), entity.getAnimationTick()));
+                    MinecraftForge.EVENT_BUS.post(new AnimationEvent.Tick<>(entity, entity.getAnimation(), entity.getAnimationTick()));
                 }
                 if (entity.getAnimationTick() == entity.getAnimation().getDuration()) {
                     if( ! entity.getAnimation().doesLoop()) {

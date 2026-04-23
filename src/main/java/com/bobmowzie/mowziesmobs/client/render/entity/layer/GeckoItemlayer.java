@@ -13,7 +13,7 @@ import org.joml.Matrix4f;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
-import software.bernie.geckolib.util.RenderUtil;
+import software.bernie.geckolib.util.RenderUtils;
 
 public class GeckoItemlayer<T extends MowzieGeckoEntity> extends BlockAndItemGeoLayer<T> {
     protected Matrix4f dispatchedMat = new Matrix4f();
@@ -55,7 +55,7 @@ public class GeckoItemlayer<T extends MowzieGeckoEntity> extends BlockAndItemGeo
             return;
 
         poseStack.pushPose();
-        RenderUtil.translateToPivotPoint(poseStack, bone);
+        RenderUtils.translateToPivotPoint(poseStack, bone);
 
         if (stack != null)
             renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);

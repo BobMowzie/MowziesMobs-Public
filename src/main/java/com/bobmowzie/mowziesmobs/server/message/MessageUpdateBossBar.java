@@ -1,56 +1,65 @@
 package com.bobmowzie.mowziesmobs.server.message;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.ClientProxy;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.core.UUIDUtil;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
-/** Set entity to 'null' to remove boss bar */
-public record MessageUpdateBossBar(UUID bossId, boolean remove, ResourceLocation registryName) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MessageUpdateBossBar> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "message_update_boss_bar"));
-    public static final StreamCodec<ByteBuf, MessageUpdateBossBar> STREAM_CODEC = StreamCodec.composite(
-            UUIDUtil.STREAM_CODEC,
-            MessageUpdateBossBar::bossId,
-            ByteBufCodecs.BOOL,
-            MessageUpdateBossBar::remove,
-            ResourceLocation.STREAM_CODEC,
-            MessageUpdateBossBar::registryName,
-            MessageUpdateBossBar::new
-    );
+public class MessageUpdateBossBar {
+    private UUID bossID;
+    private boolean remove;
+    private ResourceLocation registryName;
 
-    private static final ResourceLocation NULL = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "null");
+    public MessageUpdateBossBar() {
 
-    public static MessageUpdateBossBar fromEntity(UUID bossId, LivingEntity entity) {
-        if (entity == null) {
-            return new MessageUpdateBossBar(bossId, true, NULL);
+    }
+
+    // Set entity to null to remove boss from the map
+    public MessageUpdateBossBar(UUID bossID, LivingEntity entity) {
+        this.bossID = bossID;
+        if (entity != null) {
+            this.registryName = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+            this.remove = false;
         }
-
-        ResourceLocation registryName = entity.level().registryAccess().registryOrThrow(Registries.ENTITY_TYPE).getKey(entity.getType());
-        return new MessageUpdateBossBar(bossId, false, registryName);
+        else {
+            this.registryName = null;
+            this.remove = true;
+        }
     }
 
-    public static void handleClient(final MessageUpdateBossBar packet, final IPayloadContext context) {
-        context.enqueueWork(() -> {
-            if (packet.remove()) {
-                ClientProxy.bossBarRegistryNames.remove(packet.bossId());
-            } else {
-                ClientProxy.bossBarRegistryNames.put(packet.bossId(), packet.registryName());
-            }
-        });
+    public static void serialize(final MessageUpdateBossBar message, final FriendlyByteBuf buf) {
+        buf.writeUUID(message.bossID);
+        buf.writeBoolean(message.remove);
+        if (!message.remove && message.registryName != null) buf.writeResourceLocation(message.registryName);
     }
 
-    @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static MessageUpdateBossBar deserialize(final FriendlyByteBuf buf) {
+        final MessageUpdateBossBar message = new MessageUpdateBossBar();
+        message.bossID = buf.readUUID();
+        message.remove = buf.readBoolean();
+        if (!message.remove) message.registryName = buf.readResourceLocation();
+        return message;
+    }
+
+    public static class Handler implements BiConsumer<MessageUpdateBossBar, Supplier<NetworkEvent.Context>> {
+        @Override
+        public void accept(final MessageUpdateBossBar message, final Supplier<NetworkEvent.Context> contextSupplier) {
+            final NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                if (message.registryName == null) {
+                    ClientProxy.bossBarRegistryNames.remove(message.bossID);
+                }
+                else {
+                	ClientProxy.bossBarRegistryNames.put(message.bossID, message.registryName);
+                }
+            });
+            context.setPacketHandled(true);
+        }
     }
 }

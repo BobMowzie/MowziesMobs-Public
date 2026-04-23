@@ -21,10 +21,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.List;
 
@@ -57,7 +57,7 @@ public class EntityEarthSpike extends EntityGeomancyBase {
                 for (int i = 0; i < 30; i++) {
                     Vec3 offset = new Vec3(0.6 + random.nextFloat() * 0.2, 0.1, 0).yRot(random.nextFloat() * (float) Math.PI * 2f);
                     Vec3 vel = offset.normalize().scale(random.nextGaussian() * 0.12).yRot(random.nextFloat() * 0.2f - 0.1f).add(0, random.nextDouble() * 0.45 + 0.2, 0).add(getForward().scale(0.1));
-                    AdvancedTerrainParticle.spawnTerrainParticle(level(), ParticleHandler.TERRAIN, getX() + offset.x, getY(), getZ() + offset.z, vel.x, vel.y, vel.z, 0, 0.4f + random.nextGaussian() * 0.3, 0.94f, 25 + random.nextFloat() * 10, getBlock(), new ParticleComponent[]{
+                    AdvancedTerrainParticle.spawnTerrainParticle(level(), ParticleHandler.TERRAIN.get(), getX() + offset.x, getY(), getZ() + offset.z, vel.x, vel.y, vel.z, 0, 0.4f + random.nextGaussian() * 0.3, 0.94f, 25 + random.nextFloat() * 10, getBlock(), new ParticleComponent[]{
                             new ParticleComponent.Gravity(1)
                     });
                 }
@@ -99,6 +99,7 @@ public class EntityEarthSpike extends EntityGeomancyBase {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        super.registerControllers(controllers);
         controllers.add(controller);
     }
 

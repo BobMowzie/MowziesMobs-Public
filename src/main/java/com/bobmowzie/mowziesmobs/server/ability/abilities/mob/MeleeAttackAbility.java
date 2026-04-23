@@ -6,7 +6,7 @@ import com.bobmowzie.mowziesmobs.server.ability.AbilityType;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieGeckoEntity;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class MeleeAttackAbility<T extends MowzieGeckoEntity> extends Ability<T> {
     protected SoundEvent attackSound;
@@ -18,11 +18,18 @@ public class MeleeAttackAbility<T extends MowzieGeckoEntity> extends Ability<T> 
     protected RawAnimation[] animations;
 
     public MeleeAttackAbility(AbilityType<T, ? extends MeleeAttackAbility<T>> abilityType, T user, RawAnimation[] animations, SoundEvent attackSound, SoundEvent hitSound, float knockBackMultiplier, float range, float damageMultiplier, int startup, int recovery, boolean hurtInterrupts) {
-        this(abilityType, user, new AbilitySection[] {
+        super(abilityType, user, new AbilitySection[] {
                 new AbilitySection.AbilitySectionDuration(AbilitySection.AbilitySectionType.STARTUP, startup),
                 new AbilitySection.AbilitySectionInstant(AbilitySection.AbilitySectionType.ACTIVE),
                 new AbilitySection.AbilitySectionDuration(AbilitySection.AbilitySectionType.RECOVERY, recovery)
-        }, animations, attackSound, hitSound, knockBackMultiplier, range, damageMultiplier, hurtInterrupts);
+        }, 0);
+        this.attackSound = attackSound;
+        this.hitSound = hitSound;
+        this.knockBackMultiplier = knockBackMultiplier;
+        this.damageMultiplier = damageMultiplier;
+        this.range = range;
+        this.hurtInterrupts = hurtInterrupts;
+        this.animations = animations;
     }
 
     public MeleeAttackAbility(AbilityType<T, ? extends MeleeAttackAbility<T>> abilityType, T user, AbilitySection[] sectionTrack, RawAnimation[] animations, SoundEvent attackSound, SoundEvent hitSound, float knockBackMultiplier, float range, float damageMultiplier, boolean hurtInterrupts) {

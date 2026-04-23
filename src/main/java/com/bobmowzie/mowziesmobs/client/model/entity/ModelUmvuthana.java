@@ -1,14 +1,14 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthana;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.MaskType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.data.EntityModelData;
 
 public class ModelUmvuthana extends MowzieGeoModel<EntityUmvuthana> {
@@ -18,24 +18,22 @@ public class ModelUmvuthana extends MowzieGeoModel<EntityUmvuthana> {
 
     @Override
     public ResourceLocation getModelResource(EntityUmvuthana object) {
-        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "geo/umvuthana.geo.json");
+        return new ResourceLocation(MowziesMobs.MODID, "geo/umvuthana.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(EntityUmvuthana entity) {
         boolean isElite = entity.getMaskType() == MaskType.FAITH || entity.getMaskType() == MaskType.FURY;
-        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, isElite ? "textures/entity/umvuthana_elite.png" : "textures/entity/umvuthana.png");
+        return new ResourceLocation(MowziesMobs.MODID, isElite ? "textures/entity/umvuthana_elite.png" : "textures/entity/umvuthana.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(EntityUmvuthana object) {
-        return ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "animations/umvuthana.animation.json");
+        return new ResourceLocation(MowziesMobs.MODID, "animations/umvuthana.animation.json");
     }
 
     @Override
     public void setCustomAnimations(EntityUmvuthana entity, long instanceId, AnimationState<EntityUmvuthana> animationState) {
-        super.setCustomAnimations(entity, instanceId, animationState);
-
         boolean isRaptor = entity.getMaskType() == MaskType.FURY;
         boolean isElite = entity.getMaskType() == MaskType.FAITH || isRaptor;
         getMowzieBone("crestRight").setHidden(!isElite);

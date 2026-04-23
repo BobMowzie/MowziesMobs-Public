@@ -4,7 +4,6 @@ import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.foliaath.EntityBabyFoliaath;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -21,6 +20,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ItemFoliaathSeed extends Item {
@@ -33,7 +33,7 @@ public class ItemFoliaathSeed extends Item {
             entity.moveTo(x + 0.5, y, z + 0.5, world.getLevel().random.nextFloat() * 360 - 180, 0);
             entity.yHeadRot = entity.getYRot();
             entity.yBodyRot = entity.getYRot();
-            entity.finalizeSpawn(world, world.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.MOB_SUMMONED, null);
+            entity.finalizeSpawn(world, world.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.MOB_SUMMONED, null, null);
             if (!entity.checkSpawnRules(world, MobSpawnType.MOB_SUMMONED)) {
                 return null;
             }
@@ -58,7 +58,7 @@ public class ItemFoliaathSeed extends Item {
         }
         Entity entity = spawnCreature((ServerLevel) world, new EntityBabyFoliaath(EntityHandler.BABY_FOLIAATH.get(), world), pos.getX(), pos.getY() + 1, pos.getZ());
         if (entity != null) {
-            if (entity instanceof LivingEntity && stack.has(DataComponents.CUSTOM_NAME)) {
+            if (entity instanceof LivingEntity && stack.hasCustomHoverName()) {
                 entity.setCustomName(stack.getHoverName());
             }
             if (!player.isCreative()) {
@@ -69,8 +69,8 @@ public class ItemFoliaathSeed extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        super.appendHoverText(stack, context, tooltip, flagIn);
+    public void appendHoverText(ItemStack stack, @Nullable Level worldIn, List<Component> tooltip, TooltipFlag flagIn) {
+        super.appendHoverText(stack, worldIn, tooltip, flagIn);
         tooltip.add(Component.translatable(getDescriptionId() + ".text.0").setStyle(ItemHandler.TOOLTIP_STYLE));
         tooltip.add(Component.translatable(getDescriptionId() + ".text.1").setStyle(ItemHandler.TOOLTIP_STYLE));
         tooltip.add(Component.translatable(getDescriptionId() + ".text.2").setStyle(ItemHandler.TOOLTIP_STYLE));

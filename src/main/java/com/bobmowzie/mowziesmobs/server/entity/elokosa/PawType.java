@@ -1,9 +1,9 @@
 package com.bobmowzie.mowziesmobs.server.entity.elokosa;
 
 import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
+import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleData;
 import com.bobmowzie.mowziesmobs.server.potion.EffectHandler;
 import com.google.common.base.Defaults;
-import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
@@ -12,20 +12,20 @@ import java.util.EnumMap;
 import java.util.Locale;
 
 public enum PawType {
-    FULL(MobEffects.WEAKNESS, ParticleHandler.MOON_FULL),
-    GIBBOUS(MobEffects.MOVEMENT_SLOWDOWN, ParticleHandler.MOON_GIBBOUS),
-    HALF(MobEffects.DIG_SLOWDOWN, ParticleHandler.MOON_HALF),
-    CRESCENT(EffectHandler.FRAGILITY, ParticleHandler.MOON_CRESCENT),
-    NEW(EffectHandler.ECLIPSED, ParticleHandler.MOON_NEW);
+    FULL(MobEffects.WEAKNESS, ParticleHandler.MOON_FULL.get()),
+    GIBBOUS(MobEffects.MOVEMENT_SLOWDOWN, ParticleHandler.MOON_GIBBOUS.get()),
+    HALF(MobEffects.DIG_SLOWDOWN, ParticleHandler.MOON_HALF.get()),
+    CRESCENT(EffectHandler.FRAGILITY.get(), ParticleHandler.MOON_CRESCENT.get()),
+    NEW(EffectHandler.ECLIPSED.get(), ParticleHandler.MOON_NEW.get());
 
     public static final int COUNT = PawType.values().length;
 
-    private final Holder<MobEffect> potion;
-    private final Holder<ParticleType<?>> particleType;
+    private final MobEffect potion;
+    private final ParticleType<AdvancedParticleData> particleType;
 
     private final String name;
 
-    PawType(Holder<MobEffect> potion, Holder<ParticleType<?>> particleType) {
+    PawType(MobEffect potion, ParticleType<AdvancedParticleData> particleType) {
         this.potion = potion;
         this.particleType = particleType;
         name = name().toLowerCase(Locale.ENGLISH);
@@ -51,11 +51,11 @@ public enum PawType {
         return name;
     }
 
-    public Holder<MobEffect> getPotion() {
+    public MobEffect getPotion() {
         return potion;
     }
 
-    public Holder<ParticleType<?>> getParticleType() {
+    public ParticleType<AdvancedParticleData> getParticleType() {
         return particleType;
     }
 }

@@ -1,9 +1,8 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.entity.effects.geomancy.EntityFissure;
 import com.bobmowzie.mowziesmobs.server.entity.effects.geomancy.EntityFissurePiece;
-import com.ilexiconn.llibrary.client.util.ClientUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -30,12 +29,12 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 public class RenderFissurePiece extends EntityRenderer<EntityFissurePiece> {
-    private static final ResourceLocation TEXTURE0 = MMCommon.resource("textures/particle/crack_0.png");
-    private static final ResourceLocation TEXTURE1 = MMCommon.resource("textures/particle/crack_1.png");
-    private static final ResourceLocation TEXTURE2 = MMCommon.resource("textures/particle/crack_2.png");
-    private static final ResourceLocation TEXTURE3 = MMCommon.resource("textures/particle/crack_3.png");
-    private static final ResourceLocation TEXTURE4 = MMCommon.resource("textures/particle/crack_4.png");
-    private static final ResourceLocation TEXTURE5 = MMCommon.resource("textures/particle/crack_5.png");
+    private static final ResourceLocation TEXTURE0 = new ResourceLocation(MowziesMobs.MODID, "textures/particle/crack_0.png");
+    private static final ResourceLocation TEXTURE1 = new ResourceLocation(MowziesMobs.MODID, "textures/particle/crack_1.png");
+    private static final ResourceLocation TEXTURE2 = new ResourceLocation(MowziesMobs.MODID, "textures/particle/crack_2.png");
+    private static final ResourceLocation TEXTURE3 = new ResourceLocation(MowziesMobs.MODID, "textures/particle/crack_3.png");
+    private static final ResourceLocation TEXTURE4 = new ResourceLocation(MowziesMobs.MODID, "textures/particle/crack_4.png");
+    private static final ResourceLocation TEXTURE5 = new ResourceLocation(MowziesMobs.MODID, "textures/particle/crack_5.png");
     private static final ResourceLocation[] TEXTURES = new ResourceLocation[] {
             TEXTURE0,
             TEXTURE1,
@@ -266,7 +265,6 @@ public class RenderFissurePiece extends EntityRenderer<EntityFissurePiece> {
     }
 
     public static void drawVertex(Matrix4f matrix, Matrix3f normals, VertexConsumer vertexBuilder, float offsetX, float offsetY, float offsetZ, float textureX, float textureY, float alpha, int packedLightIn) {
-        VertexConsumer vertexConsumer = vertexBuilder.addVertex(matrix, offsetX, offsetY, offsetZ).setColor(0, 0, 0, 1 * alpha).setUv(textureX, textureY).setOverlay(OverlayTexture.NO_OVERLAY).setLight(packedLightIn);
-        ClientUtils.transformNormals(vertexConsumer, normals, 0, 1, 0);
+        vertexBuilder.vertex(matrix, offsetX, offsetY, offsetZ).color(0, 0, 0, 1 * alpha).uv(textureX, textureY).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(packedLightIn).normal(normals, 0.0F, 1.0F, 0.0F).endVertex();
     }
 }

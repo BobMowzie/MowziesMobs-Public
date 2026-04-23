@@ -4,8 +4,10 @@ import com.bobmowzie.mowziesmobs.client.model.entity.ModelGeckoPlayerFirstPerson
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelGeckoPlayerThirdPerson;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieAnimationController;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.ability.AbilityHandler;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
+import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
+import com.bobmowzie.mowziesmobs.server.capability.PlayerCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.model.geom.EntityModelSet;
@@ -15,17 +17,20 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class GeckoPlayer implements GeoEntity {
 
 	protected GeoRenderer<GeckoPlayer> renderer;
@@ -79,13 +84,13 @@ public abstract class GeckoPlayer implements GeoEntity {
 		if (player == null) {
 			return PlayState.STOP;
 		}
-		AbilityData abilityData = DataHandler.getData(player, DataHandler.ABILITY_DATA);
-		if (abilityData == null) {
+		AbilityCapability.IAbilityCapability abilityCapability = AbilityHandler.INSTANCE.getAbilityCapability(player);
+		if (abilityCapability == null) {
 			return PlayState.STOP;
 		}
 
-		if (abilityData.getActiveAbility() != null) {
-			return abilityData.animationPredicate(e, getPerspective());
+		if (abilityCapability.getActiveAbility() != null) {
+			return abilityCapability.animationPredicate(e, getPerspective());
 		}
 		else {
 			e.getController().setAnimation(IDLE_ANIMATION);
@@ -96,23 +101,24 @@ public abstract class GeckoPlayer implements GeoEntity {
 	@Nullable
 	public static GeckoPlayer getGeckoPlayer(Player player, Perspective perspective) {
 		if (perspective == Perspective.FIRST_PERSON) return GeckoFirstPersonRenderer.GECKO_PLAYER_FIRST_PERSON;
-        return DataHandler.getData(player, DataHandler.PLAYER_DATA).getGeckoPlayer();
-    }
+		PlayerCapability.IPlayerCapability playerCapability = CapabilityHandler.getCapability(player, CapabilityHandler.PLAYER_CAPABILITY);
+		if (playerCapability != null) {
+			return playerCapability.getGeckoPlayer();
+		}
+		return null;
+	}
 
 	public static MowzieAnimationController<GeckoPlayer> getAnimationController(Player player, Perspective perspective) {
-        GeckoPlayer geckoPlayer;
-        
-		if (perspective == Perspective.FIRST_PERSON) {
-			geckoPlayer = GeckoFirstPersonRenderer.GECKO_PLAYER_FIRST_PERSON;
-		} else {
-			geckoPlayer = DataHandler.getData(player, DataHandler.PLAYER_DATA).getGeckoPlayer();
+		PlayerCapability.IPlayerCapability playerCapability = CapabilityHandler.getCapability(player, CapabilityHandler.PLAYER_CAPABILITY);
+		if (playerCapability != null) {
+			GeckoPlayer geckoPlayer;
+			if (perspective == Perspective.FIRST_PERSON) geckoPlayer = GeckoFirstPersonRenderer.GECKO_PLAYER_FIRST_PERSON;
+			else geckoPlayer = playerCapability.getGeckoPlayer();
+			if (geckoPlayer != null) {
+				return geckoPlayer.controller;
+			}
 		}
-		
-        if (geckoPlayer != null) {
-            return geckoPlayer.controller;
-        }
-		
-        return null;
+		return null;
 	}
 
 	public GeoRenderer<GeckoPlayer> getPlayerRenderer() {
@@ -200,7 +206,7 @@ public abstract class GeckoPlayer implements GeoEntity {
 		}
 
 		public boolean isPlayerSlim() {
-			return ((AbstractClientPlayer) getPlayer()).getSkin().model().name().equals("SLIM");
+			return ((AbstractClientPlayer) getPlayer()).getModelName().equals("slim");
 		}
 
 		@Override

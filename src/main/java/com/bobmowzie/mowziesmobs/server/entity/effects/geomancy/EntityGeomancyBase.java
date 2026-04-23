@@ -27,7 +27,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -35,10 +34,11 @@ import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.Tags;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.common.Tags;
+import net.minecraftforge.fluids.FluidType;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Optional;
@@ -79,17 +79,22 @@ public abstract class EntityGeomancyBase extends EntityMagicEffect implements Ge
         }
     }
 
+    @Override
+    public boolean isPushedByFluid(FluidType type) {
+        return false;
+    }
+
     // Change the specified block to its geomancy version. I.E. Grass blocks turn to dirt, stairs and slabs turn to base versions.
     public BlockState changeBlock(BlockState blockState) {
         if (!blockState.is(TagHandler.GEOMANCY_USEABLE)) {
-            ICopiedBlockProperties properties = (ICopiedBlockProperties) blockState.getBlock().properties();
-            Block baseBlock = properties.mowziesMobs$getBaseBlock();
+            ICopiedBlockProperties properties = (ICopiedBlockProperties) blockState.getBlock().properties;
+            Block baseBlock = properties.getBaseBlock();
             if (baseBlock != null) {
                 blockState = baseBlock.defaultBlockState();
             }
         }
 
-        ResourceKey<Block> blockKey = blockState.getBlock().builtInRegistryHolder().getKey();
+        ResourceKey<Block> blockKey = blockState.getBlock().builtInRegistryHolder().key();
         if (blockKey != null) {
             String blockString = blockKey.location().toString();
             if (blockState.getBlock() instanceof SlabBlock && blockString.endsWith("_slab")) {
@@ -117,8 +122,8 @@ public abstract class EntityGeomancyBase extends EntityMagicEffect implements Ge
         else if (blockState.is(BlockTags.NYLIUM)) blockState = Blocks.NETHERRACK.defaultBlockState();
         else if (blockState.is(Tags.Blocks.ORES_IN_GROUND_NETHERRACK)) blockState = Blocks.NETHERRACK.defaultBlockState();
         else if (blockState.is(Tags.Blocks.ORES_IN_GROUND_STONE)) blockState = Blocks.STONE.defaultBlockState();
-        else if (blockState.is(Tags.Blocks.SANDS_RED)) blockState = Blocks.RED_SANDSTONE.defaultBlockState();
-        else if (blockState.is(Tags.Blocks.SANDS_COLORLESS)) blockState = Blocks.SANDSTONE.defaultBlockState();
+        else if (blockState.is(Tags.Blocks.SAND_RED)) blockState = Blocks.RED_SANDSTONE.defaultBlockState();
+        else if (blockState.is(Tags.Blocks.SAND_COLORLESS)) blockState = Blocks.SANDSTONE.defaultBlockState();
         else if (blockState.getBlock() == Blocks.SOUL_SAND) blockState = Blocks.SOUL_SOIL.defaultBlockState();
 
         return blockState;
@@ -135,11 +140,11 @@ public abstract class EntityGeomancyBase extends EntityMagicEffect implements Ge
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(BLOCK_STATE, Blocks.DIRT.defaultBlockState());
-        builder.define(DEATH_TIME, 1200);
-        builder.define(TIER, 0);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        getEntityData().define(BLOCK_STATE, Blocks.DIRT.defaultBlockState());
+        getEntityData().define(DEATH_TIME, 1200);
+        getEntityData().define(TIER, 0);
     }
 
     @Override
@@ -154,7 +159,7 @@ public abstract class EntityGeomancyBase extends EntityMagicEffect implements Ge
 
     @Override
     public PushReaction getPistonPushReaction() {
-        return PushReaction.IGNORE;
+        return PushReaction.BLOCK;
     }
 
     @Override
@@ -168,7 +173,7 @@ public abstract class EntityGeomancyBase extends EntityMagicEffect implements Ge
     }
 
     @Override
-    public boolean ignoreExplosion(Explosion explosion) {
+    public boolean ignoreExplosion() {
         return true;
     }
 
@@ -300,6 +305,11 @@ public abstract class EntityGeomancyBase extends EntityMagicEffect implements Ge
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+
     }
 
     public boolean doRemoveTimer() {

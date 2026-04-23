@@ -235,7 +235,7 @@ public class GeckoDynamicChain {
             return;
         }
 
-        float currentTime = entity.tickCount + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+        float currentTime = entity.tickCount + Minecraft.getInstance().getPartialTick();
 
         for (int i = 0; i < chainOrig.length; i++) {
             prevRenderPos[i] = new Vec3(renderPos[i].x, renderPos[i].y, renderPos[i].z);

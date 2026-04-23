@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure.processor;
 
-import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.WorldGenRegion;
@@ -21,11 +21,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 public class RootsProcessor extends StructureProcessor {
     public static final RootsProcessor INSTANCE = new RootsProcessor();
-    public static final MapCodec<RootsProcessor> CODEC = MapCodec.unit(() -> INSTANCE);
+    public static final Codec<RootsProcessor> CODEC = Codec.unit(() -> INSTANCE);
 
-    @Override
     protected StructureProcessorType<?> getType() {
-        return ProcessorHandler.ROOTS_PROCESSOR.value();
+        return ProcessorHandler.BASE_PROCESSOR;
     }
 
     @Override

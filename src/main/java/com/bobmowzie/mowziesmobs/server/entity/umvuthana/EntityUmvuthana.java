@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.entity.umvuthana;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.tools.MathUtils;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieAnimationController;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleDecal;
@@ -31,13 +31,12 @@ import com.bobmowzie.mowziesmobs.server.item.UmvuthanaMask;
 import com.bobmowzie.mowziesmobs.server.loot.LootTableHandler;
 import com.bobmowzie.mowziesmobs.server.potion.EffectHandler;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
@@ -59,12 +58,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animation.*;
-import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.core.animation.*;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.EnumSet;
 
@@ -130,7 +130,7 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
                 if (itemEntity != null) {
                     ItemStack item = itemEntity.getItem();
                     item.setDamageValue((int) Math.ceil((1.0f - getUser().getHealthRatio()) * item.getMaxDamage()));
-                    item.set(DataComponents.CUSTOM_NAME, getUser().getCustomName());
+                    item.setHoverName(getUser().getCustomName());
                 }
             }
         }
@@ -155,9 +155,13 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
     public int timeUntilDeath = -1;
     private int blockCount = 0;
 
+    @OnlyIn(Dist.CLIENT)
     public Vec3[] staffPos;
+    @OnlyIn(Dist.CLIENT)
     public Vec3[] headPos;
+    @OnlyIn(Dist.CLIENT)
     public Vec3[] barakoPos;
+    @OnlyIn(Dist.CLIENT)
     public Vec3[] myPos;
 
     protected Vec3 teleportDestination;
@@ -175,6 +179,7 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
     public EntityUmvuthana(EntityType<? extends EntityUmvuthana> type, Level world) {
         super(type, world);
         setMask(MaskType.from(Mth.nextInt(random, 1, 4)));
+        setMaxUpStep(1);
         circleTick += random.nextInt(200);
         frame += random.nextInt(50);
         xpReward = 6;
@@ -225,6 +230,7 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Zombie.class, 0, true, false, (e) -> !(e instanceof ZombifiedPiglin)));
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, AbstractSkeleton.class, 0, true, false, null));
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Zoglin.class, 0, true, false, null));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, EntityElokosa.class, 0, true, false, null));
         this.targetSelector.addGoal(6, new AvoidEntityGoal<>(this, Creeper.class, 6.0F, 1.0D, 1.2D));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, true, target -> {
             if (target instanceof Player) {
@@ -234,7 +240,6 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
             }
             return true;
         }));
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, EntityElokosa.class, 0, true, false, null));
     }
 
     @Override
@@ -349,18 +354,21 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return MowzieEntity.createAttributes().add(Attributes.ATTACK_DAMAGE, 3)
-                .add(Attributes.MAX_HEALTH, 8)
-                .add(Attributes.STEP_HEIGHT, 1)
-                .add(Attributes.WATER_MOVEMENT_EFFICIENCY, 0.5);
+                .add(Attributes.MAX_HEALTH, 8);
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, SpawnGroupData livingData) {
+    protected boolean doDirectionalWalk() {
+        return true;
+    }
+
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, SpawnGroupData livingData, CompoundTag compound) {
         if (canHoldVaryingWeapons()) {
             setWeapon(random.nextInt(3) == 0 ? 1 : 0);
         }
         if (reason == MobSpawnType.COMMAND && !(this instanceof EntityUmvuthanaRaptor) && !(this instanceof EntityUmvuthanaCrane) && !(this instanceof EntityUmvuthanaCraneToPlayer)) setMask(MaskType.from(Mth.nextInt(random, 1, 4)));
-        return super.finalizeSpawn(world, difficulty, reason, livingData);
+        return super.finalizeSpawn(world, difficulty, reason, livingData, compound);
     }
 
     protected boolean canHoldVaryingWeapons() {
@@ -384,18 +392,13 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
     }
 
     @Override
-    protected boolean doDirectionalWalk() {
-        return true;
-    }
-
-    @Override
     public void tick() {
         super.tick();
 
         if (level().isClientSide()) {
             if (deathTime < 20 && active && !(getActiveAbilityType() == TELEPORT_ABILITY && getActiveAbility().getCurrentSection().sectionType != AbilitySection.AbilitySectionType.RECOVERY)) {
                 if (this.tickCount % 10 == 1) {
-                    AdvancedParticleBase.spawnParticle(level(), ParticleHandler.GLOW, getX(), getY(), getZ(), 0, 0, 0, true, 0, 0, 0, 0, 0F, 1, 1, 0.3, 0.4, 1, 9, true, false, new ParticleComponent[]{
+                    AdvancedParticleBase.spawnParticle(level(), ParticleHandler.GLOW.get(), getX(), getY(), getZ(), 0, 0, 0, true, 0, 0, 0, 0, 0F, 1, 1, 0.3, 0.4, 1, 9, true, false, new ParticleComponent[]{
                             new ParticleComponent.PinLocation(headPos),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.oscillate(9, 10, 12), false)
                     });
@@ -485,7 +488,7 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
             footstepCounter++;
             double rotation = Math.toRadians(yBodyRot + 180f);
             Vec3 offset = new Vec3(0, 0, footstepCounter % 2 == 0 ? 0.3 : -0.3).yRot((float) -rotation + 90);
-            ParticleDecal.spawnDecal(level(), ParticleHandler.STRIX_FOOTPRINT, getX() + offset.x(), getY() + 0.01, getZ() + offset.z(), 0, 0, 0, rotation,1F, 1, 0.95, 0.1, 1, 1, 200, true, 8, 32, new ParticleComponent[]{
+            ParticleDecal.spawnDecal(level(), ParticleHandler.STRIX_FOOTPRINT.get(), getX() + offset.x(), getY() + 0.01, getZ() + offset.z(), 0, 0, 0, rotation,1F, 1, 0.95, 0.1, 1, 1, 200, true, 8, 32, new ParticleComponent[]{
                     new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.RED, new ParticleComponent.KeyTrack(
                             new float[]{0.995f, 0.05f},
                             new float[]{0, 0.3f}
@@ -559,15 +562,15 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(DANCING, false);
-        builder.define(MASK, 0);
-        builder.define(WEAPON, 0);
-        builder.define(ACTIVE, true);
-        builder.define(HEALPOSX, 0f);
-        builder.define(HEALPOSY, 0f);
-        builder.define(HEALPOSZ, 0f);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        getEntityData().define(DANCING, false);
+        getEntityData().define(MASK, 0);
+        getEntityData().define(WEAPON, 0);
+        getEntityData().define(ACTIVE, true);
+        getEntityData().define(HEALPOSX, 0f);
+        getEntityData().define(HEALPOSY, 0f);
+        getEntityData().define(HEALPOSZ, 0f);
     }
 
     public boolean getDancing() {
@@ -667,21 +670,22 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
     }
 
     @Override
-    protected @NotNull ResourceKey<LootTable> getDefaultLootTable() {
-        return switch (getMaskType()) {
+    protected ResourceLocation getDefaultLootTable() {
+        switch (getMaskType()) {
             case BLISS:
-                yield LootTableHandler.UMVUTHANA_BLISS;
+                return LootTableHandler.UMVUTHANA_BLISS;
             case FEAR:
-                yield LootTableHandler.UMVUTHANA_FEAR;
+                return LootTableHandler.UMVUTHANA_FEAR;
             case FURY:
-                yield LootTableHandler.UMVUTHANA_FURY;
+                return LootTableHandler.UMVUTHANA_FURY;
             case MISERY:
-                yield LootTableHandler.UMVUTHANA_MISERY;
+                return LootTableHandler.UMVUTHANA_MISERY;
             case RAGE:
-                yield LootTableHandler.UMVUTHANA_RAGE;
+                return LootTableHandler.UMVUTHANA_RAGE;
             case FAITH:
-                yield LootTableHandler.UMVUTHANA_FAITH;
-        };
+                return LootTableHandler.UMVUTHANA_FAITH;
+        }
+        return LootTableHandler.UMVUTHANA_FURY;
     }
 
     @Override
@@ -1017,11 +1021,11 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
                 if (getTicksInUse() == 5) {
                     ParticleComponent.KeyTrack keyTrack1 = ParticleComponent.KeyTrack.oscillate(0, 2, 24);
                     ParticleComponent.KeyTrack keyTrack2 = new ParticleComponent.KeyTrack(new float[]{0, 18, 18, 0}, new float[]{0, 0.2f, 0.8f, 1});
-                    AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.SUN, getUser().getX(), getUser().getY(), getUser().getZ(), 0, 0, 0, true, 0, 0, 0, 0, 0F, 1, 1, 1, 1, 1, 15, true, false, new ParticleComponent[]{
+                    AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.SUN.get(), getUser().getX(), getUser().getY(), getUser().getZ(), 0, 0, 0, true, 0, 0, 0, 0, 0F, 1, 1, 1, 1, 1, 15, true, false, new ParticleComponent[]{
                             new ParticleComponent.PinLocation(getUser().myPos),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, keyTrack2, false),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, keyTrack1, true),
-                            new RibbonComponent(ParticleHandler.RIBBON_FLAT, 10, 0, 0, 0, 0.12F, 0.95, 0.9, 0.35, 0.75, true, true, new ParticleComponent[]{
+                            new RibbonComponent(ParticleHandler.RIBBON_FLAT.get(), 10, 0, 0, 0, 0.12F, 0.95, 0.9, 0.35, 0.75, true, true, new ParticleComponent[]{
                                     new RibbonComponent.PropertyOverLength(RibbonComponent.PropertyOverLength.EnumRibbonProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(1, 0))
                             }),
                     });
@@ -1035,7 +1039,7 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
 //                        v = v.rotatePitch(increment * i);
                         v = v.yRot(increment * rand.nextFloat() + increment * (i / (float)num));
                         v = v.zRot(increment * rand.nextFloat() + increment * (i % num));
-                        AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.PIXEL, getUser().myPos[0].x(), getUser().myPos[0].y(), getUser().myPos[0].z(), v.x(), v.y(), v.z(), true, 0, 0, 0, 0, 4f, 0.98, 0.94, 0.39, 1, 0.8, 6 + rand.nextFloat() * 4, true, false, new ParticleComponent[] {
+                        AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.PIXEL.get(), getUser().myPos[0].x(), getUser().myPos[0].y(), getUser().myPos[0].z(), v.x(), v.y(), v.z(), true, 0, 0, 0, 0, 4f, 0.98, 0.94, 0.39, 1, 0.8, 6 + rand.nextFloat() * 4, true, false, new ParticleComponent[] {
                                 new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.KeyTrack(
                                         new float[] {4f, 0},
                                         new float[] {0.8f, 1}
@@ -1087,7 +1091,7 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
             }
             if (getTicksInUse() == 6) {
                 getUser().playSound(MMSounds.ENTITY_UMVUTHANA_HEAL_START.get(rand.nextInt(3)).get(), 4, 1);
-                MMCommon.PROXY.playSunblockSound(getUser());
+                MowziesMobs.PROXY.playSunblockSound(getUser());
             }
 
             if (getTicksInUse() >= 6) {
@@ -1124,9 +1128,9 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
                     double ox = radius * Math.sin(yaw) * Math.sin(pitch);
                     double oy = radius * Math.cos(pitch);
                     double oz = radius * Math.cos(yaw) * Math.sin(pitch);
-                    if (getTicksInUse() % 5 == 0) AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.ARROW_HEAD, getUser().headPos[0].x(), getUser().headPos[0].y(), getUser().headPos[0].z(), 0, 0, 0, false, 0, 0, 0, 0, 3.5F, 0.95, 0.9, 0.35, 0.75, 1, Math.min(2 * dist, 60), true, false, new ParticleComponent[]{
+                    if (getTicksInUse() % 5 == 0) AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.ARROW_HEAD.get(), getUser().headPos[0].x(), getUser().headPos[0].y(), getUser().headPos[0].z(), 0, 0, 0, false, 0, 0, 0, 0, 3.5F, 0.95, 0.9, 0.35, 0.75, 1, Math.min(2 * dist, 60), true, false, new ParticleComponent[]{
                             new ParticleComponent.Attractor(getUser().barakoPos, 0.5f, 0.2f, ParticleComponent.Attractor.EnumAttractorBehavior.LINEAR),
-                            new RibbonComponent(ParticleHandler.RIBBON_FLAT, 10, 0, 0, 0, 0.12F, 0.95, 0.9, 0.35, 0.75, true, true, new ParticleComponent[]{
+                            new RibbonComponent(ParticleHandler.RIBBON_FLAT.get(), 10, 0, 0, 0, 0.12F, 0.95, 0.9, 0.35, 0.75, true, true, new ParticleComponent[]{
                                     new RibbonComponent.PropertyOverLength(RibbonComponent.PropertyOverLength.EnumRibbonProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(1, 0))
                             }),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.POS_X, new ParticleComponent.Oscillator(0, (float) ox, (float) (1 * dist), 2.5f), true),
@@ -1135,12 +1139,12 @@ public abstract class EntityUmvuthana extends MowzieGeckoEntity {
                             new ParticleComponent.FaceMotion(),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.KeyTrack(new float[]{0, 0, 1}, new float[]{0, 0.05f, 0.06f}), false),
                     });
-                    if (getTicksInUse() % 5 == 0) AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2, getUser().headPos[0].x(), getUser().headPos[0].y(), getUser().headPos[0].z(), 0, 0, 0, true, 0, 0, 0, 0, 1.5F, 1, 223 / 255f, 66 / 255f, 1, 1, 15, true, false, new ParticleComponent[]{
+                    if (getTicksInUse() % 5 == 0) AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2.get(), getUser().headPos[0].x(), getUser().headPos[0].y(), getUser().headPos[0].z(), 0, 0, 0, true, 0, 0, 0, 0, 1.5F, 1, 223 / 255f, 66 / 255f, 1, 1, 15, true, false, new ParticleComponent[]{
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(1f, 0f), false),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(1f, 10f), false)
                     });
                     int spawnFreq = 5;
-                    if (getTicksInUse() % spawnFreq == 0) ParticleRibbon.spawnRibbon(getUser().level(), ParticleHandler.RIBBON_SQUIGGLE, (int)(0.5 * dist), getUser().headPos[0].x(), getUser().headPos[0].y(), getUser().headPos[0].z(), 0, 0, 0, true, 0, 0, 0, 0.5F, 0.95, 0.9, 0.35, 0.75, 1, spawnFreq, true, new ParticleComponent[]{
+                    if (getTicksInUse() % spawnFreq == 0) ParticleRibbon.spawnRibbon(getUser().level(), ParticleHandler.RIBBON_SQUIGGLE.get(), (int)(0.5 * dist), getUser().headPos[0].x(), getUser().headPos[0].y(), getUser().headPos[0].z(), 0, 0, 0, true, 0, 0, 0, 0.5F, 0.95, 0.9, 0.35, 0.75, 1, spawnFreq, true, new ParticleComponent[]{
                             new RibbonComponent.BeamPinning(getUser().headPos, getUser().barakoPos),
                             new RibbonComponent.PanTexture(0, 1)
                     });

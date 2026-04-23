@@ -5,9 +5,7 @@ import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.render.entity.layer.ElokosaHandSymbolGeoLayer;
 import com.bobmowzie.mowziesmobs.client.render.entity.layer.ElokosaTransformGeoLayer;
 import com.bobmowzie.mowziesmobs.server.entity.elokosa.EntityElokosa;
-import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthana;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -30,11 +28,6 @@ public class RenderElokosa extends MowzieGeoEntityRenderer<EntityElokosa> {
     @Override
     public @NotNull ResourceLocation getTextureLocation(EntityElokosa entity) {
         return this.getMowzieGeoModel().getTextureResource(entity);
-    }
-
-    @Override
-    public void render(EntityElokosa entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     }
 
     @Override
@@ -73,19 +66,16 @@ public class RenderElokosa extends MowzieGeoEntityRenderer<EntityElokosa> {
     }
 
     @Override
-    protected float getShadowRadius(EntityElokosa entity) {
+    public void render(EntityElokosa entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         float whichForm = 0;
         if (getMowzieGeoModel().isInitialized()) {
             whichForm = -getMowzieGeoModel().getControllerValue("whichFormController");
         }
         if (whichForm <= 0.1f) {
-            if (entity.getNightForm()) {
-                return 0.9f;
-            }
-            else {
-                return 0.4f;
-            }
+            this.shadowRadius = entity.getNightForm() ? 0.9f : 0.4f;
+        } else {
+            this.shadowRadius = Mth.lerp(whichForm, 0.4f, 0.9f);
         }
-        return Mth.lerp(whichForm, 0.4f, 0.9f);
+        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     }
 }

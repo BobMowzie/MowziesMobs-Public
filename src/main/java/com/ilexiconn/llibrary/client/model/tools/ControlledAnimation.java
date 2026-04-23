@@ -1,6 +1,8 @@
 package com.ilexiconn.llibrary.client.model.tools;
 
 import net.minecraft.util.Mth;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * This is a timer that can be used to easily animate models between poses. You have to set the number of
@@ -9,6 +11,7 @@ import net.minecraft.util.Mth;
  * @author RafaMv
  * @since 1.4.0
  */
+@OnlyIn(Dist.CLIENT)
 public class ControlledAnimation {
     /**
      * It is the timer used to animate

@@ -1,55 +1,63 @@
 package com.bobmowzie.mowziesmobs.server.message;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.server.entity.ILinkedEntity;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.network.NetworkEvent;
+
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 /**
  * Created by BobMowzie on 10/28/2016.
  */
-public record MessageLinkEntities(int sourceId, int targetId) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MessageLinkEntities> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "message_link_entities"));
-    public static final StreamCodec<ByteBuf, MessageLinkEntities> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT,
-            MessageLinkEntities::sourceId,
-            ByteBufCodecs.INT,
-            MessageLinkEntities::targetId,
-            MessageLinkEntities::new
-    );
+public class MessageLinkEntities {
+    private int sourceID;
+    private int targetID;
 
-    public static MessageLinkEntities fromEntity(Entity source, Entity target) {
+    public MessageLinkEntities() {
+
+    }
+
+    public MessageLinkEntities(Entity source, Entity target) {
         if (source instanceof ILinkedEntity) {
-            return new MessageLinkEntities(source.getId(), target.getId());
+            sourceID = source.getId();
+            targetID = target.getId();
         }
-
-        return new MessageLinkEntities(-1, -1);
     }
 
-    public static void handleClient(final MessageLinkEntities packet, final IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Level level = MMCommon.PROXY.getClientLevel();
+    public static void serialize(final MessageLinkEntities message, final FriendlyByteBuf buf) {
+        buf.writeVarInt(message.sourceID);
+        buf.writeVarInt(message.targetID);
+    }
 
-            if (level != null) {
-                Entity entitySource = level.getEntity(packet.sourceId());
-                Entity entityTarget = level.getEntity(packet.targetId());
+    public static MessageLinkEntities deserialize(final FriendlyByteBuf buf) {
+        final MessageLinkEntities message = new MessageLinkEntities();
+        message.sourceID = buf.readVarInt();
+        message.targetID = buf.readVarInt();
+        return message;
+    }
 
-                if (entitySource instanceof ILinkedEntity linked && entityTarget != null) {
-                    linked.link(entityTarget);
+    public static class Handler implements BiConsumer<MessageLinkEntities, Supplier<NetworkEvent.Context>> {
+        @Override
+        @OnlyIn(Dist.CLIENT)
+        public void accept(final MessageLinkEntities message, final Supplier<NetworkEvent.Context> contextSupplier) {
+            final NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                Level level = Minecraft.getInstance().level;
+                if (level != null) {
+                    Entity entitySource = Minecraft.getInstance().level.getEntity(message.sourceID);
+                    Entity entityTarget = Minecraft.getInstance().level.getEntity(message.targetID);
+                    if (entitySource instanceof ILinkedEntity && entityTarget != null) {
+                        ((ILinkedEntity) entitySource).link(entityTarget);
+                    }
                 }
-            }
-        });
-    }
-
-    @Override
-    public @NotNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+            });
+            context.setPacketHandled(true);
+        }
     }
 }

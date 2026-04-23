@@ -1,13 +1,13 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
 import com.bobmowzie.mowziesmobs.server.entity.bluff.EntityBluff;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.data.EntityModelData;
 
 public class ModelBluff extends MowzieGeoModel<EntityBluff> {
@@ -17,17 +17,17 @@ public class ModelBluff extends MowzieGeoModel<EntityBluff> {
 
     @Override
     public ResourceLocation getModelResource(EntityBluff object) {
-        return MMCommon.resource("geo/bluff.geo.json");
+        return new ResourceLocation(MowziesMobs.MODID, "geo/bluff.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(EntityBluff object) {
-        return MMCommon.resource("textures/entity/bluff.png");
+        return new ResourceLocation(MowziesMobs.MODID, "textures/entity/bluff.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(EntityBluff object) {
-        return MMCommon.resource("animations/bluff.animation.json");
+        return new ResourceLocation(MowziesMobs.MODID, "animations/bluff.animation.json");
     }
 
 
@@ -54,9 +54,9 @@ public class ModelBluff extends MowzieGeoModel<EntityBluff> {
         MowzieGeoBone head = getMowzieBone("head");
         MowzieGeoBone root = getMowzieBone("root");
 
-        EntityModelData data = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
-        float headYaw = Mth.wrapDegrees(data.netHeadYaw());
-        float headPitch = Mth.wrapDegrees(data.headPitch());
+        EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
+        float headYaw = Mth.wrapDegrees(entityData.netHeadYaw());
+        float headPitch = Mth.wrapDegrees(entityData.headPitch());
         head.addRotX(headPitch * (float) Math.PI / 180F);
         root.addRotY(headYaw * (float) Math.PI / 180F);
     }

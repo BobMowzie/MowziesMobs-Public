@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelIceBall;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityIceBall;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -14,7 +14,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 public class RenderIceBall extends EntityRenderer<EntityIceBall> {
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/effects/ice_ball.png");
+    public static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/effects/ice_ball.png");
     public ModelIceBall model;
 
     public RenderIceBall(EntityRendererProvider.Context mgr) {
@@ -34,7 +34,7 @@ public class RenderIceBall extends EntityRenderer<EntityIceBall> {
         matrixStackIn.translate(0, -0.5f, 0);
         VertexConsumer ivertexbuilder = bufferIn.getBuffer(RenderType.entityTranslucent(TEXTURE));
         model.setupAnim(entityIn, 0, 0, entityIn.tickCount + partialTicks, 0, 0);
-        model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, -1);
+        model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         matrixStackIn.popPose();
     }
 }

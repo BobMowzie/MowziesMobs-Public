@@ -1,7 +1,7 @@
 package com.bobmowzie.mowziesmobs.server.entity.effects;
 
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
-import com.bobmowzie.mowziesmobs.server.capability.PlayerData;
+import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
+import com.bobmowzie.mowziesmobs.server.capability.PlayerCapability;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.item.ItemHandler;
@@ -17,32 +17,20 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.Stats;
-import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.entity.projectile.ProjectileDeflection;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.CommonHooks;
-import net.neoforged.neoforge.entity.PartEntity;
-import net.neoforged.neoforge.event.EventHooks;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,10 +58,10 @@ public class EntityAxeAttack extends EntityMagicEffect {
         setAxeStack(caster.getMainHandItem());
     }
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(VERTICAL, false);
-        builder.define(AXE_STACK, ItemHandler.WROUGHT_AXE.get().getDefaultInstance());
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        getEntityData().define(VERTICAL, false);
+        getEntityData().define(AXE_STACK, ItemHandler.WROUGHT_AXE.get().getDefaultInstance());
     }
 
     @Override
@@ -91,7 +79,7 @@ public class EntityAxeAttack extends EntityMagicEffect {
                 quakeAngle = getYRot();
                 quakeBB = getBoundingBox().move(0, -getCaster().getEyeHeight(), 0);
                 playSound(MMSounds.ENTITY_WROUGHT_AXE_LAND.get(), 0.3F, 0.5F);
-                playSound(SoundEvents.GENERIC_EXPLODE.value(), 2, 0.9F + random.nextFloat() * 0.1F);
+                playSound(SoundEvents.GENERIC_EXPLODE, 2, 0.9F + random.nextFloat() * 0.1F);
             }
             else if (getVertical() && tickCount == SWING_DURATION_VER /2 + 1) {
                 EntityCameraShake.cameraShake(level(), position(), 10, 0.05f, 0, 10);
@@ -187,13 +175,16 @@ public class EntityAxeAttack extends EntityMagicEffect {
                 // Do raycast check to prevent damaging through walls
                 if (!raytraceCheckEntity(entityHit)) continue;
 
-                if (getCaster() instanceof Player player) {
-                    PlayerData data = DataHandler.getData(player, DataHandler.PLAYER_DATA);
-                    data.setAxeCanAttack(true);
-                    attackTargetEntityWithCurrentItem(entityHit, player, damage / ConfigHandler.COMMON.TOOLS_AND_ABILITIES.AXE_OF_A_THOUSAND_METALS.toolConfig.attackDamage.get().floatValue(), applyKnockback);
-                    data.setAxeCanAttack(false);
+                PlayerCapability.IPlayerCapability playerCapability = CapabilityHandler.getCapability(getCaster(), CapabilityHandler.PLAYER_CAPABILITY);
+                if (playerCapability != null) {
+                    playerCapability.setAxeCanAttack(true);
+                    if (getCaster() instanceof Player) attackTargetEntityWithCurrentItem(entityHit, (Player) getCaster(), damage / ItemHandler.WROUGHT_AXE.get().getAttackDamage(), applyKnockback);
+                    playerCapability.setAxeCanAttack(false);
                 }
-
+                else {
+                    entityHit.hurt(damageSources().mobAttack(getCaster()), damage);
+                    entityHit.setDeltaMovement(entityHit.getDeltaMovement().x * applyKnockback, entityHit.getDeltaMovement().y, entityHit.getDeltaMovement().z * applyKnockback);
+                }
                 hit = true;
             }
         }
@@ -228,153 +219,141 @@ public class EntityAxeAttack extends EntityMagicEffect {
      * Copied from player entity, with modification
      */
     public void attackTargetEntityWithCurrentItem(Entity targetEntity, Player player, float damageMult, float knockbackMult) {
-        if (!CommonHooks.onPlayerAttackTarget(player, targetEntity) || !targetEntity.isAttackable()) {
-            return;
-        }
+        if (!net.minecraftforge.common.ForgeHooks.onPlayerAttackTarget(player, targetEntity)) return;
 
         ItemStack oldStack = player.getMainHandItem();
         ItemStack newStack = getAxeStack();
-        resetModifiers(player, oldStack, newStack);
         player.setItemInHand(InteractionHand.MAIN_HAND, newStack);
+        player.getAttributes().addTransientAttributeModifiers(newStack.getAttributeModifiers(EquipmentSlot.MAINHAND));
 
-        // Check this after swapping main hand in cases the main hand item impacts the result
-        if (targetEntity.skipAttackInteraction(player)) {
-            resetModifiers(player, newStack, oldStack);
-            player.setItemInHand(InteractionHand.MAIN_HAND, oldStack);
-            return;
-        }
+        if (targetEntity.isAttackable()) {
+            if (!targetEntity.skipAttackInteraction(player)) {
+                float f = (float)player.getAttributeValue(Attributes.ATTACK_DAMAGE) * damageMult;
+                float f1;
+                if (targetEntity instanceof LivingEntity) {
+                    f1 = EnchantmentHelper.getDamageBonus(player.getMainHandItem(), ((LivingEntity)targetEntity).getMobType());
+                } else {
+                    f1 = EnchantmentHelper.getDamageBonus(player.getMainHandItem(), MobType.UNDEFINED);
+                }
 
-        if (targetEntity.getType().is(EntityTypeTags.REDIRECTABLE_PROJECTILE) && targetEntity instanceof Projectile projectile && projectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, this, true)) {
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
-            resetModifiers(player, newStack, oldStack);
-            player.setItemInHand(InteractionHand.MAIN_HAND, oldStack);
-            return;
-        }
+                float f2 = 1.0f;
+                f = f * (0.2F + f2 * f2 * 0.8F);
+                f1 = f1 * f2;
+                if (f > 0.0F || f1 > 0.0F) {
+                    boolean flag = f2 > 0.9F;
+                    boolean flag1 = false;
+                    int i = 0;
+                    i = i + EnchantmentHelper.getKnockbackBonus(player);
+                    if (player.isSprinting() && flag) {
+                        player.level().playSound((Player)null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, player.getSoundSource(), 1.0F, 1.0F);
+                        ++i;
+                        flag1 = true;
+                    }
 
-        DamageSource damageSource = damageSources().playerAttack(player);
+                    f = f + f1;
+                    boolean flag3 = false;
 
-        float attackDamage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE) * damageMult;
-        float enchantedDamage = player.getEnchantedDamage(targetEntity, attackDamage, damageSource);
+                    float f4 = 0.0F;
+                    boolean flag4 = false;
+                    int j = EnchantmentHelper.getFireAspect(player);
+                    if (targetEntity instanceof LivingEntity) {
+                        f4 = ((LivingEntity)targetEntity).getHealth();
+                        if (j > 0 && !targetEntity.isOnFire()) {
+                            flag4 = true;
+                            targetEntity.setSecondsOnFire(1);
+                        }
+                    }
 
-        if (attackDamage > 0 || enchantedDamage > 0) {
-            boolean wasSprinting = false;
+                    Vec3 vector3d = targetEntity.getDeltaMovement();
+                    boolean flag5 = targetEntity.hurt(damageSources().playerAttack(player), f);
+                    if (flag5) {
+                        if (i > 0) {
+                            if (targetEntity instanceof LivingEntity) {
+                                ((LivingEntity)targetEntity).knockback((float)i * 0.5F * knockbackMult, (double)Mth.sin(player.getYRot() * ((float)Math.PI / 180F)), (double)(-Mth.cos(player.getYRot() * ((float)Math.PI / 180F))));
+                            } else {
+                                targetEntity.push((double)(-Mth.sin(player.getYRot() * ((float)Math.PI / 180F)) * (float)i * 0.5F * knockbackMult), 0.1D, (double)(Mth.cos(player.getYRot() * ((float)Math.PI / 180F)) * (float)i * 0.5F * knockbackMult));
+                            }
 
-            if (player.isSprinting()) {
-                player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, player.getSoundSource(), 1.0F, 1.0F);
-                wasSprinting = true;
-            }
+                            player.setDeltaMovement(player.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
+                            player.setSprinting(false);
+                        }
 
-            attackDamage += newStack.getItem().getAttackDamageBonus(targetEntity, attackDamage, damageSource);
-            float damage = attackDamage + enchantedDamage;
-            float targetHealth = targetEntity instanceof LivingEntity livingTarget ? livingTarget.getHealth() : 0;
+                        if (targetEntity instanceof ServerPlayer && targetEntity.hurtMarked) {
+                            ((ServerPlayer)targetEntity).connection.send(new ClientboundSetEntityMotionPacket(targetEntity));
+                            targetEntity.hurtMarked = false;
+                            targetEntity.setDeltaMovement(vector3d);
+                        }
 
-            Vec3 targetMovement = targetEntity.getDeltaMovement();
-            boolean wasHurt = targetEntity.hurt(damageSource, damage);
+                        if (flag) {
+                            player.level().playSound((Player)null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, player.getSoundSource(), 1.0F, 1.0F);
+                        } else {
+                            player.level().playSound((Player)null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_WEAK, player.getSoundSource(), 1.0F, 1.0F);
+                        }
 
-            if (wasHurt) {
-                float knockback = player.getKnockback(targetEntity, damageSource) + (wasSprinting ? 1 : 0);
+                        if (f1 > 0.0F) {
+                            player.magicCrit(targetEntity);
+                        }
 
-                if (knockback > 0) {
-                    if (targetEntity instanceof LivingEntity livingTarget) {
-                        livingTarget.knockback(knockback * 0.5F * knockbackMult, Mth.sin(player.getYRot() * ((float) Math.PI / 180F)), -Mth.cos(player.getYRot() * ((float) Math.PI / 180F)));
+                        player.setLastHurtMob(targetEntity);
+                        if (targetEntity instanceof LivingEntity) {
+                            EnchantmentHelper.doPostHurtEffects((LivingEntity)targetEntity, player);
+                        }
+
+                        EnchantmentHelper.doPostDamageEffects(player, targetEntity);
+                        ItemStack itemstack1 = player.getMainHandItem();
+                        Entity entity = targetEntity;
+                        if (targetEntity instanceof net.minecraftforge.entity.PartEntity) {
+                            entity = ((net.minecraftforge.entity.PartEntity<?>) targetEntity).getParent();
+                        }
+
+                        if (!player.level().isClientSide && !itemstack1.isEmpty() && entity instanceof LivingEntity) {
+                            ItemStack copy = itemstack1.copy();
+                            itemstack1.hurtEnemy((LivingEntity)entity, player);
+                            if (itemstack1.isEmpty()) {
+                                net.minecraftforge.event.ForgeEventFactory.onPlayerDestroyItem(player, copy, InteractionHand.MAIN_HAND);
+                                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                            }
+                        }
+
+                        if (targetEntity instanceof LivingEntity) {
+                            float f5 = f4 - ((LivingEntity)targetEntity).getHealth();
+                            player.awardStat(Stats.DAMAGE_DEALT, Math.round(f5 * 10.0F));
+                            if (j > 0) {
+                                targetEntity.setSecondsOnFire(j * 4);
+                            }
+
+                            if (player.level() instanceof ServerLevel && f5 > 2.0F) {
+                                int k = (int)((double)f5 * 0.5D);
+                                ((ServerLevel)player.level()).sendParticles(ParticleTypes.DAMAGE_INDICATOR, targetEntity.getX(), targetEntity.getY(0.5D), targetEntity.getZ(), k, 0.1D, 0.0D, 0.1D, 0.2D);
+                            }
+                        }
+
+                        player.causeFoodExhaustion(0.1F);
                     } else {
-                        targetEntity.push(-Mth.sin(player.getYRot() * ((float) Math.PI / 180F)) * knockback * 0.5F * knockbackMult, 0.1D, Mth.cos(player.getYRot() * ((float) Math.PI / 180F)) * knockback * 0.5F * knockbackMult);
-                    }
-
-                    player.setDeltaMovement(player.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
-                    player.setSprinting(false);
-                }
-
-                if (targetEntity instanceof ServerPlayer && targetEntity.hurtMarked) {
-                    ((ServerPlayer) targetEntity).connection.send(new ClientboundSetEntityMotionPacket(targetEntity));
-                    targetEntity.hurtMarked = false;
-                    targetEntity.setDeltaMovement(targetMovement);
-                }
-
-                player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, player.getSoundSource(), 1.0F, 1.0F);
-
-                if (enchantedDamage > 0) {
-                    player.magicCrit(targetEntity);
-                }
-
-                player.setLastHurtMob(targetEntity);
-                Entity entity = targetEntity;
-
-                if (targetEntity instanceof PartEntity<?> part) {
-                    entity = part.getParent();
-                }
-
-                ItemStack copy = newStack.copy();
-                boolean hurtEnemy = false;
-
-                if (level() instanceof ServerLevel serverLevel) {
-                    if (entity instanceof LivingEntity livingEntity) {
-                        hurtEnemy = newStack.hurtEnemy(livingEntity, player);
-                    }
-
-                    EnchantmentHelper.doPostAttackEffects(serverLevel, targetEntity, damageSource);
-                }
-
-                if (!level().isClientSide() && !copy.isEmpty() && entity instanceof LivingEntity livingEntity) {
-                    if (hurtEnemy) {
-                        newStack.postHurtEnemy(livingEntity, player);
-                    }
-
-                    if (newStack.isEmpty()) {
-                        EventHooks.onPlayerDestroyItem(player, copy, InteractionHand.MAIN_HAND);
-                        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                        player.level().playSound((Player)null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, player.getSoundSource(), 1.0F, 1.0F);
+                        if (flag4) {
+                            targetEntity.clearFire();
+                        }
                     }
                 }
 
-                if (targetEntity instanceof LivingEntity livingTarget) {
-                    float healthDifference = targetHealth - livingTarget.getHealth();
-                    player.awardStat(Stats.DAMAGE_DEALT, Math.round(healthDifference * 10));
-
-                    if (level() instanceof ServerLevel serverLevel && healthDifference > 2) {
-                        int particleCount = (int) ((double) healthDifference * 0.5);
-                        serverLevel.sendParticles(ParticleTypes.DAMAGE_INDICATOR, targetEntity.getX(), targetEntity.getY(0.5), targetEntity.getZ(), particleCount, 0.1, 0.0, 0.1, 0.2);
-                    }
-                }
-
-                player.causeFoodExhaustion(0.1F);
-            } else {
-                player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, player.getSoundSource(), 1.0F, 1.0F);
             }
         }
-
-        resetModifiers(player, newStack, oldStack);
         player.setItemInHand(InteractionHand.MAIN_HAND, oldStack);
-    }
-
-    private void resetModifiers(Player player, ItemStack removeFrom, ItemStack addFrom) {
-        removeFrom.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
-            AttributeInstance instance = player.getAttribute(attribute);
-
-            if (instance != null && instance.hasModifier(modifier.id())) {
-                instance.removeModifier(modifier);
-            }
-        });
-
-        addFrom.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
-            AttributeInstance instance = player.getAttribute(attribute);
-
-            if (instance != null && !instance.hasModifier(modifier.id())) {
-                instance.addTransientModifier(modifier);
-            }
-        });
+        player.getAttributes().addTransientAttributeModifiers(oldStack.getAttributeModifiers(EquipmentSlot.MAINHAND));
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        setAxeStack(ItemStack.parseOptional(registryAccess(), compound.getCompound("axe_stack")));
+        setAxeStack(ItemStack.of(compound.getCompound("axe_stack")));
         setVertical(compound.getBoolean("vertical"));
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        compound.put("axe_stack", getAxeStack().save(registryAccess(), new CompoundTag()));
+        compound.put("axe_stack", getAxeStack().save(new CompoundTag()));
         compound.putBoolean("vertical", getVertical());
     }
 }

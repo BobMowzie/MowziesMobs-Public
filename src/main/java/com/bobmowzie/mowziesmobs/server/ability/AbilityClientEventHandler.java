@@ -1,18 +1,26 @@
 package com.bobmowzie.mowziesmobs.server.ability;
 
-import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-public class AbilityClientEventHandler {
-    public static void onRenderTick(RenderFrameEvent.Post event) {
+@OnlyIn(Dist.CLIENT)
+public enum AbilityClientEventHandler {
+    INSTANCE;
+
+    @SubscribeEvent
+    public void onRenderTick(TickEvent.RenderTickEvent event) {
         Player player = Minecraft.getInstance().player;
         if (player != null) {
-            AbilityData data = DataHandler.getData(player, DataHandler.ABILITY_DATA);
-            for (Ability<?> ability : data.getAbilities()) {
-                ability.onRenderTick(event);
+            AbilityCapability.IAbilityCapability abilityCapability = AbilityHandler.INSTANCE.getAbilityCapability(player);
+            if (abilityCapability != null) {
+                for (Ability ability : abilityCapability.getAbilities()) {
+                    ability.onRenderTick(event);
+                }
             }
         }
     }

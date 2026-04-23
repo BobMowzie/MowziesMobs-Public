@@ -1,20 +1,22 @@
 package com.bobmowzie.mowziesmobs.server.ability;
 
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.*;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.geomancy.*;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.heliomancy.SolarBeamAbility;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.heliomancy.SolarFlareAbility;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.heliomancy.SunstrikeAbility;
 import com.bobmowzie.mowziesmobs.server.ability.abilities.player.heliomancy.SupernovaAbility;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
+import com.bobmowzie.mowziesmobs.server.capability.AbilityCapability;
+import com.bobmowzie.mowziesmobs.server.capability.CapabilityHandler;
 import com.bobmowzie.mowziesmobs.server.message.MessageInterruptAbility;
 import com.bobmowzie.mowziesmobs.server.message.MessageJumpToAbilitySectionServerToClient;
 import com.bobmowzie.mowziesmobs.server.message.MessagePlayerUseAbility;
 import com.bobmowzie.mowziesmobs.server.message.MessageUseAbility;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.annotation.Nullable;
@@ -39,7 +41,7 @@ public enum AbilityHandler {
     public static final AbilityType<Player, FissureAbility> FISSURE_ABILITY = new AbilityType<>("fissure", FissureAbility::new);
 
     public static final AbilityType<Player, SimplePlayerAnimationAbility> BACKSTAB_ABILITY = new AbilityType<>("backstab", (type, player) ->
-            new SimplePlayerAnimationAbility(type, player, "backstab", 12, false, true, true)
+            new SimplePlayerAnimationAbility(type, (Player) player, "backstab", 12, false, true, true)
     );
 
     public static final AbilityType<Player, RockSlingAbility> ROCK_SLING = new AbilityType<>("rock_sling", RockSlingAbility::new);
@@ -64,19 +66,30 @@ public enum AbilityHandler {
     };
 
     @Nullable
-    public Ability<?> getAbility(LivingEntity entity, AbilityType<?, ?> abilityType) {
-        return DataHandler.getData(entity, DataHandler.ABILITY_DATA).getAbilityMap().get(abilityType);
+    public AbilityCapability.IAbilityCapability getAbilityCapability(LivingEntity entity) {
+        return CapabilityHandler.getCapability(entity, CapabilityHandler.ABILITY_CAPABILITY);
+    }
+
+    @Nullable
+    public Ability getAbility(LivingEntity entity, AbilityType<?, ?> abilityType) {
+        AbilityCapability.IAbilityCapability abilityCapability = getAbilityCapability(entity);
+        if (abilityCapability != null) {
+            return abilityCapability.getAbilityMap().get(abilityType);
+        }
+        return null;
     }
 
     public <T extends LivingEntity> void sendAbilityMessage(T entity, AbilityType<?, ?> abilityType) {
         if (entity.level().isClientSide) {
             return;
         }
-        AbilityData data = DataHandler.getData(entity, DataHandler.ABILITY_DATA);
-        Ability<?> instance = data.getAbilityMap().get(abilityType);
-        if (instance != null && instance.canUse()) {
-            data.activateAbility(entity, abilityType);
-            PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new MessageUseAbility(entity.getId(), ArrayUtils.indexOf(data.getAbilityTypesOnEntity(entity), abilityType)));
+        AbilityCapability.IAbilityCapability abilityCapability = getAbilityCapability(entity);
+        if (abilityCapability != null) {
+            Ability instance = abilityCapability.getAbilityMap().get(abilityType);
+            if (instance != null && instance.canUse()) {
+                abilityCapability.activateAbility(entity, abilityType);
+                MowziesMobs.NETWORK.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), new MessageUseAbility(entity.getId(), ArrayUtils.indexOf(abilityCapability.getAbilityTypesOnEntity(entity), abilityType)));
+            }
         }
     }
 
@@ -84,20 +97,24 @@ public enum AbilityHandler {
         if (entity.level().isClientSide) {
             return;
         }
-        AbilityData data = DataHandler.getData(entity, DataHandler.ABILITY_DATA);
-        Ability<?> instance = data.getAbilityMap().get(abilityType);
-        if (instance.isUsing()) {
-            instance.interrupt();
-            PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new MessageInterruptAbility(entity.getId(), ArrayUtils.indexOf(data.getAbilityTypesOnEntity(entity), abilityType)));
+        AbilityCapability.IAbilityCapability abilityCapability = getAbilityCapability(entity);
+        if (abilityCapability != null) {
+            Ability instance = abilityCapability.getAbilityMap().get(abilityType);
+            if (instance.isUsing()) {
+                instance.interrupt();
+                MowziesMobs.NETWORK.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), new MessageInterruptAbility(entity.getId(), ArrayUtils.indexOf(abilityCapability.getAbilityTypesOnEntity(entity), abilityType)));
+            }
         }
     }
 
     public <T extends Player> void sendPlayerTryAbilityMessage(T entity, AbilityType<?, ?> ability) {
-        if (!entity.level().isClientSide()) {
+        if (!(entity.level().isClientSide && entity instanceof LocalPlayer)) {
             return;
         }
-
-        PacketDistributor.sendToServer(new MessagePlayerUseAbility(ArrayUtils.indexOf(DataHandler.getData(entity, DataHandler.ABILITY_DATA).getAbilityTypesOnEntity(entity), ability)));
+        AbilityCapability.IAbilityCapability abilityCapability = getAbilityCapability(entity);
+        if (abilityCapability != null) {
+            MowziesMobs.NETWORK.sendToServer(new MessagePlayerUseAbility(ArrayUtils.indexOf(abilityCapability.getAbilityTypesOnEntity(entity), ability)));
+        }
     }
 
 
@@ -105,13 +122,13 @@ public enum AbilityHandler {
         if (entity.level().isClientSide) {
             return;
         }
-
-        AbilityData data = DataHandler.getData(entity, DataHandler.ABILITY_DATA);
-        Ability<?> instance = data.getAbilityMap().get(abilityType);
-
-        if (instance.isUsing()) {
-            instance.jumpToSection(sectionIndex);
-            PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new MessageJumpToAbilitySectionServerToClient(entity.getId(), ArrayUtils.indexOf(data.getAbilityTypesOnEntity(entity), abilityType), sectionIndex));
+        AbilityCapability.IAbilityCapability abilityCapability = getAbilityCapability(entity);
+        if (abilityCapability != null) {
+            Ability instance = abilityCapability.getAbilityMap().get(abilityType);
+            if (instance.isUsing()) {
+                instance.jumpToSection(sectionIndex);
+                MowziesMobs.NETWORK.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), new MessageJumpToAbilitySectionServerToClient(entity.getId(), ArrayUtils.indexOf(abilityCapability.getAbilityTypesOnEntity(entity), abilityType), sectionIndex));
+            }
         }
     }
 }

@@ -1,22 +1,27 @@
 package com.bobmowzie.mowziesmobs.server.world;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.world.feature.structure.StructureTypeHandler;
 import com.bobmowzie.mowziesmobs.server.world.spawn.SpawnHandler;
-import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
-import net.neoforged.neoforge.common.world.BiomeModifier;
-import net.neoforged.neoforge.common.world.ModifiableBiomeInfo;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.minecraftforge.common.world.BiomeModifier;
+import net.minecraftforge.common.world.ModifiableBiomeInfo;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
-public class MobSpawnBiomeModifier implements BiomeModifier {
-    private static final DeferredHolder<MapCodec<? extends BiomeModifier>, MapCodec<? extends BiomeModifier>> SERIALIZER = DeferredHolder.create(NeoForgeRegistries.BIOME_MODIFIER_SERIALIZERS.key(), ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "mowzie_mob_spawns"));
+public class MobSpawnBiomeModifier implements BiomeModifier 
+{
+    private static final RegistryObject<Codec<? extends BiomeModifier>> SERIALIZER = RegistryObject.create(new ResourceLocation(MowziesMobs.MODID, "mowzie_mob_spawns"), ForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, MowziesMobs.MODID);
+
+    public MobSpawnBiomeModifier() {
+    	
+    }
 
     @Override
-    public void modify(Holder<Biome> biome, BiomeModifier.Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
+    public void modify(Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
         if (phase == Phase.ADD) {
             SpawnHandler.addBiomeSpawns(biome, builder);
             StructureTypeHandler.addBiomeSpawns(biome);
@@ -24,11 +29,11 @@ public class MobSpawnBiomeModifier implements BiomeModifier {
     }
 
     @Override
-    public MapCodec<? extends BiomeModifier> codec() {
+    public Codec<? extends BiomeModifier> codec() {
         return SERIALIZER.get();
     }
 
-    public static MapCodec<MobSpawnBiomeModifier> makeCodec() {
-        return MapCodec.unit(MobSpawnBiomeModifier::new);
+    public static Codec<MobSpawnBiomeModifier> makeCodec() {
+        return Codec.unit(MobSpawnBiomeModifier::new);
     }
 }

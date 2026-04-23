@@ -5,6 +5,8 @@ import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieEntity;
 import com.bobmowzie.mowziesmobs.server.entity.umvuthana.EntityUmvuthi;
 import com.bobmowzie.mowziesmobs.server.item.ItemHandler;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
@@ -20,7 +22,6 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.event.EventHooks;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -119,16 +120,16 @@ public class EntityElokosaHowler extends EntityElokosa {
 
     @Nullable
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData, @Nullable CompoundTag dataTag) {
         int size = random.nextInt(2) + 2;
         float theta = (2 * (float) Math.PI / size);
         for (int i = 0; i <= size; i++) {
             EntityElokosaFollowerToHowler packMember = new EntityElokosaFollowerToHowler(EntityHandler.ELOKOSA_FOLLOWER_TO_HOWLER.get(), this.level(), this);
             packMember.setPos(getX() + 0.1 * Mth.cos(theta * i), getY(), getZ() + 0.1 * Mth.sin(theta * i));
             world.addFreshEntity(packMember);
-            packMember.finalizeSpawn(world, difficulty, reason, livingData);
+            packMember.finalizeSpawn(world, difficulty, reason, livingData, dataTag);
         }
-        return super.finalizeSpawn(world, difficulty, reason, livingData);
+        return super.finalizeSpawn(world, difficulty, reason, livingData, dataTag);
     }
 
     @Override
@@ -144,11 +145,21 @@ public class EntityElokosaHowler extends EntityElokosa {
 
     @Override
     public void checkDespawn() {
-        if (EventHooks.checkMobDespawn(this)) return;
         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
             this.discard();
         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
             Entity entity = this.level().getNearestPlayer(this, -1);
+            net.minecraftforge.eventbus.api.Event.Result result = net.minecraftforge.event.ForgeEventFactory.canEntityDespawn(this, (ServerLevel) this.level());
+            if (result == net.minecraftforge.eventbus.api.Event.Result.DENY) {
+                noActionTime = 0;
+                entity = null;
+            } else if (result == net.minecraftforge.eventbus.api.Event.Result.ALLOW) {
+                if (pack != null) {
+                    pack.forEach(EntityElokosaFollowerToHowler::setShouldSetDead);
+                }
+                this.discard();
+                entity = null;
+            }
 
             if (entity != null) {
                 double distance = entity.distanceToSqr(this);

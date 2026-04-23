@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelAxeAttack;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityAxeAttack;
@@ -15,12 +15,15 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+@OnlyIn(Dist.CLIENT)
 public class RenderAxeAttack extends EntityRenderer<EntityAxeAttack> {
-    public static ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/wroughtnaut.png");
+    public static ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/wroughtnaut.png");
 
     ModelAxeAttack model;
 
@@ -49,7 +52,7 @@ public class RenderAxeAttack extends EntityRenderer<EntityAxeAttack> {
                 matrixStackIn.mulPose(new Quaternionf(new AxisAngle4f(player.getYRot() * (float) Math.PI/180f, new Vector3f(0, -1, 0))));
                 VertexConsumer ivertexbuilder = bufferIn.getBuffer(RenderType.entitySolid(TEXTURE));
                 model.setupAnim(axe, 0, 0, axe.tickCount + delta, 0, 0);
-                model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, -1);
+                model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
                 matrixStackIn.popPose();
             }
         }

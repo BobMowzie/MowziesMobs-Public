@@ -16,8 +16,6 @@ import com.bobmowzie.mowziesmobs.server.ai.Cooldown;
 import com.bobmowzie.mowziesmobs.server.ai.ElokosaLeapGoal;
 import com.bobmowzie.mowziesmobs.server.ai.MMAIAvoidEntity;
 import com.bobmowzie.mowziesmobs.server.ai.UseAbilityAI;
-import com.bobmowzie.mowziesmobs.server.capability.AbilityData;
-import com.bobmowzie.mowziesmobs.server.capability.DataHandler;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieEntity;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieGeckoEntity;
@@ -40,7 +38,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.BlockTags;
@@ -68,17 +65,17 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
-import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.common.ForgeMod;
 import org.joml.Vector3d;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animation.*;
-import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.core.animation.*;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.object.PlayState;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -190,13 +187,13 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
     protected MowzieAnimationController<MowzieGeckoEntity> walkRunController = new MowzieAnimationController<>(this, "walk_run_controller", 4, this::predicateWalkRun, 0);
     protected MowzieAnimationController<MowzieGeckoEntity> jawScreamController = new MowzieAnimationController<>(this, "jaw_scream_controller", 0, this::predicateJawScream, 0);
 
-    private static final ResourceLocation DAY_SPEED_MODIFIER_ID = ResourceLocation.withDefaultNamespace("day_form_speed");
+    private static final UUID DAY_SPEED_MODIFIER_UUID = UUID.fromString("a3b1c2d4-1111-4e5f-b6a7-123456789abc");
     private static final AttributeModifier SPEED_MODIFIER_DAY = new AttributeModifier(
-            DAY_SPEED_MODIFIER_ID, -0.03F, AttributeModifier.Operation.ADD_VALUE
+            DAY_SPEED_MODIFIER_UUID, "Day form speed", -0.03F, AttributeModifier.Operation.ADDITION
     );
-    private static final ResourceLocation DAY_HEALTH_MODIFIER_ID = ResourceLocation.withDefaultNamespace("day_form_health");
+    private static final UUID DAY_HEALTH_MODIFIER_UUID = UUID.fromString("b4c2d3e5-2222-4f6a-c7b8-234567890bcd");
     private static final AttributeModifier HEALTH_MODIFIER_DAY = new AttributeModifier(
-            DAY_HEALTH_MODIFIER_ID, -14F, AttributeModifier.Operation.ADD_VALUE
+            DAY_HEALTH_MODIFIER_UUID, "Day form health", -14F, AttributeModifier.Operation.ADDITION
     );
 
     public GeckoDynamicChain tailChain;
@@ -343,10 +340,10 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(CLING_DIRECTION, Direction.DOWN.get3DDataValue());
-        builder.define(NIGHT_FORM, false);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(CLING_DIRECTION, Direction.DOWN.get3DDataValue());
+        this.entityData.define(NIGHT_FORM, false);
     }
 
     @Override
@@ -430,9 +427,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
                 .add(Attributes.MOVEMENT_SPEED, 0.2f)
                 .add(Attributes.FOLLOW_RANGE, 32)
                 .add(Attributes.JUMP_STRENGTH, 0.42F)
-                .add(Attributes.GRAVITY, 0.095F)
-                .add(Attributes.STEP_HEIGHT, 1)
-                .add(Attributes.WATER_MOVEMENT_EFFICIENCY, 0.5);
+                .add(ForgeMod.ENTITY_GRAVITY.get(), 0.095F);
     }
 
     @Override
@@ -489,6 +484,12 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
     }
 
     @Override
+    protected void tickDeath() {
+        super.tickDeath();
+        travel(Vec3.ZERO);
+    }
+
+    @Override
     public void tick() {
         if (getClingDirection() != Direction.DOWN) {
             setDeltaMovement(0, 0, 0);
@@ -523,10 +524,10 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
             boolean isDay = isDayTime(level());
             boolean isNewMoon = level().getMoonPhase() == 4;
             if (!isDay && !isNewMoon) {
-                addEffect(new MobEffectInstance(EffectHandler.MOONS_CURSE, 10, 0, false, false));
+                addEffect(new MobEffectInstance(EffectHandler.MOONS_CURSE.get(), 10, 0, false, false));
             }
             else {
-                removeEffect(EffectHandler.MOONS_CURSE);
+                removeEffect(EffectHandler.MOONS_CURSE.get());
             }
         }
         else {
@@ -573,7 +574,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
         // Drool particles
         if (getNightForm() && level().isClientSide()) {
             if (random.nextInt(15) == 0) {
-                AdvancedParticleBase.spawnParticle(level(), ParticleHandler.PIXEL, getX(), getY(), getZ(), 0, 0, 0, true, 0, 0, 0, 0, 0F, 1, 1, 1, 0.4, 1, 80, false, true, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(level(), ParticleHandler.PIXEL.get(), getX(), getY(), getZ(), 0, 0, 0, true, 0, 0, 0, 0, 0F, 1, 1, 1, 0.4, 1, 80, false, true, new ParticleComponent[]{
                         new ParticleComponent.Gravity(0.5f),
                         new ParticleComponent.PinLocation(droolPositions.get(random.nextInt(droolPositions.size())), 20).setVelocityOnRelease(0, -0.08f, 0),
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.KeyTrack(
@@ -623,7 +624,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
     }
 
     private boolean canContinueClinging() {
-        BlockState blockstate = getInBlockState();
+        BlockState blockstate = getFeetBlockState();
         if (blockstate.isLadder(level(), blockPosition(), this)) {
             return true;
         }
@@ -686,7 +687,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
 
     public static boolean isChosenBlockOkay(PathfinderMob mob, BlockPos blockpos) {
         if (!mob.level().getBlockState(blockpos).isSolid()) return false;
-        if (mob.distanceToSqr(blockpos.getBottomCenter()) < 6) return false;
+        if (mob.distanceToSqr(Vec3.atBottomCenterOf(blockpos)) < 6) return false;
         PathNavigation pathnavigation = mob.getNavigation();
         Path path = pathnavigation.createPath(blockpos, 0, 2);
         if (path == null || path.getDistToTarget() > 5) {
@@ -716,7 +717,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
     
     public boolean checkForCling(int ticksInAir) {
         if (!onGround() && ticksInAir > 1 && (getDeltaMovement().y() < 0 || jumpGoalPos == null || distanceToSqr(jumpGoalPos) < 2)) {
-            BlockState blockstate = getInBlockState();
+            BlockState blockstate = getFeetBlockState();
             if (blockstate.isLadder(level(), blockPosition(), this)) {
                 setClingDirection(getDirection());
             } else {
@@ -782,9 +783,9 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
     }
 
     @Override
-    protected EntityDimensions getDefaultDimensions(Pose pose) {
+    public EntityDimensions getDimensions(Pose pose) {
         if (!getNightForm()) return DAY_FORM_DIMENSIONS;
-        return pose == Pose.LONG_JUMPING ? LONG_JUMP_DIMENSIONS : super.getDefaultDimensions(pose);
+        return pose == Pose.LONG_JUMPING ? LONG_JUMP_DIMENSIONS : super.getDimensions(pose);
     }
 
     public float getTreeTargetValue(BlockPos pos) {
@@ -809,26 +810,26 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
         getEntityData().set(NIGHT_FORM, nightForm);
 
         if (nightForm) {
-            getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(DAY_SPEED_MODIFIER_ID);
+            getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(DAY_SPEED_MODIFIER_UUID);
             float healthFraction = getHealthRatio();
-            getAttribute(Attributes.MAX_HEALTH).removeModifier(DAY_HEALTH_MODIFIER_ID);
+            getAttribute(Attributes.MAX_HEALTH).removeModifier(DAY_HEALTH_MODIFIER_UUID);
             setHealth(getMaxHealth() * healthFraction);
             setPose(Pose.STANDING);
             refreshDimensions();
         }
         else {
-            if (!getAttribute(Attributes.MOVEMENT_SPEED).hasModifier(DAY_SPEED_MODIFIER_ID)) {
+            if (getAttribute(Attributes.MOVEMENT_SPEED).getModifier(DAY_SPEED_MODIFIER_UUID) == null) {
                 getAttribute(Attributes.MOVEMENT_SPEED).addTransientModifier(SPEED_MODIFIER_DAY);
             }
             float healthFraction = getHealthRatio();
-            if (!getAttribute(Attributes.MAX_HEALTH).hasModifier(DAY_HEALTH_MODIFIER_ID)) {
+            if (getAttribute(Attributes.MAX_HEALTH).getModifier(DAY_HEALTH_MODIFIER_UUID) == null) {
                 getAttribute(Attributes.MAX_HEALTH).addTransientModifier(HEALTH_MODIFIER_DAY);
             }
             setHealth(getMaxHealth() * healthFraction);
             setPose(Pose.CROUCHING);
             refreshDimensions();
             if (getClingDirection() == Direction.UP) {
-                float heightDiff = this.getType().getDimensions().height() - DAY_FORM_DIMENSIONS.height();
+                float heightDiff = this.getType().getDimensions().height - DAY_FORM_DIMENSIONS.height;
                 setPos(getX(), getY() + heightDiff, getZ());
             }
         }
@@ -965,13 +966,13 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
     }
 
     @Override
-    public @org.jetbrains.annotations.Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @org.jetbrains.annotations.Nullable SpawnGroupData spawnGroupData) {
+    public @org.jetbrains.annotations.Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @org.jetbrains.annotations.Nullable SpawnGroupData spawnGroupData, @org.jetbrains.annotations.Nullable CompoundTag dataTag) {
         boolean isDay = isDayTime(level());;
         boolean isNewMoon = level().getMoonPhase() == 4;
         if (!isDay && !isNewMoon) {
-            addEffect(new MobEffectInstance(EffectHandler.MOONS_CURSE, 10, 0, false, false));
+            addEffect(new MobEffectInstance(EffectHandler.MOONS_CURSE.get(), 10, 0, false, false));
         }
-        setNightForm(hasEffect(EffectHandler.MOONS_CURSE));
+        setNightForm(hasEffect(EffectHandler.MOONS_CURSE.get()));
 
         if (spawnType == MobSpawnType.SPAWN_EGG) {
             // Try to guess which player spawned it, use the vector to them to see if it should spawn clinging
@@ -991,11 +992,11 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
                 checkForClingInDirection(this.position().subtract(closestPlayer.position()).normalize());
             }
         }
-        return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
+        return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, dataTag);
     }
 
     @Override
-    protected ResourceKey<LootTable> getDefaultLootTable() {
+    protected ResourceLocation getDefaultLootTable() {
         return LootTableHandler.ELOKOSA;
     }
 
@@ -1194,7 +1195,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
         float x = (float) (elokosa.getX() + elokosa.getRandom().nextGaussian() * (bounds.maxX - bounds.minX)/3.0);
         float y = (float) (elokosa.getY() + elokosa.getRandom().nextGaussian() * (bounds.maxY - bounds.minY)/3.0 + elokosa.getBbHeight()/heightDivider);
         float z = (float) (elokosa.getZ() + elokosa.getRandom().nextGaussian() * (bounds.maxZ - bounds.minZ)/3.0);
-        AdvancedParticleBase.spawnParticle(elokosa.level(), ParticleHandler.PIXEL, x, y, z, 0, 0.05, 0, true, 0, 0 ,0, 0, 1f, 7d / 256d, 7d / 256d, 7d / 256d, 1, 0.9, 25 + elokosa.getRandom().nextFloat() * 10, true, true, new ParticleComponent[]{
+        AdvancedParticleBase.spawnParticle(elokosa.level(), ParticleHandler.PIXEL.get(), x, y, z, 0, 0.05, 0, true, 0, 0 ,0, 0, 1f, 7d / 256d, 7d / 256d, 7d / 256d, 1, 0.9, 25 + elokosa.getRandom().nextFloat() * 10, true, true, new ParticleComponent[]{
                 new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.KeyTrack(
                         new float[]{0, 2.5f, 0},
                         new float[]{0, 0.1f, 1}
@@ -1376,7 +1377,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
         }
 
         @Override
-        public boolean canBeCanceledByAbility(Ability<?> ability) {
+        public boolean canBeCanceledByAbility(Ability ability) {
             return ability.getAbilityType() == SCYTHE_ATTACK_ABILITY;
         }
     }
@@ -1551,7 +1552,6 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
             }
             getUser().stopClinging();
             playAnimation(DEATH_START);
-            getUser().setDeltaMovement(getUser().getForward().multiply(1, 0, 1).normalize().scale(-0.75).add(0, 0.65, 0).scale(4));
             getUser().playHurtSound(getUser().damageSources().generic());
         }
 
@@ -1559,6 +1559,9 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
         public void tickUsing() {
             super.tickUsing();
             if (getTicksInUse() == 0) {
+                getUser().setDeltaMovement(getUser().getForward().multiply(1, 0, 1).normalize().scale(-0.75).add(0, 0.65, 0).scale(2.4));
+            }
+            if (getTicksInUse() == 1) {
                 getUser().setDeltaMovement(getUser().getForward().multiply(1, 0, 1).normalize().scale(-0.75).add(0, 0.2, 0).scale(0.1));
             }
             if (getCurrentSection().sectionType == AbilitySection.AbilitySectionType.ACTIVE) {
@@ -1640,7 +1643,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
         }
 
         @Override
-        public boolean canBeCanceledByAbility(Ability<?> ability) {
+        public boolean canBeCanceledByAbility(Ability ability) {
             return true;
         }
 
@@ -1664,7 +1667,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
         protected int scoreJump(BlockPos pos, Direction dir) {
             if (elokosa instanceof EntityElokosaFollower<? extends LivingEntity> elokosaFollower && elokosaFollower.getLeader() != null) {
                 LivingEntity leader = elokosaFollower.getLeader();
-                Vec3 vecBetween = leader.position().subtract(pos.getBottomCenter());
+                Vec3 vecBetween = leader.position().subtract(Vec3.atBottomCenterOf(pos));
                 double distance = vecBetween.lengthSqr();
                 int distScore = (int) Mth.clampedMap(distance, 10 * 10, 25 * 25, 30, 0);
                 return super.scoreJump(pos, dir) + distScore;
@@ -1691,7 +1694,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
                 return super.scoreJump(pos, dir);
             }
             else {
-                Vec3 vecBetween = elokosa.getTarget().position().add(0, 12, 0).subtract(pos.getBottomCenter());
+                Vec3 vecBetween = elokosa.getTarget().position().add(0, 12, 0).subtract(Vec3.atBottomCenterOf(pos));
                 double distance = vecBetween.lengthSqr();
                 int distScore = (int) Mth.clampedMap(distance, 10 * 10, 25 * 25, 30, 0);
                 return super.scoreJump(pos, dir) + distScore;
@@ -1754,7 +1757,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
                 return super.scoreJump(pos, dir);
             }
             else {
-                Vec3 vecBetween = elokosa.getTarget().position().add(0, 12, 0).subtract(pos.getBottomCenter());
+                Vec3 vecBetween = elokosa.getTarget().position().add(0, 12, 0).subtract(Vec3.atBottomCenterOf(pos));
                 double distance = vecBetween.lengthSqr();
                 int distScore = (int) Mth.clampedMap(distance, 10 * 10, 25 * 25, 30, 0);
                 return super.scoreJump(pos, dir) + distScore;
@@ -1801,7 +1804,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
             }
             else {
                 LivingEntity entityEvading = elokosa.fleeGoal.getEntityEvading();
-                Vec3 vecBetween = entityEvading.position().subtract(pos.getBottomCenter());
+                Vec3 vecBetween = entityEvading.position().subtract(Vec3.atBottomCenterOf(pos));
                 double distance = vecBetween.lengthSqr();
                 int distScore = (int) Mth.clampedMap(distance, 7 * 7, 25 * 25, 0, 30);
                 return super.scoreJump(pos, dir) + distScore;
@@ -1854,7 +1857,7 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
             if (elokosa.preventTransform) {
                 return false;
             }
-            if (elokosa.hasEffect(EffectHandler.MOONS_CURSE) == !elokosa.getNightForm()) {
+            if (elokosa.hasEffect(EffectHandler.MOONS_CURSE.get()) == !elokosa.getNightForm()) {
                 if (randomDelay == -1) randomDelay = elokosa.random.nextInt(5) + 5;
                 if (randomDelay == 0) {
                     randomDelay = -1;

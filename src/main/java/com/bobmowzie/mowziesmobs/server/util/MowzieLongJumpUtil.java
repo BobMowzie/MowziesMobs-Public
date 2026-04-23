@@ -4,11 +4,15 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.ForgeMod;
 
 import java.util.Optional;
 
 public final class MowzieLongJumpUtil {
+    private static final double GRAVITY = 0.08;
+
     public static Optional<Vec3> calculateJumpVectorForAngle(Mob mob, Vec3 target, float maxJumpVelocity, int angle, boolean requireClearTransition, float clearTransitionFraction) {
         Vec3 vec3 = mob.position();
         Vec3 vec31 = new Vec3(target.x - vec3.x, 0.0, target.z - vec3.z).normalize().scale(0.5);
@@ -19,7 +23,11 @@ public final class MowzieLongJumpUtil {
         double d1 = vec33.subtract(0.0, vec33.y, 0.0).lengthSqr();
         double d2 = Math.sqrt(d1);
         double d3 = vec33.y;
-        double d4 = mob.getGravity();
+        double d4 = 0.08;
+        AttributeInstance gravityAttribute = mob.getAttribute(ForgeMod.ENTITY_GRAVITY.get());
+        if (gravityAttribute != null) {
+            d4 = gravityAttribute.getValue();
+        }
         double d5 = Math.sin((double)(2.0F * f));
         double d6 = Math.pow(Math.cos((double)f), 2.0);
         double d7 = Math.sin((double)f);
@@ -63,14 +71,13 @@ public final class MowzieLongJumpUtil {
 
     private static boolean isClearTransition(Mob mob, EntityDimensions dimensions, Vec3 startPos, Vec3 endPos) {
         Vec3 vec3 = endPos.subtract(startPos);
-        double d0 = (double)Math.min(dimensions.width(), dimensions.height());
+        double d0 = (double)Math.min(dimensions.width, dimensions.height);
         int i = Mth.ceil(vec3.length() / d0);
         Vec3 vec31 = vec3.normalize();
         Vec3 vec32 = startPos;
 
         for (int j = 0; j < i; j++) {
             vec32 = j == i - 1 ? endPos : vec32.add(vec31.scale(d0 * 0.9F));
-//            EntityCameraShake.cameraShake(mob.level(), vec32, 0, 0, 200, 0);
             if (!mob.level().noCollision(mob, dimensions.makeBoundingBox(vec32))) {
                 return false;
             }

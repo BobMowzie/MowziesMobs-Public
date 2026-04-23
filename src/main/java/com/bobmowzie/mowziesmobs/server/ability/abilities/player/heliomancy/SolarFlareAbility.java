@@ -17,9 +17,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import software.bernie.geckolib.animation.RawAnimation;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class SolarFlareAbility extends HeliomancyAbilityBase {
     @Override
     public boolean canUse() {
         if (getUser() == null || !getUser().getInventory().getSelected().isEmpty()) return false;
-        return getUser().hasEffect(EffectHandler.SUNS_BLESSING) && super.canUse();
+        return getUser().hasEffect(EffectHandler.SUNS_BLESSING.get()) && super.canUse();
     }
 
     @Override
@@ -66,7 +66,7 @@ public class SolarFlareAbility extends HeliomancyAbilityBase {
                 double ox = radius * Math.sin(yaw) * Math.sin(pitch);
                 double oy = radius * Math.cos(pitch);
                 double oz = radius * Math.cos(yaw) * Math.sin(pitch);
-                getLevel().addParticle(ParticleOrb.Data.create((float) getUser().getX(), (float) getUser().getY() + getUser().getBbHeight() / 2f, (float) getUser().getZ(), 6), getUser().getX() + ox, getUser().getY() + getUser().getBbHeight() / 2f + oy, getUser().getZ() + oz, 0, 0, 0);
+                getLevel().addParticle(new ParticleOrb.OrbData((float) getUser().getX(), (float) getUser().getY() + getUser().getBbHeight() / 2f, (float) getUser().getZ(), 6), getUser().getX() + ox, getUser().getY() + getUser().getBbHeight() / 2f + oy, getUser().getZ() + oz, 0, 0, 0);
             }
         }
 

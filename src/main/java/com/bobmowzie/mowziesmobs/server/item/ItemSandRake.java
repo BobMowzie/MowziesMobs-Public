@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -19,8 +18,9 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ItemSandRake extends Item {
@@ -45,11 +45,11 @@ public class ItemSandRake extends Item {
             if (player != null) {
                 BlockPlaceContext blockPlaceContext = new BlockPlaceContext(player, context.getHand(), context.getItemInHand(), new BlockHitResult(context.getClickLocation(), context.getClickedFace(), context.getClickedPos(), context.isInside()));
                 RakedSandBlock origBlock = null;
-                if (blockstate.is(Tags.Blocks.SANDS_COLORLESS)) {
-                    origBlock = (RakedSandBlock) BlockHandler.RAKED_SAND.value();
+                if (blockstate.is(Tags.Blocks.SAND_COLORLESS)) {
+                    origBlock = (RakedSandBlock) BlockHandler.RAKED_SAND.get();
                 }
-                else if (blockstate.is(Tags.Blocks.SANDS_RED)) {
-                    origBlock = (RakedSandBlock) BlockHandler.RED_RAKED_SAND.value();
+                else if (blockstate.is(Tags.Blocks.SAND_RED)) {
+                    origBlock = (RakedSandBlock) BlockHandler.RED_RAKED_SAND.get();
                 }
 
                 if (origBlock != null) {
@@ -60,7 +60,9 @@ public class ItemSandRake extends Item {
                             level.setBlock(blockpos, blockState, 11);
                             origBlock.onPlace(blockState, level, blockpos, blockstate, false);
                             origBlock.updateState(blockState, level, blockpos, false);
-                            context.getItemInHand().hurtAndBreak(1, player, LivingEntity.getSlotForHand(context.getHand()));
+                            context.getItemInHand().hurtAndBreak(1, player, (p_43122_) -> {
+                                p_43122_.broadcastBreakEvent(context.getHand());
+                            });
                         }
                     }
 
@@ -74,8 +76,8 @@ public class ItemSandRake extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        super.appendHoverText(stack, context, tooltip, flagIn);
+    public void appendHoverText(ItemStack stack, @Nullable Level worldIn, List<Component> tooltip, TooltipFlag flagIn) {
+        super.appendHoverText(stack, worldIn, tooltip, flagIn);
         tooltip.add(Component.translatable(getDescriptionId() + ".text.0").setStyle(ItemHandler.TOOLTIP_STYLE));
     }
 }

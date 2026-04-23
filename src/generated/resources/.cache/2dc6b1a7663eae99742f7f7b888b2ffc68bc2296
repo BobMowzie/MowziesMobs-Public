@@ -1,9 +1,0 @@
-// 1.21.1	2026-02-20T00:19:59.7161391	Tags for minecraft:entity_type mod id mowziesmobs
-b165e09609dd00bd3830b7ce4429844556da7743 data/c/tags/entity_type/bosses.json
-b165e09609dd00bd3830b7ce4429844556da7743 data/c/tags/entity_type/capturing_not_supported.json
-4779535aeb53ca54deb859113cf10a2ced359577 data/c/tags/entity_type/teleporting_not_supported.json
-9e8e1459404b9f863a8546d11155795146268b3d data/minecraft/tags/entity_type/can_breathe_under_water.json
-26042e8548b70ce0d70828af66c3e55914698d6f data/minecraft/tags/entity_type/freeze_immune_entity_types.json
-56ed7efadf5bd884ff8f253655baea157302679b data/minecraft/tags/entity_type/impact_projectiles.json
-7273f0de0f3d2b92a917b975094fa4e96d6f8790 data/mowziesmobs/tags/entity_type/umvuthana.json
-bde1c6f2f36fa71d2cc55bbad106113f84cb9f55 data/mowziesmobs/tags/entity_type/umvuthana_umvuthi_aligned.json

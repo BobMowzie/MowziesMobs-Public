@@ -1,11 +1,10 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelWroughtnaut;
 import com.bobmowzie.mowziesmobs.client.render.entity.layer.ItemLayer;
 import com.bobmowzie.mowziesmobs.client.render.entity.layer.WroughtnautEyesLayer;
 import com.bobmowzie.mowziesmobs.server.entity.wroughtnaut.EntityWroughtnaut;
-import com.ilexiconn.llibrary.client.util.ClientUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -17,11 +16,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
+@OnlyIn(Dist.CLIENT)
 public class RenderWroughtnaut extends MobRenderer<EntityWroughtnaut, ModelWroughtnaut<EntityWroughtnaut>> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/wroughtnaut.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/wroughtnaut.png");
 
     public RenderWroughtnaut(EntityRendererProvider.Context mgr) {
         super(mgr, new ModelWroughtnaut<>(), 1.0F);
@@ -38,18 +40,11 @@ public class RenderWroughtnaut extends MobRenderer<EntityWroughtnaut, ModelWroug
             Matrix4f matrix4f = p_115458_.last().pose();
             Matrix3f matrix3f = p_115458_.last().normal();
             VertexConsumer consumer = p_115459_.getBuffer(RenderType.lines());
+            consumer.vertex(matrix4f, 0.0F, p_115455_.getEyeHeight() + 0.1f, 0.0F).color(0, 255, 255, 255).normal(matrix3f, (float) forward.x, (float) forward.y, (float) forward.z).endVertex();
+            consumer.vertex(matrix4f, (float) (forward.x * 2.0D), (float) ((double) p_115455_.getEyeHeight() + 0.1f + forward.y * 2.0D), (float) (forward.z * 2.0D)).color(0, 255, 255, 255).normal(matrix3f, (float) forward.x, (float) forward.y, (float) forward.z).endVertex();
 
-            consumer.addVertex(matrix4f, 0.0F, p_115455_.getEyeHeight() + 0.1f, 0.0F).setColor(0, 255, 255, 255);
-            ClientUtils.transformNormals(consumer, matrix3f, (float) forward.x(), (float) forward.y(), (float) forward.z());
-
-            consumer.addVertex(matrix4f, (float) (forward.x * 2.0D), (float) ((double) p_115455_.getEyeHeight() + 0.1f + forward.y * 2.0D), (float) (forward.z * 2.0D)).setColor(0, 255, 255, 255);
-            ClientUtils.transformNormals(consumer, matrix3f, (float) forward.x(), (float) forward.y(), (float) forward.z());
-
-            consumer.addVertex(matrix4f, 0.0F, p_115455_.getEyeHeight() + 0.2f, 0.0F).setColor(255, 0, 255, 255);
-            ClientUtils.transformNormals(consumer, matrix3f, (float) bodyFacing.x(), (float) bodyFacing.y(), (float) bodyFacing.z());
-
-            consumer.addVertex(matrix4f, (float) (bodyFacing.x * 2.0D), (float) ((double) p_115455_.getEyeHeight() + 0.2f + bodyFacing.y * 2.0D), (float) (bodyFacing.z * 2.0D)).setColor(255, 0, 255, 255);
-            ClientUtils.transformNormals(consumer, matrix3f, (float) bodyFacing.x(), (float) bodyFacing.y(), (float) bodyFacing.z());
+            consumer.vertex(matrix4f, 0.0F, p_115455_.getEyeHeight() + 0.2f, 0.0F).color(255, 0, 255, 255).normal(matrix3f, (float) bodyFacing.x, (float) bodyFacing.y, (float) bodyFacing.z).endVertex();
+            consumer.vertex(matrix4f, (float) (bodyFacing.x * 2.0D), (float) ((double) p_115455_.getEyeHeight() + 0.2f + bodyFacing.y * 2.0D), (float) (bodyFacing.z * 2.0D)).color(255, 0, 255, 255).normal(matrix3f, (float) bodyFacing.x, (float) bodyFacing.y, (float) bodyFacing.z).endVertex();
         }
     }
 

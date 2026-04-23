@@ -1,7 +1,7 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure;
 
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
-import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.LevelHeightAccessor;
@@ -20,7 +20,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import javax.annotation.Nullable;
 
 public class WroughtnautChamberStructure extends MowzieStructure {
-	public static final MapCodec<WroughtnautChamberStructure> CODEC = simpleCodec(WroughtnautChamberStructure::new);
+	public static final Codec<WroughtnautChamberStructure> CODEC = simpleCodec(WroughtnautChamberStructure::new);
 	
     public WroughtnautChamberStructure(Structure.StructureSettings settings) {
         super(settings, ConfigHandler.COMMON.MOBS.FERROUS_WROUGHTNAUT.generationConfig, StructureTypeHandler.FERROUS_WROUGHTNAUT_BIOMES, false, false, true);

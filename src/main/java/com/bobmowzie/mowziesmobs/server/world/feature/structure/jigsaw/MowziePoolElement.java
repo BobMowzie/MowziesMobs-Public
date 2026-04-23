@@ -2,7 +2,6 @@ package com.bobmowzie.mowziesmobs.server.world.feature.structure.jigsaw;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -17,7 +16,6 @@ import net.minecraft.world.level.block.entity.JigsawBlockEntity;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
-import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorList;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
@@ -27,7 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class MowziePoolElement extends SinglePoolElement {
-    public static final MapCodec<MowziePoolElement> CODEC = RecordCodecBuilder.mapCodec((builder) -> builder
+    public static final Codec<MowziePoolElement> CODEC = RecordCodecBuilder.create((builder) -> builder
             .group(
                     templateCodec(),
                     processorsCodec(),
@@ -73,7 +71,7 @@ public class MowziePoolElement extends SinglePoolElement {
     protected MowziePoolElement(Either<ResourceLocation, StructureTemplate> p_210415_, Holder<StructureProcessorList> p_210416_, StructureTemplatePool.Projection p_210417_,
                                 BoundsParams bounds, ConditionsParams conditions, TagsParams tags,
                                 boolean twoWay, int genOrder, int priority) {
-        super(p_210415_, p_210416_, p_210417_, Optional.of(LiquidSettings.IGNORE_WATERLOGGING));
+        super(p_210415_, p_210416_, p_210417_);
         this.bounds = bounds;
         this.conditions = conditions;
         this.tags = tags;

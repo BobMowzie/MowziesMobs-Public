@@ -1,13 +1,16 @@
 package com.bobmowzie.mowziesmobs.client.sound;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieEntity;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class BossMusicPlayer {
     public static BossMusic currentMusic;
 
@@ -27,10 +30,10 @@ public class BossMusicPlayer {
         if (!ConfigHandler.CLIENT.playBossMusic.get()) return;
 
         // Get the music object for the boss theme from the entity
-        BossMusic<? extends MowzieEntity> requestedMusic = entity.getBossMusic();
+        BossMusic requestedMusic = entity.getBossMusic();
 
         if (requestedMusic != null && entity.isAlive()) {
-            Player player = MMCommon.PROXY.getLocalPlayer();
+            Player player = MowziesMobs.PROXY.getPlayer();
             // If there is boss music playing
             if (player != null && currentMusic != null) {
                 // Don't play the music if the music settings volume is 0
@@ -73,6 +76,7 @@ public class BossMusicPlayer {
             currentMusic.setBoss(null);
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static void tick() {
         for (BossMusic music : BOSS_MUSICS) {
             if (music.isPlaying()) {

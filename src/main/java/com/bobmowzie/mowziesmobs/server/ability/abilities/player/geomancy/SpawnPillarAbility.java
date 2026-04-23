@@ -11,7 +11,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -19,8 +18,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.event.entity.living.LivingEvent;
-import software.bernie.geckolib.animation.RawAnimation;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class SpawnPillarAbility extends PlayerAbility {
     private static int MAX_DURATION = 120;
@@ -131,12 +130,12 @@ public class SpawnPillarAbility extends PlayerAbility {
         if (stack.getItem() == ItemHandler.EARTHREND_GAUNTLET.get()) {
             InteractionHand handIn = getUser().getUsedItemHand();
             if (stack.getDamageValue() + 6 < stack.getMaxDamage()) {
-                stack.hurtAndBreak(6, getUser(), LivingEntity.getSlotForHand(handIn));
+                stack.hurtAndBreak(6, getUser(), p -> p.broadcastBreakEvent(handIn));
                 return true;
             }
             else {
                 if (ConfigHandler.COMMON.TOOLS_AND_ABILITIES.EARTHREND_GAUNTLET.breakable.get()) {
-                    stack.hurtAndBreak(6, getUser(), LivingEntity.getSlotForHand(handIn));
+                    stack.hurtAndBreak(6, getUser(), p -> p.broadcastBreakEvent(handIn));
                 }
                 return false;
             }

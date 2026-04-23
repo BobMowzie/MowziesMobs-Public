@@ -134,7 +134,7 @@
   "item.mowziesmobs.bluff_rod.text.0": "Úsalo para reparar objetos de geomancia o dáselo al escultor para comenzar su desafío",
   
   "item.mowziesmobs.music_disc_petiole": "Disco de música",
-  "jukebox_song.mowziesmobs.14": "LudoCrypt - Petiole",
+  "item.mowziesmobs.music_disc_petiole.desc": "LudoCrypt - Petiole",
 
   "item.mowziesmobs.foliaath_spawn_egg": "Generar planta carnívora",
   "item.mowziesmobs.wroughtnaut_spawn_egg": "Generar caballero de hierro forjado",
@@ -379,7 +379,7 @@
   "subtitles.mowziesmobs.umvuthi.bless": "Umvuthi bellows",
   "subtitles.mowziesmobs.sunstrike": "Golpe de ataque solar",
   "subtitles.mowziesmobs.laser": "Fuegos de rayos solares",
-  "subtitles.mowziesmobs.umvuthi.roar": "Gritos de Umvuthi",
+  "subtitles.mowziesmobs.umvuthi.scream": "Gritos de barako",
   "subtitles.mowziesmobs.umvuthi.supernova_start": "Energía absorbedora de supernova",
   "subtitles.mowziesmobs.umvuthi.black_hole": "Tarareo de agujero negro",
   "subtitles.mowziesmobs.umvuthi.supernova_end": "Explosión de supernova",

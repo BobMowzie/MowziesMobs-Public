@@ -1,16 +1,16 @@
 package com.bobmowzie.mowziesmobs.client.model;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.armor.WroughtHelmModel;
 import com.bobmowzie.mowziesmobs.client.render.block.GongRenderer;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
-@EventBusSubscriber(value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = MowziesMobs.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class LayerHandler {
     public static final ModelLayerLocation WROUGHT_HELM_LAYER = register("wrought_helm", "main");
     public static final ModelLayerLocation GONG_LAYER = register("gong", "main");
@@ -22,6 +22,6 @@ public class LayerHandler {
     }
 
     private static ModelLayerLocation register(String model, String layer) {
-        return new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, model), layer);
+        return new ModelLayerLocation(new ResourceLocation(MowziesMobs.MODID, model), layer);
     }
 }

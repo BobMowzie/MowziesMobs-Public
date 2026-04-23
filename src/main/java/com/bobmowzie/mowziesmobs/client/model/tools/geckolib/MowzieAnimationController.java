@@ -2,17 +2,17 @@ package com.bobmowzie.mowziesmobs.client.model.tools.geckolib;
 
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.TestOnly;
-import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animation.Animation;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.model.CoreGeoModel;
+import software.bernie.geckolib.core.animation.Animation;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class MowzieAnimationController<T extends GeoAnimatable> extends AnimationController<T> {
     private double timingOffset;
 
-    public MowzieAnimationController(T animatable, String name, int transitionLength, AnimationController.AnimationStateHandler<T> animationHandler, double timingOffset) {
+    public MowzieAnimationController(T animatable, String name, int transitionLength, AnimationStateHandler<T> animationHandler, double timingOffset) {
         super(animatable, name, transitionLength, animationHandler);
         this.timingOffset = timingOffset;
     }
@@ -25,7 +25,7 @@ public class MowzieAnimationController<T extends GeoAnimatable> extends Animatio
         setAnimation(animation);
         currentAnimation = this.animationQueue.poll();
         isJustStarting = true;
-        adjustTick(animatable.getTick(animatable) + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
+        adjustTick(animatable.getTick(animatable) + Minecraft.getInstance().getPartialTick());
         transitionLength = 0;
     }
 
@@ -48,7 +48,7 @@ public class MowzieAnimationController<T extends GeoAnimatable> extends Animatio
 //        // I did this in a fugue state and I have no idea why it works
     }
 
-    public void setLastModel(GeoModel<T> coreGeoModel) {
+    public void setLastModel(CoreGeoModel<T> coreGeoModel) {
         this.lastModel = coreGeoModel;
     }
 
@@ -65,7 +65,7 @@ public class MowzieAnimationController<T extends GeoAnimatable> extends Animatio
                 forceAnimationReset();
                 currentAnimation = this.animationQueue.poll();
                 isJustStarting = true;
-                adjustTick(animatable.getTick(animatable) + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
+                adjustTick(animatable.getTick(animatable) + Minecraft.getInstance().getPartialTick());
                 transitionLength = 0;
             }
         }

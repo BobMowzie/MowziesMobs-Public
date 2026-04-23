@@ -83,7 +83,7 @@ public class AnimationFWNAttackAI extends AnimationAI<EntityWroughtnaut> {
                     if (entityHitDistance <= range && (entityRelativeAngle <= arc / 2 && entityRelativeAngle >= -arc / 2) || (entityRelativeAngle >= 360 - arc / 2 || entityRelativeAngle <= -360 + arc / 2)) {
                         entityHit.hurt(entity.damageSources().mobAttack(entity), damage);
                         if (entityHit.isBlocking())
-                            entityHit.getUseItem().hurtAndBreak(400, entityHit, LivingEntity.getSlotForHand(entityHit.getUsedItemHand()));
+                            entityHit.getUseItem().hurtAndBreak(400, entityHit, player -> player.broadcastBreakEvent(entityHit.getUsedItemHand()));
                         entityHit.setDeltaMovement(entityHit.getDeltaMovement().x * applyKnockback, entityHit.getDeltaMovement().y, entityHit.getDeltaMovement().z * applyKnockback);
                         hit = true;
                     }
@@ -123,7 +123,7 @@ public class AnimationFWNAttackAI extends AnimationAI<EntityWroughtnaut> {
                     if (entityHitDistance <= range - 0.3 && (entityRelativeAngle <= arc / 2 && entityRelativeAngle >= -arc / 2) || (entityRelativeAngle >= 360 - arc / 2 || entityRelativeAngle <= -360 + arc / 2)) {
                         entityHit.hurt(entity.damageSources().mobAttack(entity), damage);
                         if (entityHit.isBlocking())
-                            entityHit.getUseItem().hurtAndBreak(400, entityHit, LivingEntity.getSlotForHand(entityHit.getUsedItemHand()));
+                            entityHit.getUseItem().hurtAndBreak(400, entityHit, player -> player.broadcastBreakEvent(entityHit.getUsedItemHand()));
                         entityHit.setDeltaMovement(entityHit.getDeltaMovement().x * applyKnockback, entityHit.getDeltaMovement().y, entityHit.getDeltaMovement().z * applyKnockback);
                         hit = true;
                     }
@@ -155,7 +155,7 @@ public class AnimationFWNAttackAI extends AnimationAI<EntityWroughtnaut> {
                     if (entityHitDistance <= range + 0.2) {
                         entityHit.hurt(entity.damageSources().mobAttack(entity), damage);
                         if (entityHit.isBlocking())
-                            entityHit.getUseItem().hurtAndBreak(400, entityHit, LivingEntity.getSlotForHand(entityHit.getUsedItemHand()));
+                            entityHit.getUseItem().hurtAndBreak(400, entityHit, player -> player.broadcastBreakEvent(entityHit.getUsedItemHand()));
                         entityHit.setDeltaMovement(entityHit.getDeltaMovement().x * applyKnockback, entityHit.getDeltaMovement().y, entityHit.getDeltaMovement().z * applyKnockback);
                         hit = true;
                     }

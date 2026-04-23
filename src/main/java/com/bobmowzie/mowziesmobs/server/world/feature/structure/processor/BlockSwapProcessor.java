@@ -1,7 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.world.feature.structure.processor;
 
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.WorldGenRegion;
@@ -17,16 +16,16 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import java.util.List;
 
 public class BlockSwapProcessor extends StructureProcessor {
-    public static final MapCodec<BlockSwapProcessor> CODEC = RecordCodecBuilder.mapCodec(instance -> instance
+    public static final Codec<BlockSwapProcessor> CODEC = RecordCodecBuilder.create(instance -> instance
             .group(
                     BlockState.CODEC.listOf().fieldOf("to_replace").forGetter(config -> config.toReplace),
                     BlockStateRandomizer.CODEC.fieldOf("replace_with").forGetter(config -> config.replaceWith),
                     Codec.BOOL.optionalFieldOf("copy_properties", true).forGetter(config -> config.copyProperties)
     ).apply(instance, instance.stable(BlockSwapProcessor::new)));
 
-    private final List<BlockState> toReplace;
-    private final BlockStateRandomizer replaceWith;
-    private final boolean copyProperties;
+    List<BlockState> toReplace;
+    BlockStateRandomizer replaceWith;
+    boolean copyProperties;
 
     public BlockSwapProcessor(List<BlockState> toReplace, BlockStateRandomizer replaceWith, boolean copyProperties) {
         this.toReplace = toReplace;
@@ -34,9 +33,8 @@ public class BlockSwapProcessor extends StructureProcessor {
         this.copyProperties = copyProperties;
     }
 
-    @Override
     protected StructureProcessorType<?> getType() {
-        return ProcessorHandler.BLOCK_SWAP_PROCESSOR.value();
+        return ProcessorHandler.BASE_PROCESSOR;
     }
 
     @Override

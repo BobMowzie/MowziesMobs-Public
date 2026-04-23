@@ -7,7 +7,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
@@ -76,9 +75,9 @@ public class EntityPillarPiece extends Entity {
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        builder.define(PILLAR, Optional.empty());
-        builder.define(TIER, 0);
+    protected void defineSynchedData() {
+        getEntityData().define(PILLAR, Optional.empty());
+        getEntityData().define(TIER, 0);
     }
 
     @Override
@@ -104,7 +103,7 @@ public class EntityPillarPiece extends Entity {
     }
 
     @Override
-    public boolean ignoreExplosion(Explosion explosion) {
+    public boolean ignoreExplosion() {
         return true;
     }
 

@@ -1,6 +1,5 @@
 package com.bobmowzie.mowziesmobs.server.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
 import com.bobmowzie.mowziesmobs.client.model.tools.IntermittentAnimation;
 import com.bobmowzie.mowziesmobs.client.sound.BossMusic;
 import com.bobmowzie.mowziesmobs.client.sound.BossMusicPlayer;
@@ -13,8 +12,10 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -22,12 +23,12 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -36,6 +37,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -46,17 +49,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
-import net.neoforged.neoforge.event.EventHooks;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.entity.IEntityAdditionalSpawnData;
+import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-public abstract class MowzieEntity extends PathfinderMob implements IEntityWithComplexSpawn, IntermittentAnimatableEntity {
+public abstract class MowzieEntity extends PathfinderMob implements IEntityAdditionalSpawnData, IntermittentAnimatableEntity {
     private static final byte START_IA_HEALTH_UPDATE_ID = 4;
     private static final byte MUSIC_PLAY_ID = 67;
     private static final byte MUSIC_STOP_ID = 68;
@@ -71,12 +76,12 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
     public boolean hurtInterruptsAnimation = false;
     private final List<IntermittentAnimation<?>> intermittentAnimations = new ArrayList<>();
 
+    @OnlyIn(Dist.CLIENT)
     public Vec3[] socketPosArray;
 
     protected boolean prevOnGround;
     protected boolean prevPrevOnGround;
     protected boolean willLandSoon;
-    protected Vec3 prevDeltaMovement = Vec3.ZERO;
     
     private int killDataRecentlyHit;
     private DamageSource killDataCause;
@@ -84,8 +89,8 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
 
     protected final MMBossInfoServer bossInfo = initBossInfo();
 
-    private static final ResourceLocation HEALTH_CONFIG_MODIFIER = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "health_config_modifier");
-    private static final ResourceLocation ATTACK_CONFIG_MODIFIER = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "attack_config_modifier");
+    private static final UUID HEALTH_CONFIG_MODIFIER_UUID = UUID.fromString("eff1c400-910c-11ec-b909-0242ac120002");
+    private static final UUID ATTACK_CONFIG_MODIFIER_UUID = UUID.fromString("f76a7c90-910c-11ec-b909-0242ac120002");
 
     private static final EntityDataAccessor<Boolean> STRAFING = SynchedEntityData.defineId(MowzieEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -105,14 +110,14 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
             AttributeInstance maxHealthAttr = getAttribute(Attributes.MAX_HEALTH);
             if (maxHealthAttr != null) {
                 double difference = maxHealthAttr.getBaseValue() * getCombatConfig().healthMultiplier.get() - maxHealthAttr.getBaseValue();
-                maxHealthAttr.addTransientModifier(new AttributeModifier(HEALTH_CONFIG_MODIFIER, difference, AttributeModifier.Operation.ADD_VALUE));
+                maxHealthAttr.addTransientModifier(new AttributeModifier(HEALTH_CONFIG_MODIFIER_UUID, "Health config multiplier", difference, AttributeModifier.Operation.ADDITION));
                 this.setHealth(this.getMaxHealth());
             }
 
             AttributeInstance attackDamageAttr = getAttribute(Attributes.ATTACK_DAMAGE);
             if (attackDamageAttr != null) {
                 double difference = attackDamageAttr.getBaseValue() * getCombatConfig().attackMultiplier.get() - attackDamageAttr.getBaseValue();
-                attackDamageAttr.addTransientModifier(new AttributeModifier(ATTACK_CONFIG_MODIFIER, difference, AttributeModifier.Operation.ADD_VALUE));
+                attackDamageAttr.addTransientModifier(new AttributeModifier(ATTACK_CONFIG_MODIFIER_UUID, "Attack config multiplier", difference, AttributeModifier.Operation.ADDITION));
             }
         }
     }
@@ -122,9 +127,9 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(STRAFING, false);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        entityData.define(STRAFING, false);
     }
 
     public void setStrafing(boolean strafing) {
@@ -180,7 +185,7 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
 
             // Block check
             BlockState block = world.getBlockState(spawnPos.below());
-            ResourceLocation blockName = block.getBlock().builtInRegistryHolder().key().location();
+            ResourceLocation blockName = ForgeRegistries.BLOCKS.getKey(block.getBlock());
             List<? extends String> allowedBlocks = spawnConfig.allowedBlocks.get();
             List<? extends String> allowedBlockTags = spawnConfig.allowedBlockTags.get();
             if (blockName == null) return false;
@@ -217,7 +222,7 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
             ChunkGeneratorStructureState generatorState = serverLevel.getChunkSource().getGeneratorState();
             ChunkPos chunkPos = new ChunkPos(spawnPos);
             for (String structureName : avoidStructures) {
-                Optional<StructureSet> structureSetOptional = structureSetRegistry.getOptional(ResourceLocation.tryParse(structureName));
+                Optional<StructureSet> structureSetOptional = structureSetRegistry.getOptional(new ResourceLocation(structureName));
                 if (structureSetOptional.isEmpty()) continue;
                 Optional<ResourceKey<StructureSet>> resourceKeyOptional = structureSetRegistry.getResourceKey(structureSetOptional.get());
                 if (resourceKeyOptional.isEmpty()) continue;
@@ -233,13 +238,7 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
 
     private static boolean isBlockTagAllowed(List<? extends String> allowedBlockTags, BlockState block) {
         for (String allowedBlockTag : allowedBlockTags) {
-            ResourceLocation location = ResourceLocation.tryParse(allowedBlockTag);
-
-            if (location == null) {
-                continue;
-            }
-
-            TagKey<Block> tagKey = TagKey.create(Registries.BLOCK, location);
+            TagKey<Block> tagKey = TagKey.create(Registries.BLOCK, new ResourceLocation(allowedBlockTag));
             if (block.is(tagKey)) return true;
         }
         return false;
@@ -249,32 +248,38 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
         return pos.closerThan(this.blockPosition(), (double)distance);
     }
 
-    @Override // Copied from Mob class file
+    // Copied from Mob class file
+    @Override
     public void checkDespawn() {
-        if (EventHooks.checkMobDespawn(this)) return;
         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
             this.discard();
         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
-            Entity entity = this.level().getNearestPlayer(this, -1);
-
+            Entity entity = this.level().getNearestPlayer(this, -1.0D);
+            net.minecraftforge.eventbus.api.Event.Result result = net.minecraftforge.event.ForgeEventFactory.canEntityDespawn(this, (ServerLevel) this.level());
+            if (result == net.minecraftforge.eventbus.api.Event.Result.DENY) {
+                noActionTime = 0;
+                entity = null;
+            } else if (result == net.minecraftforge.eventbus.api.Event.Result.ALLOW) {
+                this.discard();
+                entity = null;
+            }
             if (entity != null) {
-                double distance = entity.distanceToSqr(this);
-                int despawnDistance = getDespawnDistance();
-                int despawnRadius = despawnDistance * despawnDistance;
-
-                if (distance > despawnRadius && this.removeWhenFarAway(distance)) {
+                double d0 = entity.distanceToSqr(this);
+                int i = getDespawnDistance();
+                int j = i * i;
+                if (d0 > (double)j && this.removeWhenFarAway(d0)) {
                     this.discard();
                 }
 
-                int noDespawnDistance = getNoDespawnDistance();
-                int noDespawnRadius = noDespawnDistance * noDespawnDistance;
-
-                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && distance > noDespawnRadius && this.removeWhenFarAway(distance)) {
+                int k = getNoDespawnDistance();
+                int l = k * k;
+                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double)l && this.removeWhenFarAway(d0)) {
                     this.discard();
-                } else if (distance < noDespawnRadius) {
+                } else if (d0 < (double)l) {
                     this.noActionTime = 0;
                 }
             }
+
         } else {
             this.noActionTime = 0;
         }
@@ -288,15 +293,10 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
         return this.getType().getCategory().getNoDespawnDistance();
     }
 
-    public Vec3 getPrevDeltaMovement() {
-        return prevDeltaMovement;
-    }
-
     @Override
     public void tick() {
         prevPrevOnGround = prevOnGround;
         prevOnGround = onGround();
-        prevDeltaMovement = getDeltaMovement();
         super.tick();
         frame++;
         if (tickCount % 4 == 0) bossInfo.update();
@@ -337,13 +337,9 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
         super.customServerAiStep();
     }
 
-    @Override
-    public void writeSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
-
-    }
 
     @Override
-    public void readSpawnData(@NotNull RegistryFriendlyByteBuf buffer) {
+    public void readSpawnData(FriendlyByteBuf buf) {
         yRotO = getYRot();
         yBodyRotO = yBodyRot = yHeadRotO = yHeadRot;
     }
@@ -353,47 +349,63 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
         return this.doHurtTarget(entityIn, 1.0F, 1.0f);
     }
 
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, SpawnGroupData spawnDataIn, CompoundTag dataTag) {
+//        System.out.println("Spawned " + getName().getString() + " at " + getPosition());
+//        System.out.println("Block " + world.getBlockState(getPosition().down()).toString());
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+    }
+
     public boolean doHurtTarget(Entity entityIn, float damageMultiplier, float applyKnockbackMultiplier) {
         return doHurtTarget(entityIn, damageMultiplier, applyKnockbackMultiplier, false);
     }
 
-    /** Mostly a copy from {@link Mob#doHurtTarget(Entity)} */
-    public boolean doHurtTarget(Entity target, float damageMultiplier, float applyKnockbackMultiplier, boolean canDisableShield) {
-        float damage = (float) getAttributeValue(Attributes.ATTACK_DAMAGE) * damageMultiplier;
-        DamageSource damagesource = damageSources().mobAttack(this);
-
-        if (level() instanceof ServerLevel serverLevel) {
-            damage = EnchantmentHelper.modifyDamage(serverLevel, this.getWeaponItem(), target, damagesource, damage);
+    public boolean doHurtTarget(Entity entityIn, float damageMultiplier, float applyKnockbackMultiplier, boolean canDisableShield) { // Copied from mob class
+        float f = (float)this.getAttribute(Attributes.ATTACK_DAMAGE).getValue() * damageMultiplier;
+        float f1 = (float)this.getAttribute(Attributes.ATTACK_KNOCKBACK).getValue();
+        if (entityIn instanceof LivingEntity) {
+            f += EnchantmentHelper.getDamageBonus(this.getMainHandItem(), ((LivingEntity)entityIn).getMobType());
+            f1 += (float)EnchantmentHelper.getKnockbackBonus(this);
         }
 
-        boolean wasHurt = target.hurt(damagesource, damage);
-
-        if (wasHurt) {
-            if (target instanceof LivingEntity livingTarget) {
-                // FIXME 1.21 :: this no longer just increases the attribute value but rather the total result
-                float knockback = getKnockback(livingTarget, damagesource) * applyKnockbackMultiplier;
-
-                if (knockback > 0) {
-                    livingTarget.knockback(
-                            knockback * 0.5F,
-                            Mth.sin(getYRot() * (float) (Math.PI / 180.0)),
-                            -Mth.cos(getYRot() * (float) (Math.PI / 180.0))
-                    );
-
-                    setDeltaMovement(getDeltaMovement().multiply(0.6, 1, 0.6));
-                }
-            }
-
-            if (level() instanceof ServerLevel serverLevel) {
-                // Handle fire aspect etc.
-                EnchantmentHelper.doPostAttackEffects(serverLevel, target, damagesource);
-            }
-
-            setLastHurtMob(target);
-            playAttackSound();
+        int i = EnchantmentHelper.getFireAspect(this);
+        if (i > 0) {
+            entityIn.setSecondsOnFire(i * 4);
         }
 
-        return wasHurt;
+        boolean flag = entityIn.hurt(damageSources().mobAttack(this), f);
+        if (flag) {
+            entityIn.setDeltaMovement(entityIn.getDeltaMovement().multiply(applyKnockbackMultiplier, 1.0, applyKnockbackMultiplier));
+            if (f1 > 0.0F && entityIn instanceof LivingEntity) {
+                ((LivingEntity)entityIn).knockback(f1 * 0.5F, Mth.sin(this.getYRot() * ((float)Math.PI / 180F)), -Mth.cos(this.getYRot() * ((float)Math.PI / 180F)));
+                this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
+            }
+
+            if (entityIn instanceof Player) {
+                Player player = (Player)entityIn;
+                if (canDisableShield) this.maybeDisableShield(player, player.isUsingItem() ? player.getUseItem() : ItemStack.EMPTY);
+            }
+
+            this.doEnchantDamageEffects(this, entityIn);
+            this.setLastHurtMob(entityIn);
+        }
+
+        return flag;
+    }
+
+    private void maybeDisableShield(Player player, ItemStack itemStackBlock) { // Copied from mob class
+        if (!itemStackBlock.isEmpty() && itemStackBlock.is(Items.SHIELD)) {
+            float f = 0.25F + (float)EnchantmentHelper.getBlockEfficiency(this) * 0.05F;
+            if (this.random.nextFloat() < f) {
+                player.getCooldowns().addCooldown(Items.SHIELD, 100);
+                this.level().broadcastEntityEvent(player, (byte)30);
+            }
+        }
+    }
+
+    public void playSound(List<? extends java.util.function.Supplier<net.minecraft.sounds.SoundEvent>> sounds, float volume, float pitch) {
+        net.minecraft.sounds.SoundEvent sound = sounds.get(random.nextInt(sounds.size())).get();
+        playSound(sound, volume, pitch);
     }
 
     public float getHealthRatio() {
@@ -438,11 +450,11 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
     protected void tickDeath() { // Copied from entityLiving
         ++this.deathTime;
         int deathDuration = getDeathDuration();
-        if (this.deathTime >= deathDuration && level() instanceof ServerLevel serverLevel) {
+        if (this.deathTime >= deathDuration && !this.level().isClientSide()) {
             lastHurtByPlayer = killDataAttackingPlayer;
             lastHurtByPlayerTime = killDataRecentlyHit;
             if (dropAfterDeathAnim && killDataCause != null) {
-                dropAllDeathLoot(serverLevel, killDataCause);
+                dropAllDeathLoot(killDataCause);
             }
             this.level().broadcastEntityEvent(this, (byte)60);
             this.remove(Entity.RemovalReason.KILLED);
@@ -452,9 +464,9 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
     protected abstract int getDeathDuration();
 
     @Override
-    protected void dropAllDeathLoot(@NotNull ServerLevel level, @NotNull DamageSource source) {
+    protected void dropAllDeathLoot(DamageSource source) {
         if (!dropAfterDeathAnim || deathTime > 0) {
-            super.dropAllDeathLoot(level, source);
+            super.dropAllDeathLoot(source);
         }
     }
 
@@ -525,14 +537,6 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
     }
 
     @Override
-    public void load(CompoundTag compound) {
-        super.load(compound);
-        if (this.hasCustomName()) {
-            this.bossInfo.setName(this.getDisplayName());
-        }
-    }
-
-    @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         if (cooldowns != null) {
@@ -549,6 +553,14 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
             for (Cooldown cooldown : cooldowns) {
                 cooldown.setTimer(compound.getInt(cooldown.getName()));
             }
+        }
+    }
+
+    @Override
+    public void load(CompoundTag compound) {
+        super.load(compound);
+        if (this.hasCustomName()) {
+            this.bossInfo.setName(this.getDisplayName());
         }
     }
 
@@ -574,6 +586,7 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
         return BossEvent.BossBarColor.PURPLE;
     }
 
+    @OnlyIn(Dist.CLIENT)
     public void setSocketPosArray(int index, Vec3 pos) {
         if (socketPosArray != null && socketPosArray.length > index) {
             socketPosArray[index] = pos;
@@ -622,17 +635,17 @@ public abstract class MowzieEntity extends PathfinderMob implements IEntityWithC
         }
     }
 
-    /** For common usage (loading the BossMusic class loads the client 'SoundInstance' class for some reason) */
     public boolean hasBossMusic() {
         return false;
     }
 
-    public BossMusic<?> getBossMusic() {
+    @OnlyIn(Dist.CLIENT)
+    public BossMusic getBossMusic() {
         return null;
     }
 
-    public void playSound(List<DeferredHolder<SoundEvent, SoundEvent>> sounds, float volume, float pitch) {
-        SoundEvent sound = sounds.get(random.nextInt(sounds.size())).get();
-        playSound(sound, volume, pitch);
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        return NetworkHooks.getEntitySpawningPacket(this);
     }
 }

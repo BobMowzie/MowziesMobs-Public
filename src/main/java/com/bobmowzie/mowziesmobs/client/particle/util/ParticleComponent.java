@@ -275,9 +275,9 @@ public abstract class ParticleComponent {
             else if (property == EnumParticleProperty.PARTICLE_ANGLE) {
                 if (particle.rotation instanceof ParticleRotation.FaceCamera faceCameraRot) {
                     if (additive) {
-                        faceCameraRot.angle = faceCameraRot.angle + value;
+                        faceCameraRot.faceCameraAngle = faceCameraRot.faceCameraAngle + value;
                     } else {
-                        faceCameraRot.angle = value;
+                        faceCameraRot.faceCameraAngle = value;
                     }
                 }
             }

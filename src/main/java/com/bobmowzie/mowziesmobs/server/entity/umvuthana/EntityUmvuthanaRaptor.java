@@ -5,6 +5,8 @@ import com.bobmowzie.mowziesmobs.server.config.ConfigHandler;
 import com.bobmowzie.mowziesmobs.server.entity.EntityHandler;
 import com.bobmowzie.mowziesmobs.server.entity.LeaderSunstrikeImmune;
 import com.bobmowzie.mowziesmobs.server.entity.MowzieEntity;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
@@ -19,7 +21,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.neoforged.neoforge.event.EventHooks;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -54,8 +55,7 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
 
     public static AttributeSupplier.Builder createAttributes() {
         return MowzieEntity.createAttributes().add(Attributes.ATTACK_DAMAGE, 6)
-                .add(Attributes.MAX_HEALTH, 10)
-                .add(Attributes.STEP_HEIGHT, 1);
+                .add(Attributes.MAX_HEALTH, 10);
     }
 
     @Override
@@ -104,13 +104,13 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
         }
     }
 
-    public void removePackMember(EntityUmvuthanaFollowerToRaptor member) {
-        pack.remove(member);
+    public void removePackMember(EntityUmvuthanaFollowerToRaptor packMember) {
+        pack.remove(packMember);
         sortPackMembers();
     }
 
-    public void addPackMember(EntityUmvuthanaFollowerToRaptor member) {
-        pack.add(member);
+    public void addPackMember(EntityUmvuthanaFollowerToRaptor packMember) {
+        pack.add(packMember);
         sortPackMembers();
     }
 
@@ -124,7 +124,6 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
             double z = getZ() + packRadius * Math.sin(targetTheta);
             for (int n = 0; n < pack.size(); n++) {
                 EntityUmvuthanaFollowerToRaptor packMember = pack.get(n);
-                if (packMember == null) continue;
                 double diffSq = (x - packMember.getX()) * (x - packMember.getX()) + (z - packMember.getZ()) * (z - packMember.getZ());
                 if (diffSq < smallestDiffSq) {
                     smallestDiffSq = diffSq;
@@ -156,7 +155,7 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
 
     @Nullable
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData, @Nullable CompoundTag compound) {
         int size = random.nextInt(2) + 3;
         float theta = (2 * (float) Math.PI / size);
         for (int i = 0; i <= size; i++) {
@@ -166,7 +165,7 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
             packMember.setWeapon(weapon);
             world.addFreshEntity(packMember);
         }
-        return super.finalizeSpawn(world, difficulty, reason, livingData);
+        return super.finalizeSpawn(world, difficulty, reason, livingData, compound);
     }
 
     @Override
@@ -198,11 +197,21 @@ public class EntityUmvuthanaRaptor extends EntityUmvuthana implements LeaderSuns
 
     @Override
     public void checkDespawn() {
-        if (EventHooks.checkMobDespawn(this)) return;
         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
             this.discard();
         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
             Entity entity = this.level().getNearestPlayer(this, -1);
+            net.minecraftforge.eventbus.api.Event.Result result = net.minecraftforge.event.ForgeEventFactory.canEntityDespawn(this, (ServerLevel) this.level());
+            if (result == net.minecraftforge.eventbus.api.Event.Result.DENY) {
+                noActionTime = 0;
+                entity = null;
+            } else if (result == net.minecraftforge.eventbus.api.Event.Result.ALLOW) {
+                if (pack != null) {
+                    pack.forEach(EntityUmvuthanaFollowerToRaptor::setShouldSetDead);
+                }
+                this.discard();
+                entity = null;
+            }
 
             if (entity != null) {
                 double distance = entity.distanceToSqr(this);

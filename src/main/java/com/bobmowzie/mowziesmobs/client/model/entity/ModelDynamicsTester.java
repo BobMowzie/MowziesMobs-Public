@@ -69,7 +69,7 @@ public class ModelDynamicsTester<T extends EntityDynamicsTester> extends Advance
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
         body1.showModel = false;
         body2.showModel = false;
         body3.showModel = false;
@@ -77,7 +77,7 @@ public class ModelDynamicsTester<T extends EntityDynamicsTester> extends Advance
         body5.showModel = false;
         body6.showModel = false;
 //        if (entity.dc != null) entity.dc.render(f5, bodydynamic);
-        root.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
+        root.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
     }
 
     /**

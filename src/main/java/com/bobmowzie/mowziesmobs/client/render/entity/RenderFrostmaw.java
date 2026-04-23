@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelFrostmaw;
 import com.bobmowzie.mowziesmobs.client.render.MowzieRenderUtils;
 import com.bobmowzie.mowziesmobs.client.render.entity.layer.ItemLayer;
@@ -18,7 +18,7 @@ import net.minecraft.world.phys.Vec3;
  * Created by BobMowzie on 5/8/2017.
  */
 public class RenderFrostmaw extends MobRenderer<EntityFrostmaw, ModelFrostmaw<EntityFrostmaw>> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/entity/frostmaw.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/entity/frostmaw.png");
 
     public RenderFrostmaw(EntityRendererProvider.Context mgr) {
         super(mgr, new ModelFrostmaw<>(), 3.5f);

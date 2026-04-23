@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.render.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.entity.ModelPoisonBall;
 import com.bobmowzie.mowziesmobs.server.entity.effects.EntityPoisonBall;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -14,7 +14,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 public class RenderPoisonBall extends EntityRenderer<EntityPoisonBall> {
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MMCommon.MODID, "textures/effects/poison_ball.png");
+    public static final ResourceLocation TEXTURE = new ResourceLocation(MowziesMobs.MODID, "textures/effects/poison_ball.png");
     public ModelPoisonBall model;
 
     public RenderPoisonBall(EntityRendererProvider.Context mgr) {
@@ -33,7 +33,7 @@ public class RenderPoisonBall extends EntityRenderer<EntityPoisonBall> {
         matrixStackIn.mulPose(Axis.YN.rotationDegrees(entityYaw));
         VertexConsumer ivertexbuilder = bufferIn.getBuffer(RenderType.entityTranslucent(this.getTextureLocation(entityIn)));
         model.setupAnim(entityIn, 0, 0, entityIn.tickCount + partialTicks, 0, 0);
-        model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, -1);
+        model.renderToBuffer(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         matrixStackIn.popPose();
     }
 }

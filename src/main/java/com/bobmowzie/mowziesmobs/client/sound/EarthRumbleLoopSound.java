@@ -5,7 +5,10 @@ import com.ilexiconn.llibrary.client.model.tools.ControlledAnimation;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class EarthRumbleLoopSound extends AbstractTickableSoundInstance {
     private final IGeomancyRumbler rumbler;
     int ticksExisted = 0;

@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.client.model.entity;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoBone;
 import com.bobmowzie.mowziesmobs.client.model.tools.geckolib.MowzieGeoModel;
 import com.bobmowzie.mowziesmobs.server.entity.elokosa.EntityElokosa;
@@ -8,8 +8,8 @@ import com.bobmowzie.mowziesmobs.server.entity.elokosa.EntityElokosaHowler;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.data.EntityModelData;
 
 public class ModelElokosa extends MowzieGeoModel<EntityElokosa> {
@@ -22,18 +22,18 @@ public class ModelElokosa extends MowzieGeoModel<EntityElokosa> {
 
     @Override
     public ResourceLocation getModelResource(EntityElokosa elokosa) {
-        return MMCommon.resource("geo/elokosa.geo.json");
+        return new ResourceLocation(MowziesMobs.MODID, "geo/elokosa.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(EntityElokosa elokosa) {
         boolean isElite = elokosa instanceof EntityElokosaHowler;
-        return MMCommon.resource("textures/entity/" + (isElite ? "elokosa_elite.png" : "elokosa.png"));
+        return new ResourceLocation(MowziesMobs.MODID,"textures/entity/" + (isElite ? "elokosa_elite.png" : "elokosa.png"));
     }
 
     @Override
     public ResourceLocation getAnimationResource(EntityElokosa elokosa) {
-        return MMCommon.resource("animations/elokosa.animation.json");
+        return new ResourceLocation(MowziesMobs.MODID,"animations/elokosa.animation.json");
     }
 
     @Override

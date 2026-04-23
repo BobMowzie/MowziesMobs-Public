@@ -3,13 +3,12 @@ package com.bobmowzie.mowziesmobs.server.block;
 import com.bobmowzie.mowziesmobs.server.block.entity.BlockEntityHandler;
 import com.bobmowzie.mowziesmobs.server.block.entity.GongBlockEntity;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -33,11 +32,9 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class GongBlock extends BaseEntityBlock {
-    public static final MapCodec<GongBlock> CODEC = simpleCodec(GongBlock::new);
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 //    public static final EnumProperty<BellAttachType> ATTACHMENT = BlockStateProperties.BELL_ATTACHMENT;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
@@ -71,25 +68,22 @@ public class GongBlock extends BaseEntityBlock {
         return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
-    @Override
     public void onProjectileHit(Level p_49708_, BlockState p_49709_, BlockHitResult p_49710_, Projectile p_49711_) {
         Entity entity = p_49711_.getOwner();
         Player player = entity instanceof Player ? (Player)entity : null;
         this.onHit(p_49708_, p_49709_, p_49710_, player, true);
     }
 
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        return onHit(level, state, hitResult, player, true) ? ItemInteractionResult.sidedSuccess(level.isClientSide()) : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    public InteractionResult use(BlockState p_49722_, Level p_49723_, BlockPos p_49724_, Player p_49725_, InteractionHand p_49726_, BlockHitResult p_49727_) {
+        return this.onHit(p_49723_, p_49722_, p_49727_, p_49725_, true) ? InteractionResult.sidedSuccess(p_49723_.isClientSide) : InteractionResult.PASS;
     }
 
-    public boolean onHit(Level level, BlockState state, BlockHitResult result, @Nullable Player player, boolean p_49706_) {
-        Direction direction = result.getDirection();
-        BlockPos blockpos = result.getBlockPos();
-        boolean flag = !p_49706_ || this.isProperHit(state, direction, result.getLocation().y - (double)blockpos.getY());
-
+    public boolean onHit(Level p_49702_, BlockState p_49703_, BlockHitResult p_49704_, @javax.annotation.Nullable Player p_49705_, boolean p_49706_) {
+        Direction direction = p_49704_.getDirection();
+        BlockPos blockpos = p_49704_.getBlockPos();
+        boolean flag = !p_49706_ || this.isProperHit(p_49703_, direction, p_49704_.getLocation().y - (double)blockpos.getY());
         if (flag) {
-            this.attemptToRing(player, level, blockpos, direction);
+            this.attemptToRing(p_49705_, p_49702_, blockpos, direction);
 
             return true;
         } else {
@@ -107,7 +101,7 @@ public class GongBlock extends BaseEntityBlock {
     }
 
     public boolean attemptToRing(Level p_49713_, BlockPos p_49714_, @javax.annotation.Nullable Direction p_49715_) {
-        return this.attemptToRing(null, p_49713_, p_49714_, p_49715_);
+        return this.attemptToRing((Entity)null, p_49713_, p_49714_, p_49715_);
     }
 
     public boolean attemptToRing(@javax.annotation.Nullable Entity p_152189_, Level p_152190_, BlockPos p_152191_, @javax.annotation.Nullable Direction p_152192_) {
@@ -118,7 +112,7 @@ public class GongBlock extends BaseEntityBlock {
             }
 
             ((GongBlockEntity)blockentity).onHit(p_152192_);
-            p_152190_.playSound(null, p_152191_, MMSounds.BLOCK_GONG.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+            p_152190_.playSound((Player)null, p_152191_, MMSounds.BLOCK_GONG.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
             p_152190_.gameEvent(p_152189_, GameEvent.BLOCK_CHANGE, p_152191_);
             return true;
         } else {
@@ -126,32 +120,29 @@ public class GongBlock extends BaseEntityBlock {
         }
     }
 
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, POWERED);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> p_49751_) {
+        p_49751_.add(FACING, POWERED);
     }
 
+    @Nullable
     @Override
-    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new GongBlockEntity(pos, state);
     }
 
-    @Override
-    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level p_152194_, BlockState p_152195_, BlockEntityType<T> p_152196_) {
+    @javax.annotation.Nullable
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level p_152194_, BlockState p_152195_, BlockEntityType<T> p_152196_) {
         return createTickerHelper(p_152196_, BlockEntityHandler.GONG_BLOCK_ENTITY.get(), GongBlockEntity::tick);
     }
 
-    @Override
     public VoxelShape getCollisionShape(BlockState p_49760_, BlockGetter p_49761_, BlockPos p_49762_, CollisionContext p_49763_) {
         return this.getVoxelShape(p_49760_);
     }
 
-    @Override
     public VoxelShape getShape(BlockState p_49755_, BlockGetter p_49756_, BlockPos p_49757_, CollisionContext p_49758_) {
         return this.getVoxelShape(p_49755_);
     }
 
-    @Override
     public RenderShape getRenderShape(BlockState blockState) {
         return RenderShape.MODEL;
     }
@@ -161,12 +152,10 @@ public class GongBlock extends BaseEntityBlock {
         return direction != Direction.NORTH && direction != Direction.SOUTH ? EAST_WEST_SHAPE : NORTH_SOUTH_SHAPE;
     }
 
-    @Override
-    protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+    public boolean isPathfindable(BlockState p_49717_, BlockGetter p_49718_, BlockPos p_49719_, PathComputationType p_49720_) {
         return false;
     }
 
-    @Override
     public PushReaction getPistonPushReaction(BlockState p_49765_) {
         return PushReaction.DESTROY;
     }
@@ -186,8 +175,8 @@ public class GongBlock extends BaseEntityBlock {
         return true;
     }
 
-    @Override
-    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+    @javax.annotation.Nullable
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction direction = context.getClickedFace();
         BlockPos blockpos = context.getClickedPos();
         Direction.Axis direction$axis = direction.getAxis();
@@ -208,7 +197,6 @@ public class GongBlock extends BaseEntityBlock {
         return null;
     }
 
-    @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @javax.annotation.Nullable LivingEntity entity, ItemStack itemStack) {
         super.setPlacedBy(level, pos, state, entity, itemStack);
         if (!level.isClientSide) {
@@ -230,14 +218,14 @@ public class GongBlock extends BaseEntityBlock {
 
     }
 
-    @Override
-    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide && player.isCreative()) {
             for (int i = 0; i <= 2; i++) {
                 BlockPos abovePos = pos.above(i);
                 BlockPos blockpos1 = abovePos.relative(state.getValue(FACING).getClockWise());
+                BlockPos blockpos2 = abovePos;
                 BlockPos blockpos3 = abovePos.relative(state.getValue(FACING).getCounterClockWise());
-                BlockPos[] toBreakPoses = {blockpos1, abovePos, blockpos3};
+                BlockPos[] toBreakPoses = {blockpos1, blockpos2, blockpos3};
                 for (BlockPos toBreakPos : toBreakPoses) {
                     BlockState blockstate = level.getBlockState(toBreakPos);
                     if (blockstate.is(BlockHandler.GONG_PART.get())) {
@@ -248,12 +236,7 @@ public class GongBlock extends BaseEntityBlock {
             }
         }
 
-        return super.playerWillDestroy(level, pos, state, player);
-    }
-
-    @Override
-    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
+        super.playerWillDestroy(level, pos, state, player);
     }
 
     public enum GongPart implements StringRepresentable {
@@ -277,7 +260,6 @@ public class GongBlock extends BaseEntityBlock {
     }
 
     public static class GongPartBlock extends HorizontalDirectionalBlock {
-        public static final MapCodec<GongPartBlock> CODEC = simpleCodec(GongPartBlock::new);
 
         public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
         public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
@@ -299,21 +281,18 @@ public class GongBlock extends BaseEntityBlock {
             BlockState baseState = level.getBlockState(basePos);
             if (baseState.is(BlockHandler.GONG.get())) {
                 BlockHitResult baseHitResult = new BlockHitResult(hitResult.getLocation().add(basePos.getX() - pos.getX(), basePos.getY() - pos.getY(), basePos.getZ() - pos.getZ()), hitResult.getDirection(), basePos, hitResult.isInside());
-                baseState.onProjectileHit(level, baseState, baseHitResult, projectile);
+                baseState.getBlock().onProjectileHit(level, baseState, baseHitResult, projectile);
             }
         }
 
-        @Override
-        protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
             BlockPos basePos = getBasePos(state, pos);
             BlockState baseState = level.getBlockState(basePos);
-
             if (baseState.is(BlockHandler.GONG.get())) {
                 BlockHitResult baseHitResult = new BlockHitResult(hitResult.getLocation().add(basePos.getX() - pos.getX(), basePos.getY() - pos.getY(), basePos.getZ() - pos.getZ()), hitResult.getDirection(), basePos, hitResult.isInside());
-                return baseState.useItemOn(stack, level, player, hand, baseHitResult);
+                return baseState.getBlock().use(baseState, level, pos, player, hand, baseHitResult);
             }
-
-            return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+            return super.use(state, level, pos, player, hand, hitResult);
         }
 
         private BlockPos getBasePos(BlockState state, BlockPos pos) {
@@ -328,7 +307,7 @@ public class GongBlock extends BaseEntityBlock {
         }
 
         @Override
-        public @NotNull BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
             BlockPos basePos = getBasePos(state, pos);
             BlockState baseState = level.getBlockState(basePos);
             if (baseState.is(BlockHandler.GONG.get())) {
@@ -336,10 +315,9 @@ public class GongBlock extends BaseEntityBlock {
                 level.levelEvent(player, 2001, basePos, Block.getId(state));
             }
 
-            return super.playerWillDestroy(level, pos, state, player);
+            super.playerWillDestroy(level, pos, state, player);
         }
 
-        @Override
         public BlockState updateShape(BlockState state, Direction direction, BlockState state1, LevelAccessor level, BlockPos pos, BlockPos pos1) {
             BlockPos basePos = getBasePos(state, pos);
             BlockState baseState = level.getBlockState(basePos);
@@ -349,17 +327,14 @@ public class GongBlock extends BaseEntityBlock {
             return super.updateShape(state, direction, state1, level, pos, pos1);
         }
 
-        @Override
         public VoxelShape getCollisionShape(BlockState p_49760_, BlockGetter p_49761_, BlockPos p_49762_, CollisionContext p_49763_) {
             return this.getVoxelShape(p_49760_);
         }
 
-        @Override
         public VoxelShape getShape(BlockState p_49755_, BlockGetter p_49756_, BlockPos p_49757_, CollisionContext p_49758_) {
             return this.getVoxelShape(p_49755_);
         }
 
-        @Override
         public RenderShape getRenderShape(BlockState blockState) {
             return RenderShape.MODEL;
         }
@@ -369,12 +344,10 @@ public class GongBlock extends BaseEntityBlock {
             return direction != Direction.NORTH && direction != Direction.SOUTH ? EAST_WEST_SHAPE : NORTH_SOUTH_SHAPE;
         }
 
-        @Override
-        protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+        public boolean isPathfindable(BlockState p_49717_, BlockGetter p_49718_, BlockPos p_49719_, PathComputationType p_49720_) {
             return false;
         }
 
-        @Override
         public PushReaction getPistonPushReaction(BlockState p_49765_) {
             return PushReaction.DESTROY;
         }
@@ -382,11 +355,6 @@ public class GongBlock extends BaseEntityBlock {
         @Override
         public Item asItem() {
             return BlockHandler.GONG.get().asItem();
-        }
-
-        @Override
-        protected @NotNull MapCodec<? extends HorizontalDirectionalBlock> codec() {
-            return CODEC;
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.bobmowzie.mowziesmobs.server.ability.abilities.player.geomancy;
 
-import com.bobmowzie.mowziesmobs.MMCommon;
+import com.bobmowzie.mowziesmobs.MowziesMobs;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
 import com.bobmowzie.mowziesmobs.client.particle.util.AdvancedParticleBase;
 import com.bobmowzie.mowziesmobs.client.particle.util.ParticleComponent;
@@ -12,6 +12,7 @@ import com.bobmowzie.mowziesmobs.server.entity.effects.geomancy.EntityGeomancyBa
 import com.bobmowzie.mowziesmobs.server.item.ItemHandler;
 import com.bobmowzie.mowziesmobs.server.potion.EffectGeomancy;
 import com.bobmowzie.mowziesmobs.server.sound.MMSounds;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.Tag;
@@ -26,12 +27,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.RenderFrameEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import software.bernie.geckolib.animation.Animation;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import software.bernie.geckolib.core.animation.Animation;
 
 public class SpawnBoulderAbility extends PlayerAbility {
-    private static final int MAX_CHARGE = 60;
+    private static int MAX_CHARGE = 60;
     public static final double SPAWN_BOULDER_REACH = 5;
 
     public BlockPos spawnBoulderPos = new BlockPos(0, 0, 0);
@@ -104,10 +105,10 @@ public class SpawnBoulderAbility extends PlayerAbility {
         if (getCurrentSection().sectionType == AbilitySection.AbilitySectionType.STARTUP) {
             spawnBoulderCharge++;
             if (spawnBoulderCharge > 2) getUser().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 0, false, false));
-            if (spawnBoulderCharge == 1 && getUser().level().isClientSide) MMCommon.PROXY.playBoulderChargeSound(getUser());
+            if (spawnBoulderCharge == 1 && getUser().level().isClientSide) MowziesMobs.PROXY.playBoulderChargeSound(getUser());
             if (spawnBoulderCharge == 45) {
                 if (getUser().level().isClientSide) {
-                    AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2, (float) getUser().getX(), (float) getUser().getY() + getUser().getBbHeight() / 2f, (float) getUser().getZ(), 0, 0, 0, true, 0, 0, 0, 0, 3.5F, 0.83f, 1, 0.39f, 1, 1, 20, true, true, new ParticleComponent[]{
+                    AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2.get(), (float) getUser().getX(), (float) getUser().getY() + getUser().getBbHeight() / 2f, (float) getUser().getZ(), 0, 0, 0, true, 0, 0, 0, 0, 3.5F, 0.83f, 1, 0.39f, 1, 1, 20, true, true, new ParticleComponent[]{
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(0.7f, 0f), false),
                             new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, ParticleComponent.KeyTrack.startAndEnd(0, 40f), false)
                     });
@@ -136,7 +137,7 @@ public class SpawnBoulderAbility extends PlayerAbility {
                 else if (section == LARGE_CHARGE_SECTION) scale = 12;
                 else if (section == HUGE_CHARGE_SECTION) scale = 16;
 
-                AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2, (float) spawnBoulderPos.getX() + 0.5f, (float) spawnBoulderPos.getY() + 1.01, (float) spawnBoulderPos.getZ() + 0.5f, 0, 0, 0, false, 0, Math.PI / 2f, 0, 0, scale, 0.83f, 1, 0.39f, 1, 1, 10, true, true, new ParticleComponent[]{
+                AdvancedParticleBase.spawnParticle(getUser().level(), ParticleHandler.RING2.get(), (float) spawnBoulderPos.getX() + 0.5f, (float) spawnBoulderPos.getY() + 1.01, (float) spawnBoulderPos.getZ() + 0.5f, 0, 0, 0, false, 0, Math.PI / 2f, 0, 0, scale, 0.83f, 1, 0.39f, 1, 1, 10, true, true, new ParticleComponent[]{
                         new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, ParticleComponent.KeyTrack.startAndEnd(0.7f, 0.0f), false)
                 });
             }
@@ -222,10 +223,10 @@ public class SpawnBoulderAbility extends PlayerAbility {
     }
 
     @Override
-    public void onRenderTick(RenderFrameEvent event) {
+    public void onRenderTick(TickEvent.RenderTickEvent event) {
         super.onRenderTick(event);
         if (isUsing() && getCurrentSection().sectionType == AbilitySection.AbilitySectionType.STARTUP && getTicksInUse() > 1) {
-            Vec3 playerEyes = getUser().getEyePosition(event.getPartialTick().getGameTimeDeltaPartialTick(false));
+            Vec3 playerEyes = getUser().getEyePosition(Minecraft.getInstance().getFrameTime());
             Vec3 vec = playerEyes.subtract(lookPos).normalize();
             float yaw = (float) Math.atan2(vec.z, vec.x);
             float pitch = (float) Math.asin(vec.y);

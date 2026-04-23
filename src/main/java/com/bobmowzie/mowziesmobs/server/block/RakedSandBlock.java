@@ -4,13 +4,11 @@ import com.google.common.collect.Lists;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.ColorRGBA;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -21,11 +19,11 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Random;
 
-public class RakedSandBlock extends ColoredFallingBlock {
+public class RakedSandBlock extends SandBlock {
     public static final EnumProperty<RakedSandShape> SHAPE = EnumProperty.create("shape", RakedSandShape.class);
     public final BlockState fallingState;
 
-    public RakedSandBlock(ColorRGBA dustColor, BlockBehaviour.Properties properties, BlockState fallingState) {
+    public RakedSandBlock(int dustColor, Properties properties, BlockState fallingState) {
         super(dustColor, properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(SHAPE, RakedSandShape.NORTH_SOUTH));
         this.fallingState = fallingState;

@@ -1,6 +1,7 @@
 package com.bobmowzie.mowziesmobs.server.entity.frostmaw;
 
 import com.bobmowzie.mowziesmobs.client.particle.ParticleCloud;
+import com.bobmowzie.mowziesmobs.client.particle.ParticleHandler;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleRing;
 import com.bobmowzie.mowziesmobs.client.particle.ParticleSnowFlake;
 import com.bobmowzie.mowziesmobs.client.sound.BossMusic;
@@ -27,7 +28,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
@@ -54,11 +55,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.items.ItemHandlerHelper;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
@@ -114,6 +115,7 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
 
     public EntityFrostmaw(EntityType<? extends EntityFrostmaw> type, Level world) {
         super(type, world);
+        setMaxUpStep(1);
         frame += random.nextInt(50);
         legSolver = new LegSolverQuadruped(1f, 2f, -1, 1.5f);
         if (world.isClientSide)
@@ -164,8 +166,9 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
             @Override
             protected void onAttack(LivingEntity entityTarget, float damageMultiplier, float applyKnockbackMultiplier) {
                 super.onAttack(entityTarget, damageMultiplier, applyKnockbackMultiplier);
-                if (getAnimationTick() == 21 && entityTarget instanceof Player player) {
-                    if (player.isBlocking()) player.disableShield();
+                if (getAnimationTick() == 21 && entityTarget instanceof Player){
+                    Player player = (Player)entityTarget;
+                    if (player.isBlocking()) player.disableShield(true);
                 }
             }
         });
@@ -211,9 +214,7 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                 .add(Attributes.MAX_HEALTH, 250)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1)
                 .add(Attributes.FOLLOW_RANGE, 50)
-                .add(Attributes.MOVEMENT_SPEED, 0.3D)
-                .add(Attributes.STEP_HEIGHT, 1)
-                .add(Attributes.WATER_MOVEMENT_EFFICIENCY, 0.9);
+                .add(Attributes.MOVEMENT_SPEED, 0.3D);
     }
 
     @Override
@@ -222,11 +223,11 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
     }
 
     @Override
-    protected void defineSynchedData(@NotNull SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(ACTIVE, false);
-        builder.define(HAS_CRYSTAL, true);
-        builder.define(ALWAYS_ACTIVE, false);
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        getEntityData().define(ACTIVE, false);
+        getEntityData().define(HAS_CRYSTAL, true);
+        getEntityData().define(ALWAYS_ACTIVE, false);
     }
 
     @Override
@@ -254,7 +255,7 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
 
     @Override
     public PushReaction getPistonPushReaction() {
-        return PushReaction.IGNORE;
+        return PushReaction.BLOCK;
     }
 
     @Override
@@ -337,13 +338,13 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                     float radius = 4;
                     float slamPosX = (float) (getX() + radius * Math.cos(Math.toRadians(getYRot() + 90)));
                     float slamPosZ = (float) (getZ() + radius * Math.sin(Math.toRadians(getYRot() + 90)));
-                    if (level().isClientSide) level().addParticle(new ParticleRing.Data(0f, (float)Math.PI/2f, 17, 1f, 1f, 1f, 1f, 60, false, ParticleRing.EnumRingBehavior.GROW), slamPosX, getY() + 0.2f, slamPosZ, 0, 0, 0);
+                    if (level().isClientSide) level().addParticle(new ParticleRing.RingData(0f, (float)Math.PI/2f, 17, 1f, 1f, 1f, 1f, 60f, false, ParticleRing.EnumRingBehavior.GROW), slamPosX, getY() + 0.2f, slamPosZ, 0, 0, 0);
                     AABB hitBox = new AABB(slamPosX - 0.5f, getY() - 0.5f,  slamPosZ - 0.5f,slamPosX + 0.5f, getY() + 0.5f, slamPosZ + 0.5f).inflate(3, 3, 3);
                     List<LivingEntity> entitiesHit = level().getEntitiesOfClass(LivingEntity.class, hitBox);
                     for (LivingEntity entity: entitiesHit) {
                         if (entity != this && entity.position().distanceToSqr(slamPosX, getY(), slamPosZ) <= 9) {
                             doHurtTarget(entity, 4f, 1);
-                            if (entity.isBlocking()) entity.getUseItem().hurtAndBreak(400, entity, LivingEntity.getSlotForHand(entity.getUsedItemHand()));
+                            if (entity.isBlocking()) entity.getUseItem().hurtAndBreak(400, entity, p -> p.broadcastBreakEvent(entity.getUsedItemHand()));
                         }
                     }
                     EntityCameraShake.cameraShake(level(), new Vec3(slamPosX, getY(), slamPosZ), 30, 0.1f, 0, 20);
@@ -395,13 +396,13 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                             particlePos = particlePos.yRot((float) (random.nextFloat() * 2 * Math.PI));
                             particlePos = particlePos.xRot((float) (random.nextFloat() * 2 * Math.PI));
                             float value = random.nextFloat() * 0.15f;
-                            level().addParticle(new ParticleCloud.Data(0.75f + value, 0.75f + value, 1f, 5f + random.nextFloat() * 15f, 30, ParticleCloud.EnumCloudBehavior.CONSTANT, 1f), mouthPos.x + particlePos.x, mouthPos.y + particlePos.y, mouthPos.z + particlePos.z, -0.1 * particlePos.x, -0.1 * particlePos.y, -0.1 * particlePos.z);
+                            level().addParticle(new ParticleCloud.CloudData(ParticleHandler.CLOUD.get(), 0.75f + value, 0.75f + value, 1f, 5f + random.nextFloat() * 15f, 30, ParticleCloud.EnumCloudBehavior.CONSTANT, 1f), mouthPos.x + particlePos.x, mouthPos.y + particlePos.y, mouthPos.z + particlePos.z, -0.1 * particlePos.x, -0.1 * particlePos.y, -0.1 * particlePos.z);
                         }
                         for (int i = 0; i < 8; i++) {
                             Vec3 particlePos = new Vec3(3.5, 0, 0);
                             particlePos = particlePos.yRot((float) (random.nextFloat() * 2 * Math.PI));
                             particlePos = particlePos.xRot((float) (random.nextFloat() * 2 * Math.PI));
-                            level().addParticle(new ParticleSnowFlake.Data(40, false), mouthPos.x + particlePos.x, mouthPos.y + particlePos.y, mouthPos.z + particlePos.z, -0.07 * particlePos.x, -0.07 * particlePos.y, -0.07 * particlePos.z);
+                            level().addParticle(new ParticleSnowFlake.SnowflakeData(40, false), mouthPos.x + particlePos.x, mouthPos.y + particlePos.y, mouthPos.z + particlePos.z, -0.07 * particlePos.x, -0.07 * particlePos.y, -0.07 * particlePos.z);
                         }
                     }
                 }
@@ -459,7 +460,7 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                 }
 
                 if (shouldDodgeMeasure >= 16) shouldDodge = true;
-                if (getTarget().hasEffect(EffectHandler.FROZEN)) shouldDodge = false;
+                if (getTarget().hasEffect(EffectHandler.FROZEN.get())) shouldDodge = false;
                 if (targetDistance < 4 && shouldDodge && getAnimation() == NO_ANIMATION) {
                     shouldDodge = false;
                     dodgeCooldown = DODGE_COOLDOWN;
@@ -538,11 +539,7 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                             AnimationHandler.INSTANCE.sendAnimationMessage(this, ACTIVATE_NO_CRYSTAL_ANIMATION);
                             setActive(true);
                         }
-
-                        if (player instanceof ServerPlayer serverPlayer) {
-                            AdvancementHandler.STEAL_ICE_CRYSTAL_TRIGGER.value().trigger(serverPlayer);
-                        }
-
+                        if (player instanceof ServerPlayer) AdvancementHandler.STEAL_ICE_CRYSTAL_TRIGGER.trigger((ServerPlayer)player);
                         break;
                     }
                 }
@@ -611,14 +608,14 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                     double speed = 0.9;
                     double xSpeed = speed * Math.cos(Math.toRadians(yaw));
                     double zSpeed = speed * Math.sin(Math.toRadians(yaw));
-                    level().addParticle(new ParticleCloud.Data(0.75f, 0.75f, 1f, 40f, 22, ParticleCloud.EnumCloudBehavior.GROW, 1f), getX(), getY() + 1f, getZ(), xSpeed, 0, zSpeed);
+                    level().addParticle(new ParticleCloud.CloudData(ParticleHandler.CLOUD.get(), 0.75f, 0.75f, 1f, 40f, 22, ParticleCloud.EnumCloudBehavior.GROW, 1f), getX(), getY() + 1f, getZ(), xSpeed, 0, zSpeed);
                 }
                 for (int i = 1; i <= particleCount; i++) {
                     double yaw = i * 360.f / particleCount;
                     double speed = 0.65;
                     double xSpeed = speed * Math.cos(Math.toRadians(yaw));
                     double zSpeed = speed * Math.sin(Math.toRadians(yaw));
-                    level().addParticle(new ParticleCloud.Data(0.75f, 0.75f, 1f, 35f, 22, ParticleCloud.EnumCloudBehavior.GROW, 1f), getX(), getY() + 1f, getZ(), xSpeed, 0, zSpeed);
+                    level().addParticle(new ParticleCloud.CloudData(ParticleHandler.CLOUD.get(), 0.75f, 0.75f, 1f, 35f, 22, ParticleCloud.EnumCloudBehavior.GROW, 1f), getX(), getY() + 1f, getZ(), xSpeed, 0, zSpeed);
                 }
             }
         }
@@ -649,10 +646,11 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
         return 1;
     }
 
+    @Nullable
     @Override
-    public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData livingData, @Nullable CompoundTag compound) {
         setHasCrystal(true);
-        return super.finalizeSpawn(world, difficulty, reason, livingData);
+        return super.finalizeSpawn(world, difficulty, reason, livingData, compound);
     }
 
     private void spawnSwipeParticles() {
@@ -681,14 +679,14 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                                     float xOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
                                     float yOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
                                     float zOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
-                                    level().addParticle(new ParticleSnowFlake.Data(40, false), x + xOffset, y + yOffset, z + zOffset, motionX, motionY - 0.01f, motionZ);
+                                    level().addParticle(new ParticleSnowFlake.SnowflakeData(40, false), x + xOffset, y + yOffset, z + zOffset, motionX, motionY - 0.01f, motionZ);
                                 }
                                 for (int j = 0; j < cloudDensity; j++) {
                                     float xOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                     float yOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                     float zOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                     float value = random.nextFloat() * 0.1f;
-                                    level().addParticle(new ParticleCloud.Data(0.8f + value, 0.8f + value, 1f, (float) (10d + random.nextDouble() * 10d), 40, ParticleCloud.EnumCloudBehavior.SHRINK, 1f), x + xOffset, y + yOffset, z + zOffset, motionX, motionY, motionZ);
+                                    level().addParticle(new ParticleCloud.CloudData(ParticleHandler.CLOUD.get(), 0.8f + value, 0.8f + value, 1f, (float) (10d + random.nextDouble() * 10d), 40, ParticleCloud.EnumCloudBehavior.SHRINK, 1f), x + xOffset, y + yOffset, z + zOffset, motionX, motionY, motionZ);
                                 }
                             }
                         } else {
@@ -702,14 +700,14 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                                     float xOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
                                     float yOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
                                     float zOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
-                                    level().addParticle(new ParticleSnowFlake.Data(40, false), x + xOffset, y + yOffset, z + zOffset, motionX, motionY - 0.01f, motionZ);
+                                    level().addParticle(new ParticleSnowFlake.SnowflakeData(40, false), x + xOffset, y + yOffset, z + zOffset, motionX, motionY - 0.01f, motionZ);
                                 }
                                 for (int j = 0; j < cloudDensity; j++) {
                                     float xOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                     float yOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                     float zOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                     float value = random.nextFloat() * 0.1f;
-                                    level().addParticle(new ParticleCloud.Data(0.8f + value, 0.8f + value, 1f, (float) (10d + random.nextDouble() * 10d), 40, ParticleCloud.EnumCloudBehavior.SHRINK, 1f), x + xOffset, y + yOffset, z + zOffset, motionX, motionY, motionZ);
+                                    level().addParticle(new ParticleCloud.CloudData(ParticleHandler.CLOUD.get(), 0.8f + value, 0.8f + value, 1f, (float) (10d + random.nextDouble() * 10d), 40, ParticleCloud.EnumCloudBehavior.SHRINK, 1f), x + xOffset, y + yOffset, z + zOffset, motionX, motionY, motionZ);
                                 }
                             }
                         }
@@ -726,14 +724,14 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                                 float xOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
                                 float yOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
                                 float zOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
-                                level().addParticle(new ParticleSnowFlake.Data(40, false), x + xOffset, y + yOffset, z + zOffset, motionX, motionY - 0.01f, motionZ);
+                                level().addParticle(new ParticleSnowFlake.SnowflakeData(40, false), x + xOffset, y + yOffset, z + zOffset, motionX, motionY - 0.01f, motionZ);
                             }
                             for (int j = 0; j < cloudDensity; j++) {
                                 float xOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                 float yOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                 float zOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                 float value = random.nextFloat() * 0.1f;
-                                level().addParticle(new ParticleCloud.Data(0.8f + value, 0.8f + value, 1f, (float) (10d + random.nextDouble() * 10d), 40, ParticleCloud.EnumCloudBehavior.SHRINK, 1f), x + xOffset, y + yOffset, z + zOffset, motionX, motionY, motionZ);
+                                level().addParticle(new ParticleCloud.CloudData(ParticleHandler.CLOUD.get(), 0.8f + value, 0.8f + value, 1f, (float) (10d + random.nextDouble() * 10d), 40, ParticleCloud.EnumCloudBehavior.SHRINK, 1f), x + xOffset, y + yOffset, z + zOffset, motionX, motionY, motionZ);
                             }
                         }
                     } else if ((!swingWhichArm && getAnimationTick() > 8 && getAnimationTick() < 14) || (swingWhichArm && getAnimationTick() > 19 && getAnimationTick() < 25)) {
@@ -747,14 +745,14 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
                                 float xOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
                                 float yOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
                                 float zOffset = snowflakeRandomness * (2 * random.nextFloat() - 1);
-                                level().addParticle(new ParticleSnowFlake.Data(40, false), x + xOffset, y + yOffset, z + zOffset, motionX, motionY - 0.01f, motionZ);
+                                level().addParticle(new ParticleSnowFlake.SnowflakeData(40, false), x + xOffset, y + yOffset, z + zOffset, motionX, motionY - 0.01f, motionZ);
                             }
                             for (int j = 0; j < cloudDensity; j++) {
                                 float xOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                 float yOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                 float zOffset = cloudRandomness * (2 * random.nextFloat() - 1);
                                 float value = random.nextFloat() * 0.1f;
-                                level().addParticle(new ParticleCloud.Data(0.8f + value, 0.8f + value, 1f, (float) (10d + random.nextDouble() * 10d), 40, ParticleCloud.EnumCloudBehavior.SHRINK, 1f), x + xOffset, y + yOffset, z + zOffset, motionX, motionY, motionZ);
+                                level().addParticle(new ParticleCloud.CloudData(ParticleHandler.CLOUD.get(), 0.8f + value, 0.8f + value, 1f, (float) (10d + random.nextDouble() * 10d), 40, ParticleCloud.EnumCloudBehavior.SHRINK, 1f), x + xOffset, y + yOffset, z + zOffset, motionX, motionY, motionZ);
                             }
                         }
                     }
@@ -892,7 +890,7 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
     }
 
     @Override
-    protected ResourceKey<LootTable> getDefaultLootTable() {
+    protected ResourceLocation getDefaultLootTable() {
         return LootTableHandler.FROSTMAW;
     }
 
@@ -907,14 +905,15 @@ public class EntityFrostmaw extends MowzieLLibraryEntity implements Enemy {
         return super.getDeltaMovement();
     }
 
+    @OnlyIn(Dist.CLIENT)
     @Override
-    public boolean hasBossMusic() {
-        return true;
+    public BossMusic getBossMusic() {
+        return BossMusicPlayer.FROSTMAW_MUSIC;
     }
 
     @Override
-    public BossMusic<?> getBossMusic() {
-        return BossMusicPlayer.FROSTMAW_MUSIC;
+    public boolean hasBossMusic() {
+        return true;
     }
 
     @Override

@@ -40,8 +40,8 @@ public class EntityFissurePiece extends Entity {
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        builder.define(GROW_TICK, 0);
+    protected void defineSynchedData() {
+        getEntityData().define(GROW_TICK, 0);
     }
 
     public void setOwner(@Nullable EntityFissure owner) {
