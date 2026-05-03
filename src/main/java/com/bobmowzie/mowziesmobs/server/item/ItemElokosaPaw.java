@@ -121,19 +121,22 @@ public class ItemElokosaPaw extends Item {
         int effectDuration = ConfigHandler.COMMON.TOOLS_AND_ABILITIES.ELOKOSA_PAW.effectDuration.getAsInt();
         for (LivingEntity entity : entitiesNearby) {
             entity.addEffect(new MobEffectInstance(pawType.getPotion(), effectDuration));
-            for (int i = 0; i < 30; i++) {
-                Vec3 vel = new Vec3(0.05 + entity.getRandom().nextFloat() * 0.1f, 0, 0).yRot(entity.getRandom().nextFloat() * Mth.TWO_PI).xRot(entity.getRandom().nextFloat() * Mth.TWO_PI);
-                AdvancedParticleBase.spawnParticle(level, ParticleHandler.PIXEL, entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ(), vel.x, vel.y, vel.z, true, 0, 0, 0, 0, 5F, 0.85,0.65,0.99, 1, 0.9, 10 + player.getRandom().nextInt(10), true, true, new ParticleComponent[]{
-                        new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (1f - (float) Math.pow(t, 2)) * 2.5f), false),
-                        new ParticleComponent.ForceOverTime(new Vec3(0, 0.003, 0)),
-                        new ParticleComponent.Vortex(new Vec3(0, 1, 0), new Vec3(entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ()), ParticleComponent.KeyTrack.startAndEnd(entity.getRandom().nextFloat() * 0.1f, 0f)),
-                        new ParticleComponent.CurlNoise(0.025f, 4f),
+
+            if (level.isClientSide()) {
+                for (int i = 0; i < 30; i++) {
+                    Vec3 vel = new Vec3(0.05 + entity.getRandom().nextFloat() * 0.1f, 0, 0).yRot(entity.getRandom().nextFloat() * Mth.TWO_PI).xRot(entity.getRandom().nextFloat() * Mth.TWO_PI);
+                    AdvancedParticleBase.spawnParticle(level, ParticleHandler.PIXEL, entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ(), vel.x, vel.y, vel.z, true, 0, 0, 0, 0, 5F, 0.85,0.65,0.99, 1, 0.9, 10 + player.getRandom().nextInt(10), true, true, new ParticleComponent[]{
+                            new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (1f - (float) Math.pow(t, 2)) * 2.5f), false),
+                            new ParticleComponent.ForceOverTime(new Vec3(0, 0.003, 0)),
+                            new ParticleComponent.Vortex(new Vec3(0, 1, 0), new Vec3(entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ()), ParticleComponent.KeyTrack.startAndEnd(entity.getRandom().nextFloat() * 0.1f, 0f)),
+                            new ParticleComponent.CurlNoise(0.025f, 4f),
+                    });
+                }
+                AdvancedParticleBase.spawnParticle(level, ParticleHandler.BURST_OUT, entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ(), 0, 0, 0, true, 0, 0, 0, 0, 4F, 0.65,0.45,0.95, 1, 1, 18, true, false, new ParticleComponent[]{
+                        new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (float) Math.pow(t, 0.6) * 14f), false),
+                        new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.Expression(t -> 1f - (float) Math.pow(t, 0.5)), false),
                 });
             }
-            AdvancedParticleBase.spawnParticle(level, ParticleHandler.BURST_OUT, entity.getX(), entity.getY() + entity.getBbHeight()/2f, entity.getZ(), 0, 0, 0, true, 0, 0, 0, 0, 4F, 0.65,0.45,0.95, 1, 1, 18, true, false, new ParticleComponent[]{
-                    new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.SCALE, new ParticleComponent.Expression(t -> (float) Math.pow(t, 0.6) * 14f), false),
-                    new ParticleComponent.PropertyControl(ParticleComponent.PropertyControl.EnumParticleProperty.ALPHA, new ParticleComponent.Expression(t -> 1f - (float) Math.pow(t, 0.5)), false),
-            });
         }
         return InteractionResultHolder.consume(itemstack);
     }
