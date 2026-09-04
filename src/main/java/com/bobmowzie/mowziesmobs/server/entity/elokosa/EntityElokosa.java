@@ -1651,6 +1651,16 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
     }
 
     public static class WanderLeapGoal extends ElokosaLeapGoal {
+        // Resolved once per candidate generation instead of once per candidate.
+        // getLeader() searches a 64-block cube for entities and then scans the
+        // result for a UUID, while generateCandidates() scores every solid block
+        // in a 53x41x53 volume from up to six directions -- so calling it from
+        // scoreJump cost hundreds of thousands of entity lookups in a single
+        // tick. Every candidate is scored inside one generateCandidates() call,
+        // so the leader cannot move between them and hoisting the lookup out
+        // leaves the scores unchanged.
+        private LivingEntity leaderForScoring;
+
         public WanderLeapGoal(EntityElokosa elokosa) {
             super(elokosa, UniformInt.of(25, 200));
         }
@@ -1661,9 +1671,22 @@ public abstract class EntityElokosa extends MowzieGeckoEntity implements Enemy {
         }
 
         @Override
+        protected void generateCandidates() {
+            leaderForScoring = elokosa instanceof EntityElokosaFollower<? extends LivingEntity> elokosaFollower
+                    ? elokosaFollower.getLeader()
+                    : null;
+            try {
+                super.generateCandidates();
+            } finally {
+                // Cleared so the goal never keeps a leader alive between ticks.
+                leaderForScoring = null;
+            }
+        }
+
+        @Override
         protected int scoreJump(BlockPos pos, Direction dir) {
-            if (elokosa instanceof EntityElokosaFollower<? extends LivingEntity> elokosaFollower && elokosaFollower.getLeader() != null) {
-                LivingEntity leader = elokosaFollower.getLeader();
+            LivingEntity leader = leaderForScoring;
+            if (leader != null) {
                 Vec3 vecBetween = leader.position().subtract(pos.getBottomCenter());
                 double distance = vecBetween.lengthSqr();
                 int distScore = (int) Mth.clampedMap(distance, 10 * 10, 25 * 25, 30, 0);

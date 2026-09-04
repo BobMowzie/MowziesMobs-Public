@@ -164,8 +164,12 @@ public abstract class EntityElokosaFollower<L extends LivingEntity> extends Enti
 
     @Override
     public @NotNull BlockPos getRestrictCenter() {
-        if (getLeader() != null) {
-            return getLeader().getOnPos();
+        // One lookup, not two: getLeader() searches a 64-block cube for
+        // entities, and the navigation code calls this every time it evaluates
+        // a restricted move.
+        L currentLeader = getLeader();
+        if (currentLeader != null) {
+            return currentLeader.getOnPos();
         }
         return super.getRestrictCenter();
     }
