@@ -45,7 +45,7 @@ public final class GuiUmvuthiTrade extends AbstractContainerScreen<ContainerUmvu
         this.umvuthi = screenContainer.getUmvuthi();
         this.player = inv.player;
         this.inventory = screenContainer.getInventoryUmvuthi();
-        this.hasTraded = umvuthi.hasTradedWith(inv.player);
+        this.hasTraded = umvuthi != null && umvuthi.hasTradedWith(inv.player);
         inventory.addListener(this);
     }
 
@@ -58,8 +58,16 @@ public final class GuiUmvuthiTrade extends AbstractContainerScreen<ContainerUmvu
         updateButton();
     }
 
+    // As in GuiSculptorTrade: without the referenced mob on this client there is no Umvuthi here; close the screen
+    // instead of crashing.
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        if (umvuthi == null) onClose();
+    }
+
     protected void actionPerformed(Button button) {
-    	if (button == grantButton) {
+    	if (button == grantButton && umvuthi != null) {
             hasTraded = true;
             updateButton();
             PacketDistributor.sendToServer(new MessageUmvuthiTrade(umvuthi.getId()));
@@ -103,6 +111,7 @@ public final class GuiUmvuthiTrade extends AbstractContainerScreen<ContainerUmvu
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+        if (umvuthi == null) return;
         ItemStack inSlot = inventory.getItem(0);
         guiGraphics.pose().pushPose();
 
@@ -134,7 +143,8 @@ public final class GuiUmvuthiTrade extends AbstractContainerScreen<ContainerUmvu
 
     @Override
 	public void onChange(Container inv) {
-        grantButton.active = hasTraded || umvuthi.doesItemSatisfyDesire(inv.getItem(0));
+        if (grantButton == null) return;
+        grantButton.active = hasTraded || (umvuthi != null && umvuthi.doesItemSatisfyDesire(inv.getItem(0)));
 	}
 
     private void updateButton() {

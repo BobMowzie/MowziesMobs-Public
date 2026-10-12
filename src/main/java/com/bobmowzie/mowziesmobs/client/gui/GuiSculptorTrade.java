@@ -49,8 +49,17 @@ public final class GuiSculptorTrade extends AbstractContainerScreen<ContainerScu
         updateButton();
     }
 
+    // The client finds the Sculptor through the proxy's referenced mob, which is only set when this client ran the
+    // interaction itself. When the server opens the menu without that (client and server disagreeing on whether a
+    // trade can start), there is no Sculptor here: close the screen instead of crashing.
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        if (sculptor == null) onClose();
+    }
+
     private void actionPerformed(Button button) {
-    	if (button == beginButton) {
+    	if (button == beginButton && sculptor != null) {
             PacketDistributor.sendToServer(new MessageSculptorTrade(sculptor.getId()));
     	}
     }
@@ -90,6 +99,7 @@ public final class GuiSculptorTrade extends AbstractContainerScreen<ContainerScu
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+        if (sculptor == null) return;
         ItemStack inSlot = inventory.getItem(0);
         guiGraphics.pose().pushPose();
 
@@ -114,7 +124,8 @@ public final class GuiSculptorTrade extends AbstractContainerScreen<ContainerScu
 
     @Override
 	public void onChange(Container inv) {
-        beginButton.active = sculptor.doesItemSatisfyDesire(inv.getItem(0)) && !sculptor.isTestObstructed();
+        if (beginButton == null) return;
+        beginButton.active = sculptor != null && sculptor.doesItemSatisfyDesire(inv.getItem(0)) && !sculptor.isTestObstructed();
 	}
 
     private void updateButton() {
